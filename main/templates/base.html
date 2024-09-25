@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS-FSA</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <a class="navbar-brand" href="{% url 'main:home' %}">FSA</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav mr-auto">
+                    <!-- User Management Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userManagementDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            User Management
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="userManagementDropdown">
+                            <a class="dropdown-item" href="{% url 'user:user_list' %}"> <i class="fas fa-user"></i> &nbsp;User</a>
+                            <a class="dropdown-item" href="{% url 'role:role_list' %}"> <i class="fas fa-briefcase"></i> &nbsp;Role</a>
+                            <a class="dropdown-item" href="{% url 'module_group:module_list' %}"> <i class="fas fa-cogs"></i> &nbsp;Module</a>
+                            <a class="dropdown-item" href="{% url 'module_group:module_group_list' %}"> <i class="fas fa-folder"></i> &nbsp;Module Group</a>
+                            <a class="dropdown-item" href="{% url 'user_module:user_module_list' %}"> <i class="fas fa-user-tag"></i> &nbsp;User Module</a>
+                        </div>
+                    </li>
+                    <!-- Training Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="trainingManagementDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Training
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="trainingManagementDropdown">
+                            <a class="dropdown-item" href="{% url 'subject:subject_list' %}"> <i class="fas fa-book"></i> &nbsp;Subject</a>
+                            <a class="dropdown-item" href="{% url 'category:category_list' %}"> <i class="fas fa-tags"></i> &nbsp;Category</a>
+                            <a class="dropdown-item" href="{% url 'training_program:training_program_list' %}"> <i class="fas fa-calendar-alt"></i> &nbsp;Training Program</a>
+                            <a class="dropdown-item" href="{% url 'class:class_list' %}"> <i class="fas fa-list"></i> &nbsp;Class List</a>
+                            <a class="dropdown-item" href="{% url 'study:study_list' %}"> <i class="fas fa-list"></i> &nbsp;Study List</a>
+                        </div>
+                    </li>
+                    <!-- Assessment Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="assessmentManagementDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Assessment 
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="assessmentManagementDropdown">
+                            <a class="dropdown-item" href="{% url 'question:question_list' %}"> <i class="fas fa-question-circle"></i> &nbsp;Question</a>
+                            <a class="dropdown-item" href="{% url 'quiz:quiz_home' %}"> <i class="fas fa-list"></i> &nbsp;Quiz</a>
+                            <a class="dropdown-item" href="{% url 'tools:exam_generator_view' %}"> <i class="fas fa-tag"></i> &nbsp;tools</a>
+                            
+                        </div>
+                    </li>
+                </ul>s
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <form method="POST" action="{% url 'main:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link nav-link" style="display:inline; padding: 0;">Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    {% else %}
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <a class="navbar-brand" href="{% url 'main:home' %}">FSA</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:login' %}">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    {% endif %}
+
+    <div class="container mt-4">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

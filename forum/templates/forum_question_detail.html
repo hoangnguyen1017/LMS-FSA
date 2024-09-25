@@ -21,12 +21,13 @@
     </button>
 </form>
 
-<!-- Edit and Delete buttons for the question -->
+<!-- Edit, Delete, and Report buttons for the question -->
 <a href="{% url 'forum:edit_question' question.pk %}" class="btn btn-secondary">Edit</a>
 <form method="post" action="{% url 'forum:delete_question' question.pk %}" style="display:inline;">
     {% csrf_token %}
     <button type="submit" class="btn btn-danger">Delete</button>
 </form>
+<a href="{% url 'forum:report_content' 'question' question.pk %}" class="btn btn-warning">Report</a>
 
 <hr>
 
@@ -54,12 +55,13 @@
             </button>
         </form>
 
-        <!-- Edit and Delete buttons for the comment -->
+        <!-- Edit, Delete, and Report buttons for the comment -->
         <a href="{% url 'forum:edit_comment' comment.pk %}" class="btn btn-secondary">Edit</a>
         <form method="post" action="{% url 'forum:delete_comment' comment.pk %}" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">Delete</button>
         </form>
+        <a href="{% url 'forum:report_content' 'comment' comment.pk %}" class="btn btn-warning">Report</a>
 
         <!-- Reply to Comment -->
         <button onclick="document.getElementById('replyFormComment{{ comment.id }}').style.display='block'">Reply</button>

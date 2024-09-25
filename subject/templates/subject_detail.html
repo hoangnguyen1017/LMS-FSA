@@ -15,6 +15,14 @@
             <p><strong>Description:</strong> {{ subject.description }}</p>
             <p><strong>Instructor:</strong> {{ subject.instructor.get_full_name }} ({{ subject.instructor.username }})</p>
 
+            <p><strong>Average Rating:</strong>
+                {% if subject_average_rating %}
+                    {{ subject_average_rating|floatformat:1 }} / 5
+                {% else %}
+                    No ratings yet.
+                {% endif %}
+            </p>
+
             <p class="mb-4">
                 <a href="{% url 'subject:users_enrolled' subject.pk %}" class="btn btn-info">
                     Users Enrolled ({{ users_enrolled_count }})
@@ -42,6 +50,25 @@
             {% endif %}
 
             <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary mt-4">Return to Subject List</a>
+        </div>
+
+        <!-- Feedback section -->
+        <div class="feedback-section">
+            <h2 class="text-xl font-semibold mt-6">Student Feedback</h2>
+
+            {% if feedbacks %}
+                <ul class="feedback-list">
+                    {% for feedback in feedbacks %}
+                        <li>
+                            <p><strong>{{ feedback.student.get_full_name }}</strong> ({{ feedback.student.username }})</p>
+                            <p>Average Rating: {{ feedback.average_rating|floatformat:1 }} / 5</p>
+                            <p>Comment: {{ feedback.comments }}</p>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No feedback has been provided for this subject yet.</p>
+            {% endif %}
         </div>
     </div>
 </div>

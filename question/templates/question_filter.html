@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Question Bank Filter{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Question Bank Filter</h2>
+
+    <!-- Filter Section -->
+    <div class="bg-white p-4 rounded shadow mb-4">
+        <form method="GET" action="{% url 'question:question_list' %}">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label for="subject" class="block text-gray-700">Subject</label>
+                    <select name="subject" id="subject" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <option value="">All</option>
+                        {% for subj in subjects %}
+                            <option value="{{ subj.subject_id }}" {% if subj.subject_id|stringformat:"s" == request.GET.subject %}selected{% endif %}>{{ subj.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="category" class="block text-gray-700">Category</label>
+                    <select name="category" id="category" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <option value="">All</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if cat.id|stringformat:"s" == request.GET.category %}selected{% endif %}>{{ cat.category_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="method" class="block text-gray-700">Method of answer</label>
+                    <select name="method" id="method" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <option value="">All</option>
+                        <option value="essay" {% if request.GET.method == 'essay' %}selected{% endif %}>Essay</option>
+                        <option value="multiple_choice" {% if request.GET.method == 'multiple_choice' %}selected{% endif %}>Multiple Choice</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="bg-yellow-400 text-black font-bold py-2 px-4 rounded flex items-center">
+                    Filter <i class="fas fa-filter ml-2"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Section -->
+    <div class="bg-white p-4 rounded shadow">
+        <h3 class="mb-4">Filtered Questions</h3>
+        {% if questions %}
+            <ul class="list-disc pl-5">
+                {% for question in questions %}
+                    <li class="mb-2">
+                        <a href="{% url 'question:question_detail' question.id %}" class="text-blue-600 hover:underline">
+                            {{ question.question_text|truncatechars:100 }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="mb-4">No questions found matching the selected criteria.</p>
+            <a href="{% url 'question:question_add' %}" class="btn btn-success">Add New Question</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

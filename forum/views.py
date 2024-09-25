@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from .models import ForumQuestion, ForumComment, Reply
-from .forms import ForumQuestionForm, ForumCommentForm, ReplyForm
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import ForumQuestion, ForumComment, Reply, Report
+from .forms import ForumQuestionForm, ForumCommentForm, ReplyForm, ReportForm
 from subject.models import Subject
 from django.core.paginator import Paginator
 from module_group.models import ModuleGroup, Module
@@ -15,7 +15,7 @@ def question_list(request):
 
     # Filter questions based on selected subject, or show all questions
     if selected_subject_id:
-        questions = ForumQuestion.objects.filter(subject_id=selected_subject_id)
+        questions = ForumQuestion.objects.filter(subject__subject_id=selected_subject_id)
     else:
         questions = ForumQuestion.objects.all()
 
@@ -95,6 +95,8 @@ def edit_question(request, pk):
     if request.method == 'POST':
         form = ForumQuestionForm(request.POST, request.FILES, instance=question)
         if form.is_valid():
+            if 'image-clear' in request.POST:
+                question.image.delete()
             form.save()
             return redirect('forum:question_detail', pk=pk)
     else:
@@ -115,6 +117,8 @@ def edit_comment(request, pk):
     if request.method == 'POST':
         form = ForumCommentForm(request.POST, request.FILES, instance=comment)
         if form.is_valid():
+            if 'image-clear' in request.POST:
+                comment.image.delete()
             form.save()
             return redirect('forum:question_detail', pk=comment.question.pk)
     else:
@@ -136,6 +140,8 @@ def edit_reply(request, pk):
     if request.method == 'POST':
         form = ReplyForm(request.POST, request.FILES, instance=reply)
         if form.is_valid():
+            if 'image-clear' in request.POST:
+                reply.image.delete()
             form.save()
             return redirect('forum:question_detail', pk=reply.comment.question.pk if reply.comment else reply.parent_reply.comment.question.pk)
     else:
@@ -210,3 +216,26 @@ def dislike_reply(request, pk):
         reply.dislikes.add(request.user)
         reply.likes.remove(request.user)
     return redirect('forum:question_detail', pk=reply.comment.question.pk if reply.comment else reply.parent_reply.comment.question.pk)
+
+@login_required
+def report_content(request, report_type, report_id):
+    if request.method == 'POST':
+        form = ReportForm(request.POST)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.user = request.user
+            report.report_type = report_type
+            report.report_id = report_id
+            report.save()
+            return redirect('forum:question_list')
+    else:
+        form = ReportForm()
+    return render(request, 'forum_report_content.html', {'form': form, 'report_type': report_type, 'report_id': report_id})
+
+
+@login_required
+def report_list(request):
+    if not request.user.is_superuser:
+        return redirect('main:home')
+    reports = Report.objects.all().order_by('-created_at')
+    return render(request, 'forum_report_list.html', {'reports': reports})

@@ -7,20 +7,24 @@ from .models import News, Event, UserProfile
 from user.models import User
 from user.forms import UserForm
 from django.contrib.auth.models import User as AuthUser
+from subject.models import *
 
 def home(request):
     module_groups = ModuleGroup.objects.all()
     modules = Module.objects.all()
     news_list = News.objects.order_by('-created_at')[:5]  # Limit to 5 latest news
     event_list = Event.objects.order_by('event_date')[:5]  # Limit to upcoming events
+    enrollments = Enrollment.objects.filter(student=request.user)
     return render(request, 'home.html', {
         'news_list': news_list,
         'event_list': event_list,
         'module_groups': module_groups,
         'modules': modules,
+        'enrollments': enrollments,
     })
 
 def base_view(request):
+    enrolled_subjects = Enrollment.objects.filter(student=request.user).select_related('subject')
     module_groups = ModuleGroup.objects.all()
     modules = Module.objects.all()
     return render(request, 'base.html', {

@@ -4,6 +4,7 @@ from . import views
 app_name = 'question'
 
 urlpatterns = [
+    path('filter/', views.question_filter, name='question_filter'),
     path('', views.question_list, name='question_list'),
     path('<int:pk>/', views.question_detail, name='question_detail'),
     path('add/', views.question_add, name='question_add'),

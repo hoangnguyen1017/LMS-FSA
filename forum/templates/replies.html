@@ -20,12 +20,13 @@
             </button>
         </form>
 
-        <!-- Edit and Delete buttons for the reply -->
+        <!-- Edit, Delete, and Report buttons for the reply -->
         <a href="{% url 'forum:edit_reply' reply.pk %}" class="btn btn-secondary">Edit</a>
         <form method="post" action="{% url 'forum:delete_reply' reply.pk %}" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">Delete</button>
         </form>
+        <a href="{% url 'forum:report_content' 'reply' reply.pk %}" class="btn btn-warning">Report</a>
 
         <!-- Reply to Reply -->
         <button onclick="document.getElementById('replyFormReply{{ reply.id }}').style.display='block'">Reply</button>

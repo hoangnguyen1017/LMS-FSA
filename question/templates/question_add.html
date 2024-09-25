@@ -1,62 +1,67 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load static %}
 
 {% block content %}
-<div class="container">
-    <h2>Add Questions</h2>
-    <form method="post">
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-4">Add New Question</h1>
+
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <form method="post" id="questionForm">
         {% csrf_token %}
+        {{ question_form.as_p }}
 
-        <!-- Question Form -->
-        <div class="form-group">
-            <label for="subject">Subject</label>
-            {{ question_form.subject|as_crispy_field }}
-        </div>
-        <div class="form-group">
-            <label for="category">Category</label>
-            {{ question_form.category|as_crispy_field }}
-        </div>
-        <div class="form-group">
-            <label for="question_text">Question</label>
-            {{ question_form.question_text|as_crispy_field }}
+        <div id="answers-container">
+            <!-- Answers will be dynamically added here -->
         </div>
 
-        <!-- Answer Formset -->
-        <h4>Answers</h4>
-        <div id="answers-formset">
-            <div class="answer-group form-group">
-                <label for="answer_text">Answer</label>
-                <input type="text" name="answer_text[]" class="form-control" placeholder="Enter answer text" required>
-                <label for="is_correct">Correct</label>
-                <input type="checkbox" name="is_correct[]" value="True" class="form-check-input">
-                <!-- Add hidden input for unchecked state -->
-                <input type="hidden" name="is_correct[]" value="False">
-            </div>
-        </div>
-        <button type="button" class="btn btn-secondary add-answer">Add Answer</button>
-        <hr>
+        <button type="button" id="add-answer" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Add Answer</button>
 
-        <button type="submit" class="btn btn-success">Save Questions</button>
+        <div class="mt-4">
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Save Question</button>
+            <a href="{% url 'question:question_list' %}" class="bg-red-500 text-white px-4 py-2 rounded ml-2">Return to Question List</a>
+            <a href="{% url 'question:question_filter' %}" class="bg-yellow-500 text-white px-4 py-2 rounded ml-2">Return to Question Filter</a>
+        </div>
     </form>
 </div>
 
 <script>
-    document.querySelector('.add-answer').addEventListener('click', function() {
-        var formset = document.getElementById('answers-formset');
+    document.addEventListener('DOMContentLoaded', function() {
+        const answersContainer = document.getElementById('answers-container');
+        const addAnswerButton = document.getElementById('add-answer');
+        let answerCount = 0;
 
-        var newAnswerGroup = `
-            <div class="answer-group form-group">
-                <label for="answer_text">Answer</label>
-                <input type="text" name="answer_text[]" class="form-control" placeholder="Enter answer text" required>
-                <label for="is_correct">Correct</label>
-                <input type="checkbox" name="is_correct[]" value="True" class="form-check-input">
-                <!-- Add hidden input for unchecked state -->
-                <input type="hidden" name="is_correct[]" value="False">
-            </div>
-        `;
+        function addAnswerField() {
+            const answerDiv = document.createElement('div');
+            answerDiv.className = 'answer-field mt-2';
+            answerDiv.innerHTML = `
+                <input type="text" name="answer_text[]" placeholder="Answer text" class="border p-2 mr-2">
+                <label>
+                    <input type="checkbox" name="is_correct[]" value="True"> Correct
+                </label>
+            `;
+            answersContainer.appendChild(answerDiv);
+            answerCount++;
+        }
 
-        // Append the new answer fields to the answers formset
-        formset.insertAdjacentHTML('beforeend', newAnswerGroup);
+        addAnswerButton.addEventListener('click', addAnswerField);
+
+        // Add initial answer field
+        addAnswerField();
+
+        // Form submission
+        document.getElementById('questionForm').addEventListener('submit', function(e) {
+            if (answerCount === 0) {
+                e.preventDefault();
+                alert('Please add at least one answer.');
+            }
+        });
     });
 </script>
 {% endblock %}

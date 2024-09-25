@@ -4,44 +4,99 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Welcome to the Home Page</h1>
-    <h2>News and Events</h2>
+    <div class="row">
+        <!-- Vertical Navbar on the far left -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky">
+                <h4>My Courses</h4>
+                <div class="my-courses">
+                    <a href="#" id="courseToggle" class="text-secondary" style="text-decoration: none;">
+                        <span class="arrow" id="courseArrow"></span> Enrolled Courses
+                    </a>
+                    <div class="course-list collapse" id="courseDropdown" style="margin-top: 10px;">
+                        {% if user.is_authenticated %}
+                            {% for enrollment in enrollments %}
+                                <a class="dropdown-item" href="{% url 'subject:subject_detail' enrollment.subject.subject_id %}">
+                                    {{ enrollment.subject.subject_code }}
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <span class="dropdown-item">Login to see your courses.</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </nav>
 
-    <hr>
+        <!-- Main Content Area on the right -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-4">
+            <h1>Welcome to the Home Page</h1>
+            <h2>News and Events</h2>
 
-    <!-- Display Latest News -->
-    <h2>Latest News</h2>
-    <ul>
-        {% if news_list %}
-            {% for news in news_list %}
-            <li><strong>{{ news.title }}</strong> - {{ news.created_at|date:"F j, Y" }}
-            <a href="{% url 'main:news_detail' news.id %}" class="btn btn-secondary btn-sm">View Detail</a></li>
-            {% endfor %}
-        {% else %}
-            <li>No news available.</li>
-        {% endif %}
-    </ul>
+            <hr>
 
-    <hr>
+            <!-- Display Latest News -->
+            <h2>Latest News</h2>
+            <ul>
+                {% if news_list %}
+                    {% for news in news_list %}
+                    <li><strong>{{ news.title }}</strong> - {{ news.created_at|date:"F j, Y" }}
+                    <a href="{% url 'main:news_detail' news.id %}" class="btn btn-secondary btn-sm">View Detail</a></li>
+                    {% endfor %}
+                {% else %}
+                    <li>No news available.</li>
+                {% endif %}
+            </ul>
 
-    <!-- Display Upcoming Events -->
-    <h2>Upcoming Events</h2>
-    <ul>
-        {% if event_list %}
-            {% for event in event_list %}
-            <li><strong>{{ event.title }}</strong> - {{ event.event_date|date:"F j, Y, g:i a" }}
-            <a href="{% url 'main:event_detail' event.id %}" class="btn btn-secondary btn-sm">View Detail</a></li>
-            {% endfor %}
-        {% else %}
-            <li>No upcoming events.</li>
-        {% endif %}
-    </ul>
+            <hr>
 
-    <hr>
+            <!-- Display Upcoming Events -->
+            <h2>Upcoming Events</h2>
+            <ul>
+                {% if event_list %}
+                    {% for event in event_list %}
+                    <li><strong>{{ event.title }}</strong> - {{ event.event_date|date:"F j, Y, g:i a" }}
+                    <a href="{% url 'main:event_detail' event.id %}" class="btn btn-secondary btn-sm">View Detail</a></li>
+                    {% endfor %}
+                {% else %}
+                    <li>No upcoming events.</li>
+                {% endif %}
+            </ul>
 
-    <!-- Link to the Admin Dashboard -->
-    {% if user.is_authenticated and user.is_staff %}
-    <a href="{% url 'main:dashboard' %}" class="btn btn-primary">Go to Dashboard Edit</a>
-    {% endif %}
+            <hr>
+
+            <!-- Link to the Admin Dashboard -->
+            {% if user.is_authenticated and user.is_staff %}
+            <a href="{% url 'main:dashboard' %}" class="btn btn-primary">Go to Dashboard Edit</a>
+            {% endif %}
+        </main>
+    </div>
 </div>
+
+<style>
+    .arrow {
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 8px solid black; /* Change color as needed */
+        margin-right: 5px; /* Space between arrow and text */
+        transition: transform 0.3s ease;
+    }
+    .rotate {
+        transform: rotate(180deg); /* Rotate to point upwards */
+    }
+</style>
+
+<script>
+    document.getElementById('courseToggle').addEventListener('click', function(event) {
+        event.preventDefault();  // Prevent default anchor click behavior
+        var dropdown = document.getElementById('courseDropdown');
+        var arrow = document.getElementById('courseArrow');
+        dropdown.classList.toggle('collapse');  // Toggle the collapse class
+        arrow.classList.toggle('rotate');  // Toggle the rotate class
+    });
+</script>
+
 {% endblock %}

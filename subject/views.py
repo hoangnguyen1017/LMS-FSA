@@ -10,6 +10,7 @@ import os
 from django.http import FileResponse,Http404
 from django.utils.text import slugify
 from django.urls import reverse
+from feedback.models import CourseFeedback
 
 
 @login_required
@@ -241,8 +242,19 @@ def subject_detail(request, pk):
     is_enrolled = Enrollment.objects.filter(student=request.user, subject=subject).exists()
     users_enrolled_count = Enrollment.objects.filter(subject=subject).count()
 
+    # Get all feedback related to the subject
+    feedbacks = CourseFeedback.objects.filter(course=subject)
+
+    # Calculate the subject's average rating
+    if feedbacks.exists():
+        total_rating = sum(feedback.average_rating() for feedback in feedbacks)
+        subject_average_rating = total_rating / feedbacks.count()
+    else:
+        subject_average_rating = None  # No feedback yet
+
     # Get prerequisite subjects
     prerequisites = Prerequisite.objects.filter(subject=subject).select_related('prerequisite_subject')
+
     context = {
         'subject': subject,
         'documents': documents,
@@ -250,6 +262,8 @@ def subject_detail(request, pk):
         'prerequisites': prerequisites,
         'is_enrolled': is_enrolled,
         'users_enrolled_count': users_enrolled_count,
+        'subject_average_rating': subject_average_rating,
+        'feedbacks': feedbacks,  # Pass feedbacks to the template
     }
 
     return render(request, 'subject_detail.html', context)
@@ -349,9 +363,6 @@ def subject_content(request, pk):
                 content_type = 'video'
             elif file_extension == '.pdf':
                 content_type = 'pdf'  # Thêm content type cho PDF
-            elif file_extension == ['.ppt', '.pptx']:
-                preview_url = file_url
-                content_type = 'ppt'
         else:
             download_url = reverse('subject:file_download', kwargs={'file_type': file_type, 'file_id': file_id})
 

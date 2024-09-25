@@ -19,4 +19,6 @@ urlpatterns = [
     path('comment/<int:pk>/dislike/', views.dislike_comment, name='dislike_comment'),
     path('reply/<int:pk>/like/', views.like_reply, name='like_reply'),
     path('reply/<int:pk>/dislike/', views.dislike_reply, name='dislike_reply'),
+    path('report/<str:report_type>/<int:report_id>/', views.report_content, name='report_content'),
+    path('reports/', views.report_list, name='report_list'),
 ]

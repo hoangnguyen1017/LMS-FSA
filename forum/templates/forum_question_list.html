@@ -11,7 +11,7 @@
         <select name="subject_id" id="subject" class="form-control" onchange="this.form.submit()">
             <option value="">All Subjects</option>
             {% for subject in subjects %}
-            <option value="{{ subject.id }}" {% if subject.id == selected_subject_id %}selected{% endif %}>
+            <option value="{{ subject.subject_id }}" {% if subject.subject_id == selected_subject_id %}selected{% endif %}>
                 {{ subject.name }}
             </option>
             {% endfor %}

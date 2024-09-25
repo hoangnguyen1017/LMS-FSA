@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ form.instance.pk|yesno:"Edit Study,Add New Study" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ form.instance.pk|yesno:"Edit Study,Add New Study" }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.study_subject.label_tag }}
+            {{ form.study_subject }}
+        </div>
+        <div class="form-group">
+            {{ form.study_link.label_tag }}
+            {{ form.study_link }}
+        </div>
+        <div class="form-group">
+            {{ form.image.label_tag }}
+            {{ form.image }}
+        </div>
+        <div class="form-group">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{% url 'study:study_list' %}" class="btn btn-secondary">Back to Study List</a>
+    </form>
+</div>
+{% endblock %}

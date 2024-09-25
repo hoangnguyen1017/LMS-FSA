@@ -1,0 +1,363 @@
+{
+    "mc_questions": [
+        {
+            "question": "Given SQL statement:\r<br>UPDATE Products<br>SET UnitPrice = UnitPrice + (UnitPrice * .10)<br>WHERE UnitPrice BETWEEN 60 AND 70<br>Which of the following is true?",
+            "answers": [
+                "10% price increase (UnitPrice) in the Products table, for products priced between 60 and 70",
+                "10% price increase (UnitPrice) in the Products table, for products with a price of 60 or 70",
+                "10% price increase (UnitPrice) in the Products table, for products priced between 60 and 70, excluding 2 values of 60 and 70",
+                "All answers are wrong."
+            ]
+        },
+        {
+            "question": "In the UPDATE statement, if we do not use the WHERE clause, then:\r",
+            "answers": [
+                "All of the records will be updated",
+                "Will not execute the update statement",
+                "Only some records are updated",
+                "No records are updated"
+            ]
+        },
+        {
+            "question": "You can add a row using SQL in a database with which of the following?\r",
+            "answers": [
+                "INSERT",
+                "ADD",
+                "CREATE",
+                "MAKE"
+            ]
+        },
+        {
+            "question": "The command to remove rows from a table 'CUSTOMER' is:\r",
+            "answers": [
+                "DELETE FROM CUSTOMER WHERE ...",
+                "REMOVE FROM CUSTOMER ...",
+                "DROP FROM CUSTOMER ...",
+                "UPDATE FROM CUSTOMER ..."
+            ]
+        },
+        {
+            "question": "Consider the following schema:\r<br>Student (studentId, firstName, lastName, address, city, areaId)<br>Which of the following query would change the area id of the student in 'HCMC' to '08'?<br>",
+            "answers": [
+                "UPDATE Student<br>SET areaId = '08' WHERE city = 'HCMC'",
+                "UPDATE areaId = '08'<br>WHERE city = 'HCMC'",
+                "CHANGE Student<br>SET areaId = '08' WHERE city = 'HCMC'",
+                "ALTER Student<br>SET areaId = '08' WHERE city = 'HCMC'"
+            ]
+        },
+        {
+            "question": "The SQL WHERE clause:\r",
+            "answers": [
+                "limits the row data are returned.",
+                "limits the column data that are returned.",
+                "Both A and B are correct.",
+                "Neither A nor B are correct."
+            ]
+        },
+        {
+            "question": "Which SQL keyword is used to specify conditional search? \r",
+            "answers": [
+                "WHERE",
+                "SELECT",
+                "SEARCH",
+                "FIND"
+            ]
+        },
+        {
+            "question": "The following table:\r<br>BOOK_INFORMATION(book_id, book_title, price)<br>Which SQL statement would you use to select all columns from the BOOK_INFORMATION table?",
+            "answers": [
+                "SELECT * FROM BOOK_INFORMATION;",
+                "SELECT book_id + price FROM BOOK_INFORMATION;",
+                "SELECT ALL FROM BOOK_INFORMATION;",
+                "SELECT ALL COLUMNS  FROM BOOK_INFORMATION;"
+            ]
+        },
+        {
+            "question": "Given the following table:\r<br>SALES (store_id, sales_date, sales_amount)<br>Which of the following SQL statements would find the first date that the store (id 10) had a sales amount greater than 2?",
+            "answers": [
+                "SELECT MIN(sales_date)<br>FROM SALES<br>WHERE store_id = 10 AND sales_amount &gt; 2;",
+                "SELECT MAX(sales_date)<br>FROM SALES<br>WHERE store_id = 10 AND sales_amount &gt; 2;",
+                "SELECT sales_date<br>FROM SALES<br>WHERE store_id = 10 AND sales_amount &gt; 2;",
+                "SELECT MIN(sales_date)<br>FROM SALES<br>WHERE store_id = 10 OR sales_amount &gt; 2;"
+            ]
+        },
+        {
+            "question": "Given the following table:\r<br>SALES (store_id, sales_date, sales_amount)<br>Which of the following SQL statements would list all stores that total sales amount is over 5000?<br>",
+            "answers": [
+                "SELECT store_id, SUM(sales_amount)<br>FROM SALES<br>GROUP BY store_id<br>HAVING SUM(sales_amount) &gt; 5000;",
+                "SELECT store_id, SUM(sales_amount)<br>FROM SALES<br>GROUP BY store_id<br>HAVING sales_amount &gt; 5000;",
+                "SELECT store_id, SUM(sales_amount)<br>FROM SALES<br>WHERE SUM(sales_amount) &gt; 5000<br>GROUP BY store_id;",
+                "SELECT store_id, SUM(sales_amount)<br>FROM SALES<br>WHERE sales_amount &gt; 5000<br>GROUP BY store_id;"
+            ]
+        },
+        {
+            "question": "Which SQL keyword is used to remove duplicate rows in the result of an SQL query SELECT?\r",
+            "answers": [
+                "DISTINCT",
+                "UNIQUE",
+                "SORT",
+                "ORDER BY"
+            ]
+        },
+        {
+            "question": "Given below data in the following table:\r<br>Example_Table (Number, Name)<br>(1, 'One'),<br>(2, 'Two'),<br>(3, 'Three'),<br>(4, 'Four'),<br>(5, 'Five'),<br>(1, 'One'),<br>(NULL, NULL)<br>and the query:<br>SELECT COUNT(*) FROM Example_Table as COUNT<br>SELECT COUNT_BIG(*) FROM Example_Table as COUNT_BIG<br>Result of the above two queries is:",
+            "answers": [
+                "7,7",
+                "6,6",
+                "8,8",
+                "None of the above"
+            ]
+        },
+        {
+            "question": "Which one is correct syntax for applying UNION operator:\r",
+            "answers": [
+                "SELECT column_name(s) FROM table_name1 UNION<br>SELECT column_name(s) FROM table_name2;",
+                "SELECT column_name(s) FROM table_name1 UNION table_name2;",
+                "UNION SELECT column_name(s) FROM table_name1<br>SELECT column_name(s) From table_name2;",
+                "SELECT FROM table_name1 and table_name2;"
+            ]
+        },
+        {
+            "question": "What is purpose of MIN function in SQL Server?\r",
+            "answers": [
+                "It returns the minimum value in the expression",
+                "It is use for decrementing the interger value",
+                "MIN is not a SQL server function",
+                "None of the above"
+            ]
+        },
+        {
+            "question": "Which of the following query is correct to select the highest salary of the employees in each Department?\r",
+            "answers": [
+                "SELECT e.dept_id, MAX(e.salary)<br>FROM Employee e GROUP BY e.dept_id;",
+                "SELECT e.dept_id, e.salary<br>FROM Employee e GROUP BY e.dept_id<br>ORDER BY MAX(e.salary);",
+                "SELECT e.dept_id, MAX(e.salary)<br>FROM Employee e GROUP BY e.dept_id, e.salary;",
+                "SELECT e.dept_id, MAX(e.salary)<br>FROM Employee e;"
+            ]
+        },
+        {
+            "question": "SELECT ________ dept_name FROM instructor;\r<br>Here which of the following displays the unique values of the column?",
+            "answers": [
+                "DISTINCT",
+                "ALL",
+                "FROM",
+                "TOP"
+            ]
+        },
+        {
+            "question": "SELECT i.name FROM instructor i\r<br>WHERE i.dept_name = 'Physics'<br>ORDER BY i.name;<br>By default, the order by clause lists items in ______ order.",
+            "answers": [
+                "Ascending",
+                "Descending",
+                "Any",
+                "Same"
+            ]
+        },
+        {
+            "question": "What is an index? \r",
+            "answers": [
+                "An index is a database table attribute, which speeds-up data search within a table.",
+                "An index is the same as alias.",
+                "An index is a special way to join 2 or more tables.",
+                "All of the above"
+            ]
+        },
+        {
+            "question": "Which of the following code will delete a view named all_marks_english?\r",
+            "answers": [
+                "drop view all_marks_english;",
+                "delete view all_marks_english;",
+                "delete all_marks_english;",
+                "drop all_marks_english;"
+            ]
+        },
+        {
+            "question": "The command to eliminate a table from a database is:\r",
+            "answers": [
+                "DROP TABLE CUSTOMER;",
+                "REMOVE TABLE CUSTOMER;",
+                "DELETE TABLE CUSTOMER;",
+                "UPDATE TABLE CUSTOMER;"
+            ]
+        },
+        {
+            "question": "The difference between the DELETE and TRUNCATE SQL clauses is:\r",
+            "answers": [
+                "The TRUNCATE clause deletes all rows in a database table, while the DELETE clause can have a WHERE condition and might or might not delete all rows in a table.",
+                "The DELETE clause deletes all rows in a database table, while the TRUNCATE clause can have a WHERE condition and might or might not delete all rows in a table.",
+                "The TRUNCATE clause is identical to the DELETE clause",
+                "The TRUNCATE clause deletes table structure and it's all data, while the DELETE clause can have a WHERE condition and might or might not delete all rows in a table."
+            ]
+        },
+        {
+            "question": "The AVG SQL function returns the__\r",
+            "answers": [
+                "average in the values in agroup.",
+                "the sum of values in a column.",
+                "maximum value from a column.",
+                "minimum value from a column."
+            ]
+        },
+        {
+            "question": "Given the following table:\r<br>Employee (name)<br>('Annie'),<br>('Bob'),<br>('Callie'),<br>('Derek')<br>Which of the following query would display all of the rows of given above table?",
+            "answers": [
+                "SELECT name FROM employee",
+                "SELECT employee FROM name",
+                "SELECT name",
+                "SELECT employee"
+            ]
+        },
+        {
+            "question": "The SQL keyword(s) ________ is used with wildcards.\r",
+            "answers": [
+                "LIKE only",
+                "IN only",
+                "NOT IN only",
+                "IN and NOT IN"
+            ]
+        },
+        {
+            "question": "Find the SQL statement below that is equal to the following: SELECT NAME FROM CUSTOMER WHERE STATE = 'VA';\r",
+            "answers": [
+                "SELECT NAME FROM CUSTOMER WHERE STATE IN ('VA');",
+                "SELECT NAME IN CUSTOMER WHERE STATE IN ('VA');",
+                "SELECT NAME IN CUSTOMER WHERE STATE = 'VA';",
+                "SELECT NAME IN CUSTOMER WHERE STATE = 'V';"
+            ]
+        },
+        {
+            "question": "Given the following table:\r<br>SALES (store_id, sales_date, sales_amount)<br>Which of the following SQL statements would find the total sales amount for each store?",
+            "answers": [
+                "SELECT store_id, SUM(sales_amount)<br>FROM SALES<br>GROUP BY store_id;",
+                "SELECT store_id, SUM(sales_amount)<br>FROM SALES;",
+                "SELECT store_id, SUM(sales_amount)<br>FROM SALES<br>ORDER BY store_id;",
+                "SELECT store_id, SUM(sales_amount)<br>FROM SALES<br>HAVING UNIQUE store_id;"
+            ]
+        },
+        {
+            "question": "Consider the following table and query: \r<br>Bill(bill_id, export_date, customer_id)<br>and<br>SELECT  COUNT(bill_id)<br>FROM Bill<br>GROUP BY export_date;<br>Which of the following is true?",
+            "answers": [
+                "List out number of bills by the date",
+                "Count all of the bills",
+                "Count number of bills by the customer",
+                "The statement is syntax error"
+            ]
+        },
+        {
+            "question": "Consider the following table: \r<br>Product(productId, name, cost)<br>Which of the following query would display the lowest of cost in the Product table?",
+            "answers": [
+                "Select min(cost) from Product;",
+                "Select cost from Product where cost = min;",
+                "Select min(cost) from Product where cost = min(cost);",
+                "Select cost from Product where cost = min(cost);"
+            ]
+        },
+        {
+            "question": "Consider the following schema:\r<br>products (ProductName, UnitPrice, UnitsInStock)<br>Which of the following query statements is syntax error?",
+            "answers": [
+                "SELECT ProductName<br>FROM products<br>WHERE (UnitPrice &lt; 10) , (UnitsInStock &gt; 5);",
+                "SELECT ProductName<br>FROM products<br>WHERE (UnitPrice &lt; 10) OR NOT (UnitsInStock &gt; 5);",
+                "SELECT ProductName<br>FROM products<br>WHERE UnitPrice &lt; 10 OR UnitsInStock &gt; 5;",
+                "SELECT ProductName<br>FROM products<br>WHERE UnitPrice &lt; 10 AND UnitsInStock &gt; 5;"
+            ]
+        },
+        {
+            "question": "The following table:\r<br>BOOK_INFORMATION(book_id, book_title, price)<br>Which SQL statement will you use to change the price for the BOOK titled 'ELEMENTARY SCHOOL GUIDE' to 20?",
+            "answers": [
+                "UPDATE BOOK_INFORMATION SET price = 20<br>WHERE book_title = 'ELEMENTARY SCHOOL GUIDE';",
+                "UPDATE TABLE BOOK_INFORMATION<br>SET price = 20 WHERE book_title = 'ELEMENTARY SCHOOL GUIDE';",
+                "UPDATE BOOK_INFORMATION CHANGE price = 20<br>WHERE book_title = 'ELEMENTARY SCHOOL GUIDE';",
+                "UPDATE TABLE BOOK_INFORMATION<br>SET price = 20 WHERE book_id = 'ELEMENTARY SCHOOL GUIDE';"
+            ]
+        },
+        {
+            "question": "The following table:\r<br>BOOK_INFORMATION(book_id, book_title, price)<br>Which SQL statement would you use to delete the row that the id is 15?",
+            "answers": [
+                "DELETE FROM BOOK_INFORMATION WHERE book_id = 15;",
+                "REMOVE FROM BOOK_INFORMATION WHERE book_id = 15;",
+                "DROP BOOK_INFORMATION WHERE book_id = 15;",
+                "TRUNCATE BOOK_INFORMATION WHERE book_id = 15;"
+            ]
+        },
+        {
+            "question": "Views are also called as__:\r",
+            "answers": [
+                "Virtual tables",
+                "Complex tables",
+                "Simple tables",
+                "Physical tables"
+            ]
+        },
+        {
+            "question": "Which one is correct command to select data from one table and inserts it into a new table.\r",
+            "answers": [
+                "SELECT INTO",
+                "UNION",
+                "INSERT INTO SELECT",
+                "None of these"
+            ]
+        },
+        {
+            "question": "The following table:\r<br>BOOK_INFORMATION(book_id, book_title, price)<br>Which SQL statement allows you to insert the following price of data into BOOK_INFORMATION?<br>book_id = 20, book_title = 'FRESHER ACADEMY SQL TUTORIAL', and price = 15",
+            "answers": [
+                "INSERT INTO BOOK_INFORMATION<br>VALUES (20, 'FRESHER ACADEMY SQL TUTORIAL', 15);",
+                "ADD INTO BOOK_INFORMATION<br>WITH (20, 'FRESHER ACADEMY SQL TUTORIAL ', 15);",
+                "INSERT INTO BOOK_INFORMATION<br>USING (20, 'FRESHER ACADEMY SQL TUTORIAL', 15);",
+                "ADD INTO BOOK_INFORMATION<br>VALUES (20, 'FRESHER ACADEMY SQL TUTORIAL', 15);"
+            ]
+        },
+        {
+            "question": "Which of the following is true about the COUNT function?\r",
+            "answers": [
+                "All are true.",
+                "COUNT(*) returns the number of rows in the table.",
+                "COUNT(exp) returns the number of rows with non-null values for the exp.",
+                "COUNT(DISTINCT exp) returns the number of unique, non-null values in the column."
+            ]
+        },
+        {
+            "question": "Which one of the following is not true for a view?\r",
+            "answers": [
+                "A view definition is permanently stored as part of the database",
+                "View is derived from other tables",
+                "View is a virtual table",
+                "View never contains derived columns"
+            ]
+        },
+        {
+            "question": "Which of the following query would show the total number of lines in the 'emp' table?\r",
+            "answers": [
+                "SELECT count(*) FROM emp;",
+                "SELECT rowcount FROM emp;",
+                "SELECT totalrows FROM emp;",
+                "SELECT count_rows FROM emp;"
+            ]
+        },
+        {
+            "question": "The following query:\r<br>SELECT emp_name FROM department<br>WHERE dept_name like '__Computer Science';<br>Which one of the following has to be added into the blank to select the department name which that 'Computer Science' as its ending string ?",
+            "answers": [
+                "%",
+                "_",
+                "||D.$"
+            ]
+        },
+        {
+            "question": "Which of the following is used to insert a row from another table:\r",
+            "answers": [
+                "INSERT INTO instructor<br>SELECT s.ID, s.name, s.dept_name, 18000<br>FROM student s WHERE s.dept_name = 'Music' and s.tot_cred &gt; 144;",
+                "INSERT INTO course (course_id, title, dept_name, credits)<br>VALUES ('CS-437', 'Database Systems', 'Comp. Sci.', 4);",
+                "INSERT INTO course<br>VALUES ('CS-437', 'Database Systems', 'Comp. Sci.', 4);",
+                "Not possible"
+            ]
+        },
+        {
+            "question": "Consider the following table:\r<br>STUDENTS(student_code, first_name, last_name, emai, phone_no, date_of_birth, honours_subject, percentage_of_marks);<br>Which of the following query would display names of all students in descending order of percentage of marks?<br>",
+            "answers": [
+                "SELECT first_name, last name, percentage_of_marks<br>FROM students<br>ORDER BY percentage_of_marks DESC;",
+                "SELECT first_name, last name, percentage_of_marks<br>FROM students<br>ORDER BY percentage_of_marks;",
+                "SELECT first_name, last name, percentage_of_marks<br>ORDER BY percentage_of_marks DESC<br>FROM students;",
+                "SELECT first_name, last name, percentage_of_marks<br>FROM students<br>ORDER BY percentage_of_marks DESCENDING;"
+            ]
+        }
+    ]
+}

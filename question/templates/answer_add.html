@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container">
+    <h2>Add Answer to Question "{{ question.question_text }}"</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Answer Form -->
+        <div class="form-group">
+            <label for="answer_text">Answer Text</label>
+            {{ answer_form.text|as_crispy_field }}
+        </div>
+        <div class="form-group">
+            <label for="is_correct">Correct</label>
+            {{ answer_form.is_correct|as_crispy_field }}
+        </div>
+
+        <button type="submit" class="btn btn-success">Save Answer</button>
+    </form>
+    
+    <!-- Link to go back to question details -->
+    <a href="{% url 'question:question_detail' pk=question.id %}" class="btn btn-primary mt-3">Back to Question Details</a>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Content for {{ subject.name }}{% endblock %}
+
+{% block content %}
+<h1>Edit Content for {{ subject.name }}</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h2>Documents</h2>
+    <ul>
+        {% for document in documents %}
+            <li>
+                <a href="{{ document.doc_file.url }}">{{ document.doc_title }}</a>
+                <input type="checkbox" name="delete_document_{{ document.id }}"> Delete
+            </li>
+        {% empty %}
+            <li>No documents available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Videos</h2>
+    <ul>
+        {% for video in videos %}
+            <li>
+                <a href="{{ video.vid_file.url }}">{{ video.vid_title }}</a>
+                <input type="checkbox" name="delete_video_{{ video.id }}"> Delete
+            </li>
+        {% empty %}
+            <li>No videos available.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Add New Content</h3>
+
+    <div>
+        <h4>Upload Documents</h4>
+        <div id="document-container">
+            <div class="document-entry">
+                <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
+                <input type="file" name="doc_file[]" class="form-control-file" accept=".pdf,.doc,.docx,.ppt,.pptx">
+                <button type="button" class="btn btn-danger delete-document" style="margin-left: 10px;">Delete</button>
+            </div>
+        </div>
+        <button type="button" id="add-document" class="btn btn-secondary mt-2">Add Another Document</button>
+    </div>
+
+    <div>
+        <h4>Upload Videos</h4>
+        <div id="video-container">
+            <div class="video-entry">
+                <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
+                <input type="file" name="vid_file[]" class="form-control-file" accept="video/*">
+                <button type="button" class="btn btn-danger delete-video" style="margin-left: 10px;">Delete</button>
+            </div>
+        </div>
+        <button type="button" id="add-video" class="btn btn-secondary mt-2">Add Another Video</button>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary">Back to Subject List</a>
+</form>
+
+{% block extra_js %}
+<script>
+    // Function to add a new document entry
+    function addDocumentEntry() {
+        const container = document.getElementById('document-container');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'document-entry';
+        newEntry.innerHTML = `
+            <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
+            <input type="file" name="doc_file[]" class="form-control-file" accept=".pdf,.doc,.docx,.ppt,.pptx">
+            <button type="button" class="btn btn-danger delete-document" style="margin-left: 10px;">Delete</button>
+        `;
+        container.appendChild(newEntry);
+        attachDeleteButton(newEntry.querySelector('.delete-document'));
+    }
+
+    // Function to add a new video entry
+    function addVideoEntry() {
+        const container = document.getElementById('video-container');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'video-entry';
+        newEntry.innerHTML = `
+            <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
+            <input type="file" name="vid_file[]" class="form-control-file" accept="video/*">
+            <button type="button" class="btn btn-danger delete-video" style="margin-left: 10px;">Delete</button>
+        `;
+        container.appendChild(newEntry);
+        attachDeleteButton(newEntry.querySelector('.delete-video'));
+    }
+
+    // Function to attach delete functionality to buttons
+    function attachDeleteButton(button) {
+        button.addEventListener('click', function() {
+            const entry = this.parentNode;
+            entry.parentNode.removeChild(entry);
+        });
+    }
+
+    // Attach event listeners once when the DOM content is fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('add-document').addEventListener('click', addDocumentEntry);
+        document.getElementById('add-video').addEventListener('click', addVideoEntry);
+
+        // Attach delete functionality to existing delete buttons
+        document.querySelectorAll('.delete-document').forEach(button => {
+            attachDeleteButton(button);
+        });
+        document.querySelectorAll('.delete-video').forEach(button => {
+            attachDeleteButton(button);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load form_filters %}
+
+{% block title %}File Preview{% endblock %}
+
+{% block extra_head %}
+<style>
+    .container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 56px); /* Adjust based on navbar height */
+    }
+    .content-row {
+        display: flex;
+        flex-direction: row;
+        height: 100%;
+    }
+    .left-section {
+        width: 25%;
+        padding: 1rem;
+        border-right: 1px solid #e2e8f0;
+        overflow-y: auto;
+    }
+    .right-section {
+        width: 75%;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+    .preview-container {
+        width: 100%;
+        height: 80vh;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="content-row">
+        <!-- Left section (Information and Files) -->
+        <div class="left-section">
+            <h2 class="text-xl font-semibold mb-2">Documents</h2>
+            {% if documents %}
+                <ul class="mb-4">
+                    {% for document in documents %}
+                        <li class="mb-2">
+                            <a href="{% url 'subject:subject_content' subject.pk %}?file_id={{ document.id }}&file_type=document">{{ document.doc_title }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No documents available for this subject.</p>
+            {% endif %}
+
+            <h2 class="text-xl font-semibold mb-2">Videos</h2>
+            {% if videos %}
+                <ul class="mb-4">
+                    {% for video in videos %}
+                        <li class="mb-2">
+                            <a href="{% url 'subject:subject_content' subject.pk %}?file_id={{ video.id }}&file_type=video">{{ video.vid_title }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No videos available for this subject.</p>
+            {% endif %}
+
+            <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary mt-4">Return to Subject List</a>
+        </div>
+
+        <!-- Right section (File Preview) -->
+        <div class="right-section">
+            <h2 class="text-2xl font-bold mb-4">File Preview</h2>
+
+            <!-- Edit Subject Content Button -->
+            <div class="mb-4">
+                <a href="{% url 'subject:subject_content_edit' subject.pk %}" class="btn btn-primary">Edit Subject Content</a>
+            </div>
+
+            <div id="preview-content" class="preview-container">
+                {% if preview_url %}
+                    {% if content_type == 'video' %}
+                        <video controls class="w-100 h-100">
+                            <source src="{{ preview_url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% elif content_type == 'image' %}
+                        <img src="{{ preview_url }}" alt="Image preview" class="max-w-full max-h-full">
+                    {% elif content_type == 'pdf' %}
+                        <iframe src="{{ preview_url }}" style="width: 100%; height: 80vh;" frameborder="0"></iframe>
+                    {% elif content_type == 'document' %}
+                        <iframe src="{{ preview_url }}" style="width: 100%; height: 80vh;" frameborder="0"></iframe>
+                    {% endif %}
+                {% elif download_url %}
+                    <p>This file type cannot be previewed. <a href="{{ download_url }}" class="btn btn-primary">Download File</a></p>
+                {% else %}
+                    <p>Select a file from the left to preview or download it.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const resizer = document.getElementById('resizer');
+        const leftSection = document.querySelector('.left-section');
+        const rightSection = document.querySelector('.right-section');
+
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', stopResize);
+        });
+
+        function resize(e) {
+            if (!isResizing) return;
+            const containerWidth = document.querySelector('.container').offsetWidth;
+            const newLeftWidth = e.clientX;
+            const newRightWidth = containerWidth - newLeftWidth;
+
+            leftSection.style.width = `${newLeftWidth}px`;
+            rightSection.style.width = `${newRightWidth}px`;
+        }
+
+        function stopResize() {
+            isResizing = false;
+            document.removeEventListener('mousemove', resize);
+        }
+    });
+
+    function showPreview(url) {
+        const previewContent = document.getElementById('preview-content');
+        previewContent.innerHTML = `<iframe src="${url}" class="w-full h-full"></iframe>`;
+    }
+</script>
+{% endblock %}

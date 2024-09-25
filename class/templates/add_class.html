@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Add New Class</h2>
+  <form method="post">
+    {% csrf_token %}
+    <b>{{ form.as_p }}</b>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'class:class_list' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+{% endblock %}

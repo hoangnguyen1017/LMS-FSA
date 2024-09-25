@@ -1,0 +1,38 @@
+{% extends 'base.html'%}
+{% block title%}Quiz{% endblock %}
+{% block content %}
+<div class="container mt4">
+<h1>Quiz Questions and Answers</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Question</th>
+            <th>Answers</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for question in questions %}
+        <tr>
+            <td>{{ question.question_description }}</td>
+            <td>
+                <ul>
+                    <li>{{ question.answertext_1 }}</li>
+                    <li>{{ question.answertext_2 }}</li>
+                    <li>{{ question.answertext_3 }}</li>
+                    <li>{{ question.answertext_4 }}</li>
+                </ul>
+            </td>
+            <td>
+                <a href="{% url 'quiz:edit_question_answer' question.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                <a href="{% url 'quiz:delete_question_answer' question.pk %}" class="btn btn-danger btn-sm">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'quiz:add_question_answer' %}" class="btn btn-primary">Add Question and Answer</a>
+<a href="{% url 'quiz:take_quiz' %}" class="btn btn-primary">Take Quiz</a>
+</div>
+{% endblock %}

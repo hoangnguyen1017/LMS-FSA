@@ -1,0 +1,16 @@
+
+<h1>Take Quiz</h1>
+<form method="POST">
+    {% csrf_token %}
+    {% for question in questions %}
+    <h3>{{ question.question_description }}</h3>
+    <ul>
+        <li><input type="radio" name="question_{{ question.id }}" value="answertext_1"><b>{{ question.answertext_1 }}</b></li>
+        <li><input type="radio" name="question_{{ question.id }}" value="answertext_2"><b>{{ question.answertext_2 }}</b></li>
+        <li><input type="radio" name="question_{{ question.id }}" value="answertext_3"><b>{{ question.answertext_3 }}</b></li>
+        <li><input type="radio" name="question_{{ question.id }}" value="answertext_4"><b>{{ question.answertext_4 }}</b></li>
+    </ul>
+    {% endfor %}
+    <button type="submit" class="btn btn-success">Submit Quiz</button>
+</form>
+

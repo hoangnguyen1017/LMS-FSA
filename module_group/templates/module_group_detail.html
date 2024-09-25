@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Module Group Detail{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>detail_module: {{ module_group.group_name }}</h2>
+
+    <!-- Thông tin chi tiết nhóm module -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>info_module</strong>
+        </div>
+        <div class="card-body">
+            <p><strong>name_group:</strong> {{ module_group.group_name }}</p>
+        </div>
+    </div>
+
+    <!-- Danh sách các module trong nhóm -->
+    <h3>Các module trong nhóm</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>name_module</th>
+                <th>URL</th>
+                <th>Icon</th>
+                <th>operation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for module in module_group.modules.all %}
+            <tr>
+                <td>{{ module.module_name }}</td>
+                <td>{{ module.module_url }}</td>
+                <td><i class="{{ module.icon }}"></i></td>
+                <td>
+                    <a href="{% url 'module_group:module_detail' module.pk %}" class="btn btn-info btn-sm">Chi tiết</a>
+                    <a href="{% url 'module_group:module_edit' module.pk %}" class="btn btn-warning btn-sm">Sửa</a>
+                    <a href="{% url 'module_group:module_delete' module.pk %}" class="btn btn-danger btn-sm">Xóa</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">no any module.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'module_group:module_group_list' %}" class="btn btn-secondary">Quay lại danh sách nhóm module</a>
+</div>
+{% endblock %}

@@ -8,14 +8,14 @@ from module_group.models import ModuleGroup, Module
 
 
 def question_list(request):
-    selected_subject_id = request.GET.get('subject_id')
+    selected_subject_id = request.GET.get('id')
 
     # Get all subjects for the dropdown
     subjects = Subject.objects.all()
 
     # Filter questions based on selected subject, or show all questions
     if selected_subject_id:
-        questions = ForumQuestion.objects.filter(subject__subject_id=selected_subject_id)
+        questions = ForumQuestion.objects.filter(subject__id=selected_subject_id)
     else:
         questions = ForumQuestion.objects.all()
 

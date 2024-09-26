@@ -25,23 +25,23 @@
         <tbody>
             {% for subject in subjects %}
             <tr>
-                <td>{{ subject.subject_id }}</td>
+                <td>{{ subject.id }}</td>
                 <td>{{ subject.subject_code }}</td>
                 <td>{{ subject.name }}</td>
                 <td>{{ subject.description }}</td>
                 <td>
-                    <a href="{% url 'subject:subject_edit' subject.subject_id %}" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="{% url 'subject:subject_delete' subject.subject_id %}" class="btn btn-danger btn-sm">Delete</a>
-                    {% if subject.subject_id in enrolled_subjects %}
+                    <a href="{% url 'subject:subject_edit' subject.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'subject:subject_delete' subject.id %}" class="btn btn-danger btn-sm">Delete</a>
+                    {% if subject.id in enrolled_subjects %}
                         <!-- Nếu user đã enrolled, hiển thị nút Unenroll và thông báo đã đăng ký -->
                         <span class="text-success">Enrolled</span>
-                        <a href="{% url 'subject:subject_unenroll' subject.subject_id %}" class="btn btn-danger btn-sm">Unenroll</a>
+                        <a href="{% url 'subject:subject_unenroll' subject.id %}" class="btn btn-danger btn-sm">Unenroll</a>
                     {% else %}
                         <!-- Nếu user chưa enrolled, hiển thị nút Enroll -->
                         <span class="text-danger">Unenrolled</span>
-                        <a href="{% url 'subject:subject_enroll' subject.subject_id %}" class="btn btn-primary btn-sm">Enroll</a>
+                        <a href="{% url 'subject:subject_enroll' subject.id %}" class="btn btn-primary btn-sm">Enroll</a>
                     {% endif %}
-                    <a href="{% url 'subject:subject_detail' subject.subject_id %}" class="btn btn-info btn-sm">View Details</a>
+                    <a href="{% url 'subject:subject_detail' subject.id %}" class="btn btn-info btn-sm">View Details</a>
                 </td>
             </tr>
             {% empty %}

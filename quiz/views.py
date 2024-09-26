@@ -198,7 +198,7 @@ def load_questions(request):
     category_id = request.GET.get('category')
 
     questions = Question.objects.filter(
-        subject_id=subject_id,
+        id=subject_id,
         category_id=category_id
     )
 

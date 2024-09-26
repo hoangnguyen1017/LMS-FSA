@@ -18,7 +18,7 @@ def question_list(request):
     # Filter by subject
     subject_id = request.GET.get('subject')
     if subject_id:
-        questions = questions.filter(subject_id=subject_id)
+        questions = questions.filter(id=subject_id)
 
     # Filter by category
     category_id = request.GET.get('category')

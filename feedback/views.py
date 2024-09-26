@@ -60,7 +60,7 @@ def give_instructor_feedback(request, instructor_id):
     return render(request, 'feedback_Instructor.html', {'form': form, 'instructor': instructor})
 
 def give_course_feedback(request, course_id):
-    course = Course.objects.get(subject_id=course_id)
+    course = Course.objects.get(id=course_id)
     if request.method == 'POST':
         form = CourseFeedbackForm(request.POST)
         if form.is_valid():

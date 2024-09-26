@@ -28,7 +28,7 @@
             <select name="course_id" id="course" class="form-control" onchange="setCourseAction()">
                 <option value="">Select a Course</option>
                 {% for course in courses %}
-                <option value="{{ course.subject_id }}">{{ course.name }}</option>
+                <option value="{{ course.id }}">{{ course.name }}</option>
                 {% endfor %}
             </select>
         </div>

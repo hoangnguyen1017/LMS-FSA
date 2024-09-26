@@ -35,7 +35,7 @@ def subject_enroll(request, pk):
                 ).values_list('subject', flat=True)
 
                 # Ensure all prerequisites are met
-                if not all(prereq.subject_id in enrolled_subjects for prereq in prerequisite_subjects):
+                if not all(prereq.id in enrolled_subjects for prereq in prerequisite_subjects):
                     form.add_error(None, 'You do not meet the prerequisites for this course.')
                     return render(request, 'subject_enroll.html', {'form': form, 'subject': subject})
 
@@ -66,7 +66,7 @@ def subject_list(request):
     module_groups = ModuleGroup.objects.all()
     subjects = Subject.objects.all()
     enrollments = Enrollment.objects.filter(student=request.user)
-    enrolled_subjects = {enrollment.subject.subject_id for enrollment in enrollments}
+    enrolled_subjects = {enrollment.subject.id for enrollment in enrollments}
     return render(request, 'subject_list.html', {
         'module_groups': module_groups,
       #  'modules': modules,
@@ -110,7 +110,7 @@ def subject_add(request):
             prerequisite_ids = request.POST.getlist('prerequisite_subjects')
             for prerequisite_id in prerequisite_ids:
                 if prerequisite_id:
-                    prerequisite_subject = Subject.objects.get(subject_id=prerequisite_id)
+                    prerequisite_subject = Subject.objects.get(id=prerequisite_id)
                     Prerequisite.objects.create(subject=subject, prerequisite_subject=prerequisite_subject)
 
             messages.success(request, 'Subject created successfully.')
@@ -133,7 +133,7 @@ def subject_add(request):
 # subject/views.py
 def subject_edit(request, pk):
     subject = get_object_or_404(Subject, pk=pk)
-    all_subjects = Subject.objects.exclude(subject_id=subject.subject_id)
+    all_subjects = Subject.objects.exclude(id=subject.id)
 
     if request.method == 'POST':
         subject_form = SubjectForm(request.POST, instance=subject)
@@ -187,7 +187,7 @@ def subject_edit(request, pk):
             prerequisite_ids = request.POST.getlist('prerequisite_subjects')
             for prerequisite_id in prerequisite_ids:
                 if prerequisite_id:  # Ensure the ID is not empty
-                    prerequisite_subject = Subject.objects.get(subject_id=prerequisite_id)
+                    prerequisite_subject = Subject.objects.get(id=prerequisite_id)
                     Prerequisite.objects.create(subject=subject, prerequisite_subject=prerequisite_subject)
 
             messages.success(request, 'Subject updated successfully.')

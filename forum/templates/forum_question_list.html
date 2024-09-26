@@ -11,7 +11,7 @@
         <select name="subject_id" id="subject" class="form-control" onchange="this.form.submit()">
             <option value="">All Subjects</option>
             {% for subject in subjects %}
-            <option value="{{ subject.subject_id }}" {% if subject.subject_id == selected_subject_id %}selected{% endif %}>
+            <option value="{{ subject.id }}" {% if subject.id == selected_subject_id %}selected{% endif %}>
                 {{ subject.name }}
             </option>
             {% endfor %}
@@ -39,13 +39,13 @@
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
-            <a href="?{% if selected_subject_id %}subject_id={{ selected_subject_id }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+            <a href="?{% if selected_subject_id %}id={{ selected_subject_id }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
         {% endif %}
 
         <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
 
         {% if page_obj.has_next %}
-            <a href="?{% if selected_subject_id %}subject_id={{ selected_subject_id }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+            <a href="?{% if selected_subject_id %}id={{ selected_subject_id }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
         {% endif %}
     </span>
 </div>

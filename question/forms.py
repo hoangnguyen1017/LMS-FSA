@@ -22,7 +22,7 @@ class QuestionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['question_text'].required = False
         self.fields['subject'].queryset = Subject.objects.all().order_by('name')
-        self.fields['subject'].to_field_name = 'subject_id'  # Use subject_id for the value
+        self.fields['subject'].to_field_name = 'id'  # Use subject_id for the value
         # If you need to update the queryset for the subject field:
         # self.fields['subject'].queryset = Subject.objects.all().order_by('name')
 

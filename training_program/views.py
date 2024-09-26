@@ -18,9 +18,9 @@ def manage_subjects(request, program_id):
             TrainingProgramSubjects.objects.filter(program=program).delete()
             for field_name, value in form.cleaned_data.items():
                 if field_name.startswith('subject_') and value:
-                    subject_id = int(field_name.split('_')[1])
-                    semester = form.cleaned_data.get(f'semester_{subject_id}')
-                    subject = Subject.objects.get(subject_id=subject_id)
+                    id = int(field_name.split('_')[1])
+                    semester = form.cleaned_data.get(f'semester_{id}')
+                    subject = Subject.objects.get(id=id)
                     TrainingProgramSubjects.objects.create(
                         program=program, subject=subject, semester=semester)
             return redirect('training_program:training_program_list')

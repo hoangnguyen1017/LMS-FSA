@@ -29,7 +29,7 @@ def user_list(request):
 
 def user_detail(request, pk):
     user = get_object_or_404(User, auth_user_id=pk)
-    enrollments = Enrollment.objects.filter(student_id=user.id)
+    enrollments = Enrollment.objects.filter(student_id=user.auth_user_id)
     # Extract subject names
     subject_names = [enrollment.subject.name for enrollment in enrollments]
 

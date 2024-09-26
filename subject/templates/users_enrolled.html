@@ -26,7 +26,7 @@
                         <td>{{ enrollment.student.username }}</td>
                         <td>{{ enrollment.student.full_name}}</td>
                         <td>
-                            <a href="{% url 'user:user_detail' pk=enrollment.student.auth_user_id %}" class="btn btn-primary">View User Details</a>
+                            <a href="{% url 'user:user_detail' pk=enrollment.student.id %}" class="btn btn-primary">View User Details</a>
                         </td>
                     </tr>
                 {% endfor %}

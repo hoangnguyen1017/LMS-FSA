@@ -9,7 +9,6 @@
         <thead>
             <tr>
                 <th>Username</th>
-                <th>Full Name</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -17,7 +16,6 @@
             {% for enrollment in enrolled_users %}
             <tr>
                 <td>{{ enrollment.student.username }}</td>
-                <td>{{ enrollment.student.get_full_name }}</td>
                 <td>
                     <a href="{% url 'user:user_detail' enrollment.student.pk %}" class="btn btn-info btn-sm">View User Details</a>
                 </td>

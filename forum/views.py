@@ -8,20 +8,20 @@ from module_group.models import ModuleGroup, Module
 
 
 def question_list(request):
-    selected_subject_id = request.GET.get('id')
+    selected_subject_id = request.GET.get('subject_id')  # Change 'id' to 'subject_id'
 
     # Get all subjects for the dropdown
     subjects = Subject.objects.all()
 
     # Filter questions based on selected subject, or show all questions
     if selected_subject_id:
-        questions = ForumQuestion.objects.filter(subject__id=selected_subject_id)
+        questions = ForumQuestion.objects.filter(subject_id=selected_subject_id)  # Filter by subject_id
     else:
         questions = ForumQuestion.objects.all()
 
     questions = questions.order_by('-created_at')
 
-    # Pagination logic: paginate questions, 5 per page
+    # Pagination logic: paginate questions, 10 per page
     paginator = Paginator(questions, 10)  # Show 10 questions per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -30,12 +30,11 @@ def question_list(request):
     module = Module.objects.all()
 
     return render(request, 'forum_question_list.html', {
-        'page_obj': page_obj,  # Pass the paginated questions
-        'subjects': subjects,  # Pass the subjects for the dropdown
+        'page_obj': page_obj,
+        'subjects': subjects,
         'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
         'module_groups': module_groups,
         'module': module,
-        # To highlight the selected subject
     })
 
 @login_required

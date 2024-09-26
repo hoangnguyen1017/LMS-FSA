@@ -302,7 +302,7 @@ def users_enrolled(request, pk):
     # Lấy danh sách người dùng đã đăng ký môn học
     enrolled_users = Enrollment.objects.filter(subject=subject).select_related('student')
 
-    return render(request, 'users_enrolled.html', {
+    return render(request, 'users_subject_enrolled.html', {
         'subject': subject,
         'enrolled_users': enrolled_users,
     })

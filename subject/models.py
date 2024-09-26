@@ -9,19 +9,11 @@ class Subject(models.Model):
 
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_subjects')
     instructor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='taught_subjects')
+    published = models.BooleanField(default=True)
+    prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='is_prerequisite_for')
 
     def __str__(self):
         return self.name
-
-class Prerequisite(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='subject_prerequisites')
-    prerequisite_subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='prerequisite_for_subjects')
-
-    class Meta:
-        unique_together = ('subject', 'prerequisite_subject')
-
-    def __str__(self):
-        return f"{self.prerequisite_subject.name} is a prerequisite for {self.subject.name}"
 
 # Mô hình lưu trữ tài liệu
 class Document(models.Model):

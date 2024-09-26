@@ -6,112 +6,144 @@
 {% block title %}{{ form.instance.pk|yesno:"Edit Subject,Add New Subject" }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container">
     <h2>{{ form.instance.pk|yesno:"Edit Subject,Add New Subject" }}</h2>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="form-group">
-            {{ subject_form.name.label_tag }}
-            {{ subject_form.name|add_class:"form-control" }}
-        </div>
-        <div class="form-group"></div>
-            {{ subject_form.subject_code.label_tag }}
-            {{ subject_form.subject_code|add_class:"form-control" }}
-        </div>
-        <div class="form-group">
-            {{ subject_form.description.label_tag }}
-            {{ subject_form.description|add_class:"form-control" }}
-        </div>
-        <div class="form-group">
-            {{ subject_form.creator.label_tag }}
-            {{ subject_form.creator|add_class:"form-control" }}
-        </div>
-        <div class="form-group">
-            {{ subject_form.instructor.label_tag }}
-            {{ subject_form.instructor|add_class:"form-control" }}
-        </div>
-
-        <!-- Prerequisite Subjects -->
-        <div class="form-group">
-            <h3>Prerequisite Subjects</h3>
-            <div id="prerequisite-container">
-                <div class="prerequisite-entry">
-                    <select name="prerequisite_subjects" class="form-control">
-                        <option value="">Select a prerequisite subject (optional)</option>
-                        {% for subject in all_subjects %}
-                            <option value="{{ subject.id }}">{{ subject.name }}</option>
-                        {% endfor %}
-                    </select>
+        <div class="row">
+            <div class="col-md-8" style="margin-left: 2cm; margin-right: 2cm;">
+                <div class="form-group">
+                    {{ subject_form.name.label_tag }}
+                    {{ subject_form.name|add_class:"form-control" }}
                 </div>
-            </div>
-            <button type="button" id="add-prerequisite" class="btn btn-secondary mt-2">Add Another Prerequisite</button>
-        </div>
-
-        <!-- Documents -->
-        <div class="form-group">
-            <h3>Documents</h3>
-            {% if documents %}
-                <h4>Existing Documents</h4>
-                <ul>
-                    {% for document in documents %}
-                    <li>
-                        <input type="checkbox" name="delete_document_{{ document.id }}" id="delete_document_{{ document.id }}">
-                        <label for="delete_document_{{ document.id }}">Delete</label>
-                        {% if document.doc_file %}
-                            <a href="{{ document.doc_file.url }}">{{ document.doc_title }}</a>
-                        {% else %}
-                            {{ document.doc_title }} (No file uploaded)
-                        {% endif %}
-                    </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-            <h4>Add New Documents</h4>
-            <div id="document-container">
-                <div class="document-entry">
-                    <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
-                    <input type="file" name="doc_file[]" class="form-control-file">
+                <div class="form-group">
+                    {{ subject_form.subject_code.label_tag }}
+                    {{ subject_form.subject_code|add_class:"form-control" }}
                 </div>
-            </div>
-            <button type="button" id="add-document" class="btn btn-secondary mt-2">Add Another Document</button>
-        </div>
-
-        <div id="additional-documents"></div>
-        <!-- Videos -->
-        <div class="form-group">
-            <h3>Videos</h3>
-            {% if videos %}
-                <h4>Existing Videos</h4>
-                <ul>
-                    {% for video in videos %}
-                    <li>
-                        <input type="checkbox" name="delete_video_{{ video.id }}" id="delete_video_{{ video.id }}">
-                        <label for="delete_video_{{ video.id }}">Delete</label>
-                        <a href="{{ video.vid_file.url }}">{{ video.vid_title }}</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-            <h4>Add New Videos</h4>
-            <div id="video-container">
-                <div class="video-entry">
-                    <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
-                    <input type="file" name="vid_file[]" class="form-control-file">
+                <div class="form-group">
+                    {{ subject_form.description.label_tag }}
+                    {{ subject_form.description|add_class:"form-control" }}
                 </div>
+                <div class="form-group">
+                    {{ subject_form.creator.label_tag }}
+                    {{ subject_form.creator|add_class:"form-control" }}
+                </div>
+                <div class="form-group">
+                    {{ subject_form.instructor.label_tag }}
+                    {{ subject_form.instructor|add_class:"form-control" }}
+                </div>
+
+                <!-- Prerequisite Subjects -->
+                <div class="form-group">
+                    <h3>Prerequisite Subjects</h3>
+                    <div id="prerequisite-container">
+                        <div class="prerequisite-entry">
+                            <select name="prerequisite_subjects[]" class="form-control">
+                                <option value="">Select a prerequisite subject (optional)</option>
+                                {% for subject in all_subjects %}
+                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" id="add-prerequisite" class="btn btn-secondary mt-2">Add Another Prerequisite</button>
+                </div>
+
+                <!-- Documents -->
+                <div class="form-group">
+                    <h3>Documents</h3>
+                    {% if documents %}
+                        <h4>Existing Documents</h4>
+                        <ul>
+                            {% for document in documents %}
+                            <li>
+                                <input type="checkbox" name="delete_document_{{ document.id }}" id="delete_document_{{ document.id }}">
+                                <label for="delete_document_{{ document.id }}">Delete</label>
+                                {% if document.doc_file %}
+                                    <a href="{{ document.doc_file.url }}">{{ document.doc_title }}</a>
+                                {% else %}
+                                    {{ document.doc_title }} (No file uploaded)
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <h4>Add New Documents</h4>
+                    <div id="document-container">
+                        <div class="document-entry">
+                            <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
+                            <input type="file" name="doc_file[]" class="form-control-file">
+                        </div>
+                    </div>
+                    <button type="button" id="add-document" class="btn btn-secondary mt-2">Add Another Document</button>
+                </div>
+
+                <!-- Videos -->
+                <div class="form-group">
+                    <h3>Videos</h3>
+                    {% if videos %}
+                        <h4>Existing Videos</h4>
+                        <ul>
+                            {% for video in videos %}
+                            <li>
+                                <input type="checkbox" name="delete_video_{{ video.id }}" id="delete_video_{{ video.id }}">
+                                <label for="delete_video_{{ video.id }}">Delete</label>
+                                <a href="{{ video.vid_file.url }}">{{ video.vid_title }}</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <h4>Add New Videos</h4>
+                    <div id="video-container">
+                        <div class="video-entry">
+                            <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
+                            <input type="file" name="vid_file[]" class="form-control-file">
+                        </div>
+                    </div>
+                    <button type="button" id="add-video" class="btn btn-secondary mt-2">Add Another Video</button>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary">Back to Subject List</a>
             </div>
-            <button type="button" id="add-video" class="btn btn-secondary mt-2">Add Another Video</button>
         </div>
-
-        <div id="additional-videos"></div>
-
-        <button type="submit" class="btn btn-primary">Save</button>
-        <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary">Back to Subject List</a>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Function to create a new prerequisite select element
+    function createPrerequisiteSelect() {
+        const selectHtml = `
+            <div class="prerequisite-entry mt-2">
+                <select name="prerequisite_subjects[]" class="form-control">
+                    <option value="">Select a prerequisite subject (optional)</option>
+                    {% for subject in all_subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-danger btn-sm mt-1 remove-prerequisite">Remove</button>
+            </div>
+        `;
+        return selectHtml;
+    }
+
+    // Add new prerequisite select when clicking "Add Another Prerequisite"
+    document.getElementById('add-prerequisite').addEventListener('click', function() {
+        const container = document.getElementById('prerequisite-container');
+        const newPrerequisite = document.createElement('div');
+        newPrerequisite.innerHTML = createPrerequisiteSelect();
+        container.appendChild(newPrerequisite);
+    });
+
+    // Remove prerequisite select when clicking "Remove"
+    document.getElementById('prerequisite-container').addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('remove-prerequisite')) {
+            e.target.closest('.prerequisite-entry').remove();
+        }
+    });
+
     document.getElementById('add-document').addEventListener('click', function() {
         const container = document.getElementById('document-container');
         const newEntry = document.createElement('div');

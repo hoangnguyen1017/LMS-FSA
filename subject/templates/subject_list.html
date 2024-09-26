@@ -5,13 +5,20 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Subject List</h2>
-    <!-- Form tìm kiếm -->
+        <h2>Subject List</h2>
+        <!-- Form tìm kiếm -->
         <form method="GET" action="{% url 'subject:course_search' %}" class="form-inline">
             <input type="text" name="query" class="form-control mr-2" placeholder="Search by name, description, or code...">
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
     </div>
+
+    <!-- Export and Import Buttons -->
+    <div class="mb-4">
+        <a href="{% url 'subject:export_subject' %}" class="btn btn-success">Export to Excel</a>
+        <button class="btn btn-secondary" data-toggle="modal" data-target="#importModal">Import from Excel</button>
+    </div>
+
     <table class="table table-striped">
         <thead>
             <tr>
@@ -33,11 +40,11 @@
                     <a href="{% url 'subject:subject_edit' subject.id %}" class="btn btn-warning btn-sm">Edit</a>
                     <a href="{% url 'subject:subject_delete' subject.id %}" class="btn btn-danger btn-sm">Delete</a>
                     {% if subject.id in enrolled_subjects %}
-                        <!-- Nếu user đã enrolled, hiển thị nút Unenroll và thông báo đã đăng ký -->
+                        <!-- If user is enrolled, show Unenroll button -->
                         <span class="text-success">Enrolled</span>
                         <a href="{% url 'subject:subject_unenroll' subject.id %}" class="btn btn-danger btn-sm">Unenroll</a>
                     {% else %}
-                        <!-- Nếu user chưa enrolled, hiển thị nút Enroll -->
+                        <!-- If user is not enrolled, show Enroll button -->
                         <span class="text-danger">Unenrolled</span>
                         <a href="{% url 'subject:subject_enroll' subject.id %}" class="btn btn-primary btn-sm">Enroll</a>
                     {% endif %}
@@ -54,4 +61,32 @@
     <a href="{% url 'subject:subject_add' %}" class="btn btn-primary">Add New Subject</a>
     <a href="{% url 'subject:resource_library' %}" class="btn btn-info">Go to Resource Library</a>
 </div>
+
+<!-- Modal for Importing Excel -->
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import Subjects from Excel</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" enctype="multipart/form-data" action="{% url 'subject:import_modules' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="excel_file">Choose Excel file:</label>
+                        <input type="file" class="form-control-file" name="excel_file" id="excel_file" accept=".xlsx">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

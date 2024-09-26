@@ -5,69 +5,115 @@
 
 {% block content %}
 <div class="container">
-    <div class="content-row">
-        <!-- Left section (Information and Files) -->
-        <div class="left-section">
-            <h1 class="text-2xl font-bold mb-4">{{ subject.name }} - Details</h1>
-            <p><strong>Subject ID:</strong> {{ subject.id }}</p>
-            <p><strong>Subject Name:</strong> {{ subject.name }}</p>
-            <p><strong>Subject Code:</strong> {{ subject.subject_code }}</p>
-            <p><strong>Description:</strong> {{ subject.description }}</p>
-            <p><strong>Instructor:</strong> {{ subject.instructor.get_full_name }} ({{ subject.instructor.username }})</p>
+    <h1 class="text-2xl font-bold mb-4">{{ subject.name }} - Details</h1>
 
-            <p><strong>Average Rating:</strong>
-                {% if subject_average_rating %}
-                    {{ subject_average_rating|floatformat:1 }} / 5
-                {% else %}
-                    No ratings yet.
-                {% endif %}
-            </p>
+    <!-- Information Table -->
+    <table class="table table-bordered mb-4">
+        <thead class="thead-light">
+            <tr>
+                <th colspan="2">Information</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>Subject ID</th>
+                <td>{{ subject.id }}</td>
+            </tr>
+            <tr>
+                <th>Subject Code</th>
+                <td>{{ subject.subject_code }}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{ subject.description }}</td>
+            </tr>
+            <tr>
+                <th>Instructor</th>
+                <td>{{ subject.instructor.get_full_name }} ({{ subject.instructor.username }})</td>
+            </tr>
+            <tr>
+                <th>Average Rating</th>
+                <td>
+                    {% if subject_average_rating %}
+                        {{ subject_average_rating|floatformat:1 }} / 5
+                    {% else %}
+                        No ratings yet.
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Prerequisite Subjects</th>
+                <td>
+                    {% if subject.prerequisites.exists %}
+                        <ul class="list-unstyled">
+                            {% for prerequisite in subject.prerequisites.all %}
+                                <li>{{ prerequisite.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        No prerequisites for this subject.
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
-            <p class="mb-4">
-                <a href="{% url 'subject:users_enrolled' subject.pk %}" class="btn btn-info">
-                    Users Enrolled ({{ users_enrolled_count }})
-                </a>
-            </p>
+    <!-- Student Feedback Table -->
+    <table class="table table-bordered mb-4">
+        <thead class="thead-light">
+            <tr>
+                <th colspan="3">Student Feedback</th>
+            </tr>
+            <tr>
+                <th>Student</th>
+                <th>Rating</th>
+                <th>Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if feedbacks %}
+                {% for feedback in feedbacks %}
+                    <tr>
+                        <td>{{ feedback.student.get_full_name }} ({{ feedback.student.username }})</td>
+                        <td>{{ feedback.average_rating|floatformat:1 }} / 5</td>
+                        <td>{{ feedback.comments }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="3">No feedback has been provided for this subject yet.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- Action Buttons -->
+    <div class="text-center mb-4">
+        <div class="d-flex justify-content-between flex-wrap">
+            <a href="{% url 'subject:users_enrolled' subject.pk %}" class="btn btn-info mb-2">
+                Users Enrolled ({{ users_enrolled_count }})
+            </a>
 
             {% if is_enrolled %}
-                <!-- Show Go to Content button if already enrolled -->
-                <a href="{% url 'subject:subject_content' subject.pk %}" class="btn btn-success mb-2">Go to Content</a>
-                <a href="{% url 'subject:subject_unenroll' subject.pk %}" class="btn btn-danger mb-2">Unenroll</a>
+                <a href="{% url 'subject:subject_content' subject.pk %}" class="btn btn-success mb-1">Go to Content</a>
+                <a href="{% url 'subject:subject_unenroll' subject.pk %}" class="btn btn-danger mb-1">Unenroll</a>
             {% else %}
-                <!-- Show Enroll button if not enrolled -->
-                <a href="{% url 'subject:subject_enroll' subject.pk %}" class="btn btn-primary mb-2">Enroll</a>
+                <a href="{% url 'subject:subject_enroll' subject.pk %}" class="btn btn-primary mb-1">Enroll</a>
             {% endif %}
 
-            <h2 class="text-xl font-semibold mb-2">Prerequisite Subjects</h2>
-            {% if prerequisites %}
-                <ul class="mb-4">
-                    {% for prereq in prerequisites %}
-                        <li>{{ prereq.prerequisite_subject.name }}</li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No prerequisites for this subject.</p>
-            {% endif %}
+            <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary mb-1">Return to Subject List</a>
 
-            <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary mt-4">Return to Subject List</a>
-        </div>
-
-        <!-- Feedback section -->
-        <div class="feedback-section">
-            <h2 class="text-xl font-semibold mt-6">Student Feedback</h2>
-
-            {% if feedbacks %}
-                <ul class="feedback-list">
-                    {% for feedback in feedbacks %}
-                        <li>
-                            <p><strong>{{ feedback.student.get_full_name }}</strong> ({{ feedback.student.username }})</p>
-                            <p>Average Rating: {{ feedback.average_rating|floatformat:1 }} / 5</p>
-                            <p>Comment: {{ feedback.comments }}</p>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No feedback has been provided for this subject yet.</p>
+            {% if user == subject.instructor or user.is_superuser %}
+                <form id="publishForm" method="post" action="{% url 'subject:toggle_publish' subject.pk %}" class="d-inline-block mb-1">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning">
+                        {% if subject.published %}
+                            Unpublish
+                        {% else %}
+                            Publish
+                        {% endif %}
+                    </button>
+                </form>
             {% endif %}
         </div>
     </div>

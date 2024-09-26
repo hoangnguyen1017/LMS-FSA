@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Subject, Document, Video, Enrollment, Prerequisite
+from .models import Subject, Document, Video, Enrollment #, Prerequisite
 from .forms import SubjectForm, DocumentForm, VideoForm, EnrollmentForm, SubjectSearchForm
 from module_group.models import ModuleGroup
 from django.contrib.auth.decorators import login_required
@@ -11,7 +11,100 @@ from django.http import FileResponse,Http404
 from django.utils.text import slugify
 from django.urls import reverse
 from feedback.models import CourseFeedback
+from .forms import ExcelImportForm
+from django.http import HttpResponse
+import openpyxl
+import pandas as pd
+from django.contrib.auth.models import User
 
+
+def export_subject(request):
+    # Create a workbook and add a worksheet
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=lms_subject.xlsx'
+
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = 'Subject'
+
+    # Define the columns
+    columns = ['name', 'subject_code', 'description', 'creator', 'instructor']
+    worksheet.append(columns)
+
+    # Fetch all subjects and write to the Excel file
+    for subject in Subject.objects.all():
+        worksheet.append([
+            subject.name,
+            subject.subject_code,
+            subject.description,
+            subject.creator.username if subject.creator else 'N/A',  # Use username or other identifier
+            subject.instructor.username if subject.instructor else 'N/A'  # Use username or other identifier
+        ])
+
+    workbook.save(response)
+    return response
+
+
+def import_modules(request):
+    if request.method == 'POST':
+        form = ExcelImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file = request.FILES['excel_file']
+            try:
+                df = pd.read_excel(uploaded_file)
+                subject_imported = 0
+                subject_updated = 0
+
+                for index, row in df.iterrows():
+                    name = row['name']
+                    subject_code = row['subject_code']
+                    description = row['description']
+                    creator_username = row['creator']
+                    instructor_username = row['instructor']
+
+                    print(f"Processing row: {name}")
+                    # Fetch User instances
+                    try:
+                        creator = User.objects.get(username=creator_username)
+                    except User.DoesNotExist:
+                        messages.warning(request, f"Creator '{creator_username}' does not exist. Skipping subject '{name}'.")
+                        continue
+
+                    try:
+                        instructor = User.objects.get(username=instructor_username)
+                    except User.DoesNotExist:
+                        messages.warning(request, f"Instructor '{instructor_username}' does not exist. Skipping subject '{name}'.")
+                        continue
+
+                    # Get or create the subject
+                    subject, created = Subject.objects.get_or_create(
+                        name=name,
+                        defaults={
+                            'subject_code': subject_code,
+                            'description': description,
+                            'creator': creator,
+                            'instructor': instructor,
+                        }
+                    )
+
+                    if created:
+                        subject_imported += 1
+                        print(f"Subject '{name}' created")
+                    else:
+                        subject_updated += 1
+                        print(f"Subject '{name}' already exists and was not created")
+
+                messages.success(request,
+                                 f"{subject_imported} subjects imported successfully! {subject_updated} subjects already existed.")
+            except Exception as e:
+                messages.error(request, f"An error occurred during import: {e}")
+                print(f"Error during import: {e}")
+
+            return redirect('subject:subject_list')
+    else:
+        form = ExcelImportForm()
+
+    return render(request, 'subject_list.html', {'form': form})
 
 @login_required
 def subject_enroll(request, pk):
@@ -23,12 +116,11 @@ def subject_enroll(request, pk):
         if form.is_valid():
             enrollment = form.save(commit=False)
 
-            # Fetch prerequisites from the Prerequisite model
-            prerequisites = Prerequisite.objects.filter(subject=subject)
-            prerequisite_subjects = [prereq.prerequisite_subject for prereq in prerequisites]
+            # Fetch prerequisite subjects from the Subject model
+            prerequisite_subjects = subject.prerequisites.all()
 
             # Check if the user is enrolled in all prerequisite subjects
-            if prerequisite_subjects:
+            if prerequisite_subjects.exists():
                 enrolled_subjects = Enrollment.objects.filter(
                     student=request.user,
                     subject__in=prerequisite_subjects
@@ -63,13 +155,23 @@ def subject_unenroll(request, pk):
 
 
 def subject_list(request):
+    if request.user.is_superuser:
+        # Superuser can see all subjects
+        subjects = Subject.objects.all()
+    elif Subject.objects.filter(instructor=request.user).exists():
+        # Instructors can see all subjects they are teaching, published or not
+        subjects = Subject.objects.filter(
+            Q(published=True) | Q(instructor=request.user)
+        )
+    else:
+        subjects = Subject.objects.filter(published=True)  # Other users see only published subjects
+
     module_groups = ModuleGroup.objects.all()
-    subjects = Subject.objects.all()
     enrollments = Enrollment.objects.filter(student=request.user)
     enrolled_subjects = {enrollment.subject.id for enrollment in enrollments}
+
     return render(request, 'subject_list.html', {
         'module_groups': module_groups,
-      #  'modules': modules,
         'subjects': subjects,
         'enrolled_subjects': enrolled_subjects,
     })
@@ -77,12 +179,9 @@ def subject_list(request):
 def subject_add(request):
     if request.method == 'POST':
         subject_form = SubjectForm(request.POST)
-        #doc_form = DocumentForm(request.POST, request.FILES)
-        #vid_form = VideoForm(request.POST, request.FILES)
-
         if subject_form.is_valid():
             subject = subject_form.save(commit=False)
-            subject.creator = request.user  # Gán người tạo là user hiện tại
+            subject.creator = request.user
             subject.save()
 
             # Handle multiple document uploads
@@ -107,11 +206,11 @@ def subject_add(request):
                         vid_title=title
                     )
             # Handle prerequisite subjects
-            prerequisite_ids = request.POST.getlist('prerequisite_subjects')
+            prerequisite_ids = request.POST.getlist('prerequisite_subjects[]')
             for prerequisite_id in prerequisite_ids:
                 if prerequisite_id:
                     prerequisite_subject = Subject.objects.get(id=prerequisite_id)
-                    Prerequisite.objects.create(subject=subject, prerequisite_subject=prerequisite_subject)
+                    subject.prerequisites.add(prerequisite_subject)
 
             messages.success(request, 'Subject created successfully.')
             return redirect('subject:subject_list')
@@ -120,8 +219,6 @@ def subject_add(request):
             messages.error(request, 'There was an error creating the subject. Please check the form.')
     else:
         subject_form = SubjectForm()
-        #doc_form = DocumentForm()
-        #vid_form = VideoForm()
     all_subjects = Subject.objects.all()
 
     return render(request, 'subject_form.html', {
@@ -137,19 +234,18 @@ def subject_edit(request, pk):
 
     if request.method == 'POST':
         subject_form = SubjectForm(request.POST, instance=subject)
-        #doc_form = DocumentForm(request.POST, request.FILES)
-        #vid_form = VideoForm(request.POST, request.FILES)
-
         if subject_form.is_valid():
             subject = subject_form.save(commit=False)
             subject.creator = request.user
             subject_form.save()
 
+            # Handle document deletion
             documents = Document.objects.filter(subject=subject)
             for document in documents:
                 if f'delete_document_{document.id}' in request.POST:
                     document.delete()
 
+            # Handle video deletion
             videos = Video.objects.filter(subject=subject)
             for video in videos:
                 if f'delete_video_{video.id}' in request.POST:
@@ -177,18 +273,13 @@ def subject_edit(request, pk):
                         vid_title=title
                     )
 
-            # Handle deleting existing prerequisites
-            prerequisites = Prerequisite.objects.filter(subject=subject)
-            for prereq in prerequisites:
-                if f'delete_prerequisite_{prereq.id}' in request.POST:
-                    prereq.delete()
-
-            # Handle adding new prerequisites
-            prerequisite_ids = request.POST.getlist('prerequisite_subjects')
+            # Handle prerequisite subjects
+            prerequisite_ids = request.POST.getlist('prerequisite_subjects[]')
+            subject.prerequisites.clear()  # Clear the current prerequisites
             for prerequisite_id in prerequisite_ids:
                 if prerequisite_id:  # Ensure the ID is not empty
                     prerequisite_subject = Subject.objects.get(id=prerequisite_id)
-                    Prerequisite.objects.create(subject=subject, prerequisite_subject=prerequisite_subject)
+                    subject.prerequisites.add(prerequisite_subject)
 
             messages.success(request, 'Subject updated successfully.')
             return redirect('subject:subject_list')
@@ -196,22 +287,19 @@ def subject_edit(request, pk):
             messages.error(request, 'There was an error updating the subject. Please check the form.')
     else:
         subject_form = SubjectForm(instance=subject)
-        #doc_form = DocumentForm()
-        #vid_form = VideoForm()
-        documents = Document.objects.filter(subject=subject)  # Chỉ lấy tài liệu
+        documents = Document.objects.filter(subject=subject)
         videos = Video.objects.filter(subject=subject)
-        prerequisites = Prerequisite.objects.filter(subject=subject)
+        prerequisites = subject.prerequisites.all()  # Get the prerequisites from the prerequisite column
 
     return render(request, 'edit_form.html', {
         'subject_form': subject_form,
-        #'doc_form': doc_form,
-        #'vid_form': vid_form,
         'documents': documents,
         'videos': videos,
         'subject': subject,
         'prerequisites': prerequisites,  # Pass prerequisites to the template
         'all_subjects': all_subjects,
     })
+
 
 
 def subject_delete(request, pk):
@@ -260,14 +348,14 @@ def subject_detail(request, pk):
     else:
         subject_average_rating = None  # No feedback yet
 
-    # Get prerequisite subjects
-    prerequisites = Prerequisite.objects.filter(subject=subject).select_related('prerequisite_subject')
+    # Get prerequisite subjects directly from the subject's `prerequisites` column
+    prerequisites = subject.prerequisites.all()
 
     context = {
         'subject': subject,
         'documents': documents,
         'videos': videos,
-        'prerequisites': prerequisites,
+        'prerequisites': prerequisites,  # Pass prerequisites from the subject model
         'is_enrolled': is_enrolled,
         'users_enrolled_count': users_enrolled_count,
         'subject_average_rating': subject_average_rating,
@@ -275,6 +363,7 @@ def subject_detail(request, pk):
     }
 
     return render(request, 'subject_detail.html', context)
+
 
 def file_download(request, file_type, file_id):
     if file_type == 'document':
@@ -434,3 +523,11 @@ def subject_content_edit(request, pk):
         'documents': documents,
         'videos': videos,
     })
+
+@login_required
+def toggle_publish(request, pk):
+    subject = get_object_or_404(Subject, pk=pk)
+    if request.user == subject.instructor or request.user.is_superuser:
+        subject.published = not subject.published
+        subject.save()
+    return redirect('subject:subject_detail', pk=pk)

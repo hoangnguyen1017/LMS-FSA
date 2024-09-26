@@ -16,4 +16,7 @@ urlpatterns = [
     path('download/<str:file_type>/<int:file_id>/', views.file_download, name='file_download'),
     path('<int:pk>/content/', views.subject_content, name='subject_content'),
     path('<int:pk>/content/edit/', views.subject_content_edit, name='subject_content_edit'),
+    path('export/', views.export_subject, name='export_subject'),
+    path('import/', views.import_modules, name='import_modules'),
+    path('subject/<int:pk>/toggle_publish/', views.toggle_publish, name='toggle_publish'),
 ]

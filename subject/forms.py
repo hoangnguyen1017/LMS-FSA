@@ -35,3 +35,6 @@ class EnrollmentForm(forms.ModelForm):
 
 class SubjectSearchForm(forms.Form):
     query = forms.CharField(max_length=255, required=False, label='Research Subject')
+
+class ExcelImportForm(forms.Form):
+    excel_file = forms.FileField(label="Upload Excel File")

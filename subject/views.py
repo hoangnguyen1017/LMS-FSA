@@ -225,11 +225,19 @@ def subject_delete(request, pk):
 def resource_library(request):
     documents = Document.objects.all()
     videos = Video.objects.all()
+    subjects = Subject.objects.all()
+
+    selected_subject_id = request.GET.get('subject')
+    if selected_subject_id:
+        documents = documents.filter(subject_id=selected_subject_id)
+        videos = videos.filter(subject_id=selected_subject_id)
+
     return render(request, 'resource_library.html', {
         'documents': documents,
         'videos': videos,
+        'subjects': subjects,
+        'selected_subject_id': selected_subject_id,
     })
-
 
 @login_required
 def subject_detail(request, pk):

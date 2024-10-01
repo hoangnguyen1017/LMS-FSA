@@ -507,7 +507,7 @@ def subject_content(request, pk):
             elif isinstance(next_item, Video):
                 next_item_type = 'video'
             else:
-                next_item_type = 'reading_material'
+                next_item_type = 'reading'
             next_item_id = next_item.id
         else:
             next_item_type = None
@@ -550,6 +550,7 @@ def subject_content(request, pk):
     }
 
     return render(request, 'subject_content.html', context)
+
 
 @require_POST
 @login_required

@@ -172,14 +172,16 @@ def subject_list(request):
     enrollments = Enrollment.objects.filter(student=request.user)
     enrolled_subjects = {enrollment.subject.id for enrollment in enrollments}
 
-    paginator = Paginator(subjects, 3)  # Hiển thị 10 môn học trên mỗi trang
-    page_number = request.GET.get('page')  # Lấy số trang từ URL
+    # Pagination
+    paginator = Paginator(subjects, 10)  # Show 10 subjects per page
+    page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'subject_list.html', {
         'module_groups': module_groups,
-        'page_obj': page_obj,
-        'enrolled_subjects': enrolled_subjects,
+        'page_obj': page_obj,  # Pagination object for template
+        'subjects': page_obj,  # Consistent with template expectations
+        'enrolled_subjects': enrolled_subjects,  # To show enrolled status
     })
 
 def subject_add(request):
@@ -427,12 +429,17 @@ def course_search(request):
             Q(description__icontains=query) |
             Q(subject_code__icontains=query))
 
+    # Add pagination for search results
+    paginator = Paginator(courses, 10)  # Show 10 results per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
         'form': form,
-        'subjects': courses,  # Make sure to pass 'subjects' instead of 'courses' for template consistency
+        'page_obj': page_obj,  # For paginated results
+        'subjects': page_obj,  # Pass the paginated subjects as 'subjects' for template consistency
     }
     return render(request, 'subject_list.html', context)
-
 @login_required
 def subject_content(request, pk):
     subject = get_object_or_404(Subject, pk=pk)

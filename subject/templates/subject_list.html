@@ -16,7 +16,7 @@
 
         <!-- Form tìm kiếm (Search Form) -->
         <div class="col-md-4">
-            <form method="GET" action="{% url 'subject:course_search' %}" class="form-inline justify-content-end">
+            <form method="GET" action="{% url 'subject:course_search' %}" class="form-inline">
                 <input type="text" name="query" class="form-control mr-2" placeholder="Search by name, description, or code...">
                 <button type="submit" class="btn btn-primary">Search</button>
             </form>
@@ -34,7 +34,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for subject in page_obj %}
+            {% for subject in subjects %}
             <tr>
                 <td>{{ subject.id }}</td>
                 <td>{{ subject.subject_code }}</td>
@@ -44,11 +44,9 @@
                     <a href="{% url 'subject:subject_edit' subject.id %}" class="btn btn-warning btn-sm">Edit</a>
                     <a href="{% url 'subject:subject_delete' subject.id %}" class="btn btn-danger btn-sm">Delete</a>
                     {% if subject.id in enrolled_subjects %}
-                        <!-- If user is enrolled, show Unenroll button -->
                         <span class="text-success">Enrolled</span>
                         <a href="{% url 'subject:subject_unenroll' subject.id %}" class="btn btn-danger btn-sm">Unenroll</a>
                     {% else %}
-                        <!-- If user is not enrolled, show Enroll button -->
                         <span class="text-danger">Unenrolled</span>
                         <a href="{% url 'subject:subject_enroll' subject.id %}" class="btn btn-primary btn-sm">Enroll</a>
                     {% endif %}
@@ -61,6 +59,7 @@
             </tr>
             {% endfor %}
         </tbody>
+
     </table>
 
     <nav aria-label="Page navigation">
@@ -101,7 +100,7 @@
         </ul>
     </nav>
 </div>
-<!-- Modal for Importing Excel -->
+<!-- Model for Importing Excel -->
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">

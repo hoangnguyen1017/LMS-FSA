@@ -23,8 +23,5 @@ urlpatterns = [
     path('assignment/', include('assignment.urls')),
     path('forum/', include('forum.urls')),
     path('quiz/', include('quiz.urls')),
-
-
-
-    # Add more paths for other new apps here
+    path('ckeditor/', include('ckeditor_uploader.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

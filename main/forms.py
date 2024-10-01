@@ -21,9 +21,9 @@ class UserRegistrationForm(UserCreationForm):
 class NewsForm(forms.ModelForm):
     class Meta:
         model = News
-        fields = ['title', 'content']
+        fields = ['title', 'content', 'file']
 
 class EventForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ['title', 'description', 'event_date']
+        fields = ['title', 'description', 'event_date', 'file']

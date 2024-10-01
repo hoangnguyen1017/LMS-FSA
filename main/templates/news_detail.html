@@ -7,6 +7,9 @@
     <h1>{{ news.title }}</h1>
     <p><strong>Date:</strong> {{ news.created_at|date:"F j, Y" }}</p>
     <p>{{ news.content }}</p>  <!-- Adjust based on your model fields -->
+    {% if news.file %}
+        <a href="{{ news.file.url }}" download>Download Attached File</a>
+    {% endif %}
     <a href="{% url 'main:home' %}" class="btn btn-primary">Back to Home</a>
 </div>
 {% endblock %}

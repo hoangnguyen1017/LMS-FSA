@@ -102,7 +102,17 @@
                     </div>
                     <button type="button" id="add-video" class="btn btn-secondary mt-2">Add Another Video</button>
                 </div>
-
+                <!-- Reading Materials -->
+                <div class="form-group">
+                    <h4>Reading Materials</h4>
+                    <div id="reading-materials">
+                        <div class="reading-material-entry">
+                            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title" required>
+                            <textarea name="reading_material_content[]" class="form-control ckeditor" required></textarea> <!-- Use ckeditor class -->
+                        </div>
+                    </div>
+                    <button type="button" id="add-reading-material" class="btn btn-secondary mt-2">Add Another Reading Material</button>
+                </div>
                 <button type="submit" class="btn btn-primary">Save</button>
                 <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary">Back to Subject List</a>
             </div>
@@ -112,6 +122,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.ckeditor.com/4.16.0/standard/ckeditor.js"></script>
 <script>
     // Function to create a new prerequisite select element
     function createPrerequisiteSelect() {
@@ -144,6 +155,7 @@
         }
     });
 
+    // Add new document input fields
     document.getElementById('add-document').addEventListener('click', function() {
         const container = document.getElementById('document-container');
         const newEntry = document.createElement('div');
@@ -155,6 +167,7 @@
         container.appendChild(newEntry);
     });
 
+    // Add new video input fields
     document.getElementById('add-video').addEventListener('click', function() {
         const container = document.getElementById('video-container');
         const newEntry = document.createElement('div');
@@ -165,5 +178,48 @@
         `;
         container.appendChild(newEntry);
     });
+
+    // Add new reading material input fields
+    document.getElementById('add-reading-material').addEventListener('click', function() {
+        const container = document.getElementById('reading-materials');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'reading-material-entry';
+        newEntry.innerHTML = `
+            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title" required>
+            <textarea name="reading_material_content[]" class="form-control" required></textarea>
+        `;
+        container.appendChild(newEntry);
+        // Initialize CKEditor for the new textarea after it's added
+        initializeCKEditor(newEntry.querySelector('textarea').name);
+    });
+
+    // Initialize CKEditor for the initial textarea
+    initializeCKEditor('reading_material_content[]');
+
+    function initializeCKEditor(textareaName) {
+        CKEDITOR.replace(textareaName, {
+            height: 300,
+            on: {
+                instanceReady: function() {
+                    // Add a dropdown for custom sizes
+                    this.addCommand('customFontSize', {
+                        exec: function(editor) {
+                            const customSize = prompt('Enter custom font size (px):', '16');
+                            if (customSize) {
+                                editor.setStyle('font-size', customSize + 'px');
+                            }
+                        }
+                    });
+
+                    this.ui.addButton('CustomSize', {
+                        label: 'Custom Font Size',
+                        command: 'customFontSize',
+                        toolbar: 'styles'
+                    });
+                }
+            }
+        });
+    }
 </script>
 {% endblock %}
+

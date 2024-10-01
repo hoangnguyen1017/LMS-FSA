@@ -4,19 +4,23 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Subject List</h2>
-        <!-- Form tìm kiếm -->
-        <form method="GET" action="{% url 'subject:course_search' %}" class="form-inline">
-            <input type="text" name="query" class="form-control mr-2" placeholder="Search by name, description, or code...">
-            <button type="submit" class="btn btn-primary">Search</button>
-        </form>
-    </div>
+    <h2 class="mb-4">Subjects</h2>
+    <div class="row mb-4">
+        <!-- Export and Import Buttons -->
+        <div class="col-md-8 d-flex align-items-center">
+            <a href="{% url 'subject:export_subject' %}" class="btn btn-success mr-2">Export to Excel</a>
+            <button class="btn btn-secondary mr-2" data-toggle="modal" data-target="#importModal">Import from Excel</button>
+            <a href="{% url 'subject:subject_add' %}" class="btn btn-primary mr-2">Add New Subject</a>
+            <a href="{% url 'subject:resource_library' %}" class="btn btn-info">Go to Resource Library</a>
+        </div>
 
-    <!-- Export and Import Buttons -->
-    <div class="mb-4">
-        <a href="{% url 'subject:export_subject' %}" class="btn btn-success">Export to Excel</a>
-        <button class="btn btn-secondary" data-toggle="modal" data-target="#importModal">Import from Excel</button>
+        <!-- Form tìm kiếm (Search Form) -->
+        <div class="col-md-4">
+            <form method="GET" action="{% url 'subject:course_search' %}" class="form-inline justify-content-end">
+                <input type="text" name="query" class="form-control mr-2" placeholder="Search by name, description, or code...">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
     </div>
 
     <table class="table table-striped">
@@ -30,7 +34,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for subject in subjects %}
+            {% for subject in page_obj %}
             <tr>
                 <td>{{ subject.id }}</td>
                 <td>{{ subject.subject_code }}</td>
@@ -58,10 +62,45 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="{% url 'subject:subject_add' %}" class="btn btn-primary">Add New Subject</a>
-    <a href="{% url 'subject:resource_library' %}" class="btn btn-info">Go to Resource Library</a>
-</div>
 
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link">{{ num }}</a></li>
+                {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
 <!-- Modal for Importing Excel -->
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">

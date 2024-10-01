@@ -30,45 +30,45 @@
 
         <!-- Main Content Area on the right -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-4">
-            <h1>Welcome to the Home Page</h1>
-            <h2>News and Events</h2>
+            <h1>Welcome to the Learning Management System</h1>
 
-            <hr>
-
-            <!-- Display Latest News -->
-            <h2>Latest News</h2>
-            <ul>
-                {% if news_list %}
-                    {% for news in news_list %}
-                    <li><strong>{{ news.title }}</strong> - {{ news.created_at|date:"F j, Y" }}
-                    <a href="{% url 'main:news_detail' news.id %}" class="btn btn-secondary btn-sm">View Detail</a></li>
-                    {% endfor %}
-                {% else %}
-                    <li>No news available.</li>
+            <!-- Dashboard Button at the Top -->
+            <div class="mb-4">
+                {% if user.is_authenticated and user.is_staff %}
+                <a href="{% url 'main:dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
                 {% endif %}
-            </ul>
+            </div>
 
-            <hr>
+            <!-- Display Module Groups -->
+            {% for group in module_groups %}
+            <div class="mb-5">
+                <h2 class="text-primary mb-3">{{ group.group_name }}</h2>  <!-- Display the Module Group name -->
 
-            <!-- Display Upcoming Events -->
-            <h2>Upcoming Events</h2>
-            <ul>
-                {% if event_list %}
-                    {% for event in event_list %}
-                    <li><strong>{{ event.title }}</strong> - {{ event.event_date|date:"F j, Y, g:i a" }}
-                    <a href="{% url 'main:event_detail' event.id %}" class="btn btn-secondary btn-sm">View Detail</a></li>
+                <div class="row">
+                    <!-- Loop through each module within the current group -->
+                    {% for module in modules %}
+                        {% if module.module_group == group %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <!-- Module Icon -->
+                                    <div class="icon mb-3">
+                                        <i class="{{ module.icon }} fa-3x text-info"></i>
+                                    </div>
+
+                                    <!-- Module Name -->
+                                    <h5 class="card-title">{{ module.module_name }}</h5>
+
+                                    <!-- Module Button -->
+                                    <a href="{% url module.module_url %}" class="btn btn-outline-primary mt-3">Go to {{ module.module_name }}</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     {% endfor %}
-                {% else %}
-                    <li>No upcoming events.</li>
-                {% endif %}
-            </ul>
-
-            <hr>
-
-            <!-- Link to the Admin Dashboard -->
-            {% if user.is_authenticated and user.is_staff %}
-            <a href="{% url 'main:dashboard' %}" class="btn btn-primary">Go to Dashboard Edit</a>
-            {% endif %}
+                </div>
+            </div>
+            {% endfor %}
         </main>
     </div>
 </div>

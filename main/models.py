@@ -14,6 +14,7 @@ class News(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
+    file = models.FileField(upload_to='news_files/', blank=True, null=True)
 
     def __str__(self):
         return self.title
@@ -23,6 +24,7 @@ class Event(models.Model):
     description = models.TextField()
     event_date = models.DateTimeField()
     created_at = models.DateTimeField(default=timezone.now)
+    file = models.FileField(upload_to='events_files/', blank=True, null=True)
 
     def __str__(self):
         return self.title

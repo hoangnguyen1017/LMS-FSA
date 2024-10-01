@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Dashboard Edit</h2>
+
+    <!-- Manage News Section -->
+    <h3>Manage News</h3>
+    <a href="{% url 'main:news_add' %}" class="btn btn-primary">Add News</a>
+    <ul>
+        {% for news in news_list %}
+        <li>
+            {{ news.title }}
+            <!-- Edit link for news -->
+            - <a href="{% url 'main:news_edit' news.pk %}">Edit</a>
+
+            <!-- Delete button for news with confirmation -->
+            - <a href="{% url 'main:delete_news' news.pk %}"
+                 class="btn btn-danger btn-sm"
+                 onclick="return confirm('Are you sure you want to delete this news?');">
+                 Delete
+              </a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Manage Events Section -->
+    <h3>Manage Events</h3>
+    <a href="{% url 'main:event_add' %}" class="btn btn-primary">Add Event</a>
+    <ul>
+        {% for event in event_list %}
+        <li>
+            {{ event.title }} ({{ event.event_date|date:"F j, Y, g:i a" }})
+
+            <!-- Edit link for events -->
+            - <a href="{% url 'main:event_edit' event.pk %}">Edit</a>
+
+            <!-- Delete button for events with confirmation -->
+            - <a href="{% url 'main:delete_event' event.pk %}"
+                 class="btn btn-danger btn-sm"
+                 onclick="return confirm('Are you sure you want to delete this event?');">
+                 Delete
+              </a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

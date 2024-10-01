@@ -19,4 +19,5 @@ urlpatterns = [
     path('export/', views.export_subject, name='export_subject'),
     path('import/', views.import_modules, name='import_modules'),
     path('subject/<int:pk>/toggle_publish/', views.toggle_publish, name='toggle_publish'),
+    path('<int:pk>/toggle-completion/', views.toggle_completion, name='toggle_completion'),
 ]

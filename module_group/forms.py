@@ -15,3 +15,6 @@ class ModuleForm(forms.ModelForm):
             'module_group': forms.Select(attrs={'class': 'form-control'}),
             'icon': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+class ExcelImportForm(forms.Form):
+    excel_file = forms.FileField(label="Upload Excel File")

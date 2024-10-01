@@ -62,7 +62,28 @@ INSTALLED_APPS = [
     'feedback',
     'assignment',
     'forum',
+    'ckeditor',
+    'ckeditor_uploader',
 ]
+
+CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            {'name': 'document', 'items': ['Source', 'Save', 'NewPage', 'Preview', 'Print', 'Templates']},
+            {'name': 'clipboard', 'items': ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo']},
+            {'name': 'editing', 'items': ['Find', 'Replace', '-', 'SelectAll']},
+            {'name': 'insert', 'items': ['Image', 'Table', 'HorizontalRule', 'SpecialChar', 'PageBreak']},
+            {'name': 'styles', 'items': ['Styles', 'Format', 'Font', 'FontSize', 'CustomSize']},
+            {'name': 'about', 'items': ['About']},
+        ],
+        'height': 300,
+        'extraPlugins': ','.join(['uploadimage', 'image2', 'font']),  # Enable font plugin for custom sizes
+        'fontSize_sizes': '8/Small;10/Normal;12/Medium;14/Large;16/X-Large;20/XX-Large',
+        'filebrowserUploadUrl': '/upload/',  # URL to handle image uploads
+    },
+}
 
 
 

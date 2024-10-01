@@ -7,6 +7,9 @@
     <h1>{{ event.title }}</h1>
     <p><strong>Date:</strong> {{ event.event_date|date:"F j, Y, g:i a" }}</p>
     <p>{{ event.description }}</p>  <!-- Adjust based on your model fields -->
+    {% if event.file %}
+        <a href="{{ news.file.url }}" download>Download Attached File</a>
+    {% endif %}
     <a href="{% url 'main:home' %}" class="btn btn-primary">Back to Home</a>
 </div>
 {% endblock %}

@@ -12,12 +12,8 @@ from subject.models import *
 def home(request):
     module_groups = ModuleGroup.objects.all()
     modules = Module.objects.all()
-    news_list = News.objects.order_by('-created_at')[:5]  # Limit to 5 latest news
-    event_list = Event.objects.order_by('event_date')[:5]  # Limit to upcoming events
     enrollments = Enrollment.objects.filter(student=request.user)
     return render(request, 'home.html', {
-        'news_list': news_list,
-        'event_list': event_list,
         'module_groups': module_groups,
         'modules': modules,
         'enrollments': enrollments,
@@ -72,8 +68,8 @@ def register(request):
 
 # View for the dashboard
 def dashboard(request):
-    news_list = News.objects.all()
-    event_list = Event.objects.all()
+    news_list = News.objects.order_by('-created_at')[:5]  # Limit to 5 latest news
+    event_list = Event.objects.order_by('event_date')[:5]  # Limit to upcoming events
     module_groups = ModuleGroup.objects.all()
     modules = Module.objects.all()
     return render(request, 'dashboard.html', {
@@ -83,10 +79,18 @@ def dashboard(request):
         'modules': modules,
     })
 
+def dashboard_edit(request):
+    news_list = News.objects.all()
+    event_list = Event.objects.all()
+    return render(request, 'dashboard_edit.html', {
+        'news_list': news_list,
+        'event_list': event_list,
+    })
+
 # Create and Edit News
 def news_add(request):
     if request.method == 'POST':
-        form = NewsForm(request.POST)
+        form = NewsForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return redirect('main:dashboard')
@@ -113,7 +117,7 @@ def delete_news(request, pk):
 # Create and Edit Event
 def event_add(request):
     if request.method == 'POST':
-        form = EventForm(request.POST)
+        form = EventForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return redirect('main:dashboard')

@@ -1,44 +1,102 @@
 {% extends 'base.html' %}
 
-{% block title %}Manage Categories{% endblock %}
+{% block title %}{% if is_subcategory %}Edit Subcategory{% else %}Manage Categories{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Create or Edit Categories and Subcategories</h2>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
-    <!-- Form for creating subcategories -->
-    <h3>Create Subcategory</h3>
-    <form method="post" action="{% url 'category:category_add' %}">
-        {% csrf_token %}
-        <div class="form-group">
-            {{ subcategory_form.subcategory_name.label_tag }}
-            {{ subcategory_form.subcategory_name }}
-        </div>
-        <div class="form-group">
-            {{ subcategory_form.parent_category.label_tag }}
-            {{ subcategory_form.parent_category }}
-        </div>
-        <button type="submit" name="create_subcategory" class="btn btn-primary">Create Subcategory</button>
-    </form>
+    {% if is_subcategory %}
+        <h2>Edit Subcategory</h2>
+        <form method="post" action="{% url 'category:subcategory_edit' form.instance.pk %}">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.subcategory_name.label_tag }}
+                {{ form.subcategory_name }}
+                {% if form.subcategory_name.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.subcategory_name.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.parent_category.label_tag }}
+                {{ form.parent_category }}
+                {% if form.parent_category.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.parent_category.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{% url 'category:category_list' %}" class="btn btn-secondary">Back to Category List</a>
+        </form>
+    {% else %}
+        <h2>Create or Edit Categories and Subcategories</h2>
 
-    <hr>
+        <!-- Form for creating subcategories -->
+        <h3>Create Subcategory</h3>
+        <form method="post" action="{% url 'category:category_add' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ subcategory_form.subcategory_name.label_tag }}
+                {{ subcategory_form.subcategory_name }}
+                {% if subcategory_form.subcategory_name.errors %}
+                    <div class="alert alert-danger">
+                        {{ subcategory_form.subcategory_name.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ subcategory_form.parent_category.label_tag }}
+                {{ subcategory_form.parent_category }}
+                {% if subcategory_form.parent_category.errors %}
+                    <div class="alert alert-danger">
+                        {{ subcategory_form.parent_category.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            <button type="submit" name="create_subcategory" class="btn btn-primary">Create Subcategory</button>
+        </form>
 
-    <!-- Form for creating categories and linking subcategories -->
-    <h3>Create or Edit Category</h3>
-    <form method="post" action="{% if form.instance.pk %}{% url 'category:category_edit' form.instance.pk %}{% else %}{% url 'category:category_add' %}{% endif %}">
-        {% csrf_token %}
-        <div class="form-group">
-            {{ form.category_name.label_tag }}
-            {{ form.category_name }}
-        </div>
+        <hr>
 
-        <div class="form-group">
-            {{ form.subs.label_tag }}
-            {{ form.subs }} <!-- Multi-select for subcategories -->
-        </div>
+        <!-- Form for creating categories and linking subjects -->
+        <h3>Create or Edit Category</h3>
+        <form method="post" action="{% if form.instance.pk %}{% url 'category:category_edit' form.instance.pk %}{% else %}{% url 'category:category_add' %}{% endif %}">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.category_name.label_tag }}
+                {{ form.category_name }}
+                {% if form.category_name.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.category_name.errors }}
+                    </div>
+                {% endif %}
+            </div>
 
-        <button type="submit" class="btn btn-primary">{{ form.instance.pk|yesno:"Save Changes,Create Category" }}</button>
-        <a href="{% url 'category:category_list' %}" class="btn btn-secondary">Back to Category List</a>
-    </form>
+            <div class="form-group">
+                {{ form.subjects.label_tag }}
+                {{ form.subjects }} <!-- Multi-select for subjects -->
+                {% if form.subjects.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.subjects.errors }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary">{{ form.instance.pk|yesno:"Save Changes,Create Category" }}</button>
+            <a href="{% url 'category:category_list' %}" class="btn btn-secondary">Back to Category List</a>
+        </form>
+    {% endif %}
 </div>
 {% endblock %}

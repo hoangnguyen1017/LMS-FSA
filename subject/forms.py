@@ -1,7 +1,6 @@
 from django import forms
-from .models import Subject, Document, Video, Enrollment
+from .models import Subject, Document, Video, Enrollment, Completion, ReadingMaterial
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 
 # Form for creating and editing subjects
 
@@ -38,3 +37,17 @@ class SubjectSearchForm(forms.Form):
 
 class ExcelImportForm(forms.Form):
     excel_file = forms.FileField(label="Upload Excel File")
+
+
+class CompletionForm(forms.ModelForm):
+    class Meta:
+        model = Completion
+        fields = ['completed']
+
+
+class ReadingMaterialForm(forms.ModelForm):
+    class Meta:
+        model = ReadingMaterial
+        fields = ['title', 'content', 'subject']  # Include the subject if needed
+
+

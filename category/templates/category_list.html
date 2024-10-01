@@ -4,48 +4,53 @@
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Danh sách Parent Categories -->
-    <h2>Parent Categories</h2>
+    <h2>Categories and Subcategories</h2>
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Category Name</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Parent Category</th>
+                <th>Subjects</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for category in categories %}
             <tr>
-                <td>{{ category.category_name }}</td>
+                <td>{{ category.category_name|title }}</td>
+                <td>Parent Category</td>
+                <td>-</td>
+                <td>
+                    {% for subject in category.subjects.all %}
+                        {{ subject.name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        No subjects assigned
+                    {% endfor %}
+                </td>
                 <td>
                     <a href="{% url 'category:category_edit' category.pk %}" class="btn btn-warning btn-sm">Edit</a>
                     <a href="{% url 'category:category_delete' category.pk %}" class="btn btn-danger btn-sm">Delete</a>
                 </td>
             </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Danh sách Subcategories -->
-    <h2>Subcategories</h2>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Subcategory Name</th>
-                <th>Parent Category</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for subcategory in subcategories %}
-            <tr>
-                <td>{{ subcategory.subcategory_name }}</td>
-                <td>{{ subcategory.parent_category.category_name }}</td>
-                <td>
-                    <a href="{% url 'category:category_edit' subcategory.pk %}" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="{% url 'category:category_delete' subcategory.pk %}" class="btn btn-danger btn-sm">Delete</a>
-                </td>
-            </tr>
+                {% for subcategory in category.subcategories.all %}
+                <tr>
+                    <td>{{ subcategory.subcategory_name|title }}</td>
+                    <td>Subcategory</td>
+                    <td>{{ category.category_name|title }}</td>
+                    <td>
+                        {% for subject in category.subjects.all %}
+                            {{ subject.name }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            No subjects assigned
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{% url 'category:subcategory_edit' subcategory.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{% url 'category:subcategory_delete' subcategory.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
             {% endfor %}
         </tbody>
     </table>

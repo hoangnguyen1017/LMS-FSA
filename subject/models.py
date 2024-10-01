@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from ckeditor.fields import RichTextField
+from ckeditor_uploader.fields import RichTextUploadingField
 
 
 class Subject(models.Model):
@@ -45,3 +47,26 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.student} enrolled in {self.subject}"
+
+
+
+class ReadingMaterial(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='reading_materials')
+    content = RichTextUploadingField()  # Use RichTextUploadingField for HTML content with file upload capability
+    title = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.title
+
+class Completion(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, null=True, blank=True)
+    video = models.ForeignKey(Video, on_delete=models.CASCADE, null=True, blank=True)
+    reading = models.ForeignKey(ReadingMaterial, on_delete=models.CASCADE, null=True, blank=True)
+    completed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('subject', 'document', 'video')
+
+    def __str__(self):
+        return f"Completion for {'document' if self.document else 'video'} in {self.subject}"

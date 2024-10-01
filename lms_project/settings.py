@@ -195,3 +195,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_NAME = 'sessionid'
+X_FRAME_OPTIONS = "SAMEORIGIN"

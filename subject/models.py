@@ -58,6 +58,25 @@ class ReadingMaterial(models.Model):
     def __str__(self):
         return self.title
 
+class SubjectMaterial(models.Model):
+    MATERIAL_TYPE_CHOICES = [
+        ('document', 'Document'),
+        ('video', 'Video'),
+        ('reading', 'Reading Material'),
+    ]
+
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='materials')
+    material_id = models.PositiveIntegerField()
+    material_type = models.CharField(max_length=10, choices=MATERIAL_TYPE_CHOICES)
+    order = models.PositiveIntegerField()  # Order of appearance
+    title = models.CharField(max_length=255)
+
+    def __str__(self):
+        return 'subject id: ' +  str(self.subject.id ) + '   title: ' + str(self.title)
+
+    class Meta:
+        ordering = ['order']
+
 class Completion(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE, null=True, blank=True)
@@ -66,7 +85,7 @@ class Completion(models.Model):
     completed = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('subject', 'document', 'video')
+        unique_together = ('subject', 'document', 'video', 'reading')
 
     def __str__(self):
         return f"Completion for {'document' if self.document else 'video'} in {self.subject}"

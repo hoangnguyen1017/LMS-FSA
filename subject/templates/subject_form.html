@@ -49,72 +49,8 @@
                     <button type="button" id="add-prerequisite" class="btn btn-secondary mt-2">Add Another Prerequisite</button>
                 </div>
 
-                <!-- Documents -->
-                <div class="form-group">
-                    <h3>Documents</h3>
-                    {% if documents %}
-                        <h4>Existing Documents</h4>
-                        <ul>
-                            {% for document in documents %}
-                            <li>
-                                <input type="checkbox" name="delete_document_{{ document.id }}" id="delete_document_{{ document.id }}">
-                                <label for="delete_document_{{ document.id }}">Delete</label>
-                                {% if document.doc_file %}
-                                    <a href="{{ document.doc_file.url }}">{{ document.doc_title }}</a>
-                                {% else %}
-                                    {{ document.doc_title }} (No file uploaded)
-                                {% endif %}
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                    <h4>Add New Documents</h4>
-                    <div id="document-container">
-                        <div class="document-entry">
-                            <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
-                            <input type="file" name="doc_file[]" class="form-control-file">
-                        </div>
-                    </div>
-                    <button type="button" id="add-document" class="btn btn-secondary mt-2">Add Another Document</button>
-                </div>
-
-                <!-- Videos -->
-                <div class="form-group">
-                    <h3>Videos</h3>
-                    {% if videos %}
-                        <h4>Existing Videos</h4>
-                        <ul>
-                            {% for video in videos %}
-                            <li>
-                                <input type="checkbox" name="delete_video_{{ video.id }}" id="delete_video_{{ video.id }}">
-                                <label for="delete_video_{{ video.id }}">Delete</label>
-                                <a href="{{ video.vid_file.url }}">{{ video.vid_title }}</a>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                    <h4>Add New Videos</h4>
-                    <div id="video-container">
-                        <div class="video-entry">
-                            <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
-                            <input type="file" name="vid_file[]" class="form-control-file">
-                        </div>
-                    </div>
-                    <button type="button" id="add-video" class="btn btn-secondary mt-2">Add Another Video</button>
-                </div>
-                <!-- Reading Materials -->
-                <div class="form-group">
-                    <h4>Reading Materials</h4>
-                    <div id="reading-materials">
-                        <div class="reading-material-entry">
-                            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title" required>
-                            <textarea name="reading_material_content[]" class="form-control ckeditor" required></textarea> <!-- Use ckeditor class -->
-                        </div>
-                    </div>
-                    <button type="button" id="add-reading-material" class="btn btn-secondary mt-2">Add Another Reading Material</button>
-                </div>
-                <button type="submit" class="btn btn-primary">Save</button>
-                <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary">Back to Subject List</a>
+                <button type="submit" class="btn btn-primary mt-4">Save</button>
+                <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary mt-2">Back to Subject List</a>
             </div>
         </div>
     </form>
@@ -122,7 +58,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.ckeditor.com/4.16.0/standard/ckeditor.js"></script>
 <script>
     // Function to create a new prerequisite select element
     function createPrerequisiteSelect() {
@@ -154,72 +89,5 @@
             e.target.closest('.prerequisite-entry').remove();
         }
     });
-
-    // Add new document input fields
-    document.getElementById('add-document').addEventListener('click', function() {
-        const container = document.getElementById('document-container');
-        const newEntry = document.createElement('div');
-        newEntry.className = 'document-entry';
-        newEntry.innerHTML = `
-            <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
-            <input type="file" name="doc_file[]" class="form-control-file">
-        `;
-        container.appendChild(newEntry);
-    });
-
-    // Add new video input fields
-    document.getElementById('add-video').addEventListener('click', function() {
-        const container = document.getElementById('video-container');
-        const newEntry = document.createElement('div');
-        newEntry.className = 'video-entry';
-        newEntry.innerHTML = `
-            <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
-            <input type="file" name="vid_file[]" class="form-control-file">
-        `;
-        container.appendChild(newEntry);
-    });
-
-    // Add new reading material input fields
-    document.getElementById('add-reading-material').addEventListener('click', function() {
-        const container = document.getElementById('reading-materials');
-        const newEntry = document.createElement('div');
-        newEntry.className = 'reading-material-entry';
-        newEntry.innerHTML = `
-            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title" required>
-            <textarea name="reading_material_content[]" class="form-control" required></textarea>
-        `;
-        container.appendChild(newEntry);
-        // Initialize CKEditor for the new textarea after it's added
-        initializeCKEditor(newEntry.querySelector('textarea').name);
-    });
-
-    // Initialize CKEditor for the initial textarea
-    initializeCKEditor('reading_material_content[]');
-
-    function initializeCKEditor(textareaName) {
-        CKEDITOR.replace(textareaName, {
-            height: 300,
-            on: {
-                instanceReady: function() {
-                    // Add a dropdown for custom sizes
-                    this.addCommand('customFontSize', {
-                        exec: function(editor) {
-                            const customSize = prompt('Enter custom font size (px):', '16');
-                            if (customSize) {
-                                editor.setStyle('font-size', customSize + 'px');
-                            }
-                        }
-                    });
-
-                    this.ui.addButton('CustomSize', {
-                        label: 'Custom Font Size',
-                        command: 'customFontSize',
-                        toolbar: 'styles'
-                    });
-                }
-            }
-        });
-    }
 </script>
 {% endblock %}
-

@@ -110,7 +110,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="POST" enctype="multipart/form-data" action="{% url 'subject:import_modules' %}">
+            <form method="POST" enctype="multipart/form-data" action="{% url 'subject:import_subject' %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="form-group">

@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Subject, Document, Video, Enrollment, ReadingMaterial, Completion
+from .models import Subject, Document, Video, Enrollment, ReadingMaterial, Completion, SubjectMaterial
 from .forms import SubjectForm, DocumentForm, VideoForm, EnrollmentForm, SubjectSearchForm
 from module_group.models import ModuleGroup
 from django.contrib.auth.decorators import login_required
@@ -47,7 +47,7 @@ def export_subject(request):
     return response
 
 
-def import_modules(request):
+def import_subjects(request):
     if request.method == 'POST':
         form = ExcelImportForm(request.POST, request.FILES)
         if form.is_valid():
@@ -192,44 +192,12 @@ def subject_add(request):
             subject.creator = request.user
             subject.save()
 
-            # Handle multiple document uploads
-            doc_files = request.FILES.getlist('doc_file[]')
-            doc_titles = request.POST.getlist('doc_title[]')
-            for file, title in zip(doc_files, doc_titles):
-                if file and title:
-                    Document.objects.create(
-                        subject=subject,
-                        doc_file=file,
-                        doc_title=title
-                    )
-
-            # Handle multiple video uploads
-            vid_files = request.FILES.getlist('vid_file[]')
-            vid_titles = request.POST.getlist('vid_title[]')
-            for file, title in zip(vid_files, vid_titles):
-                if file and title:
-                    Video.objects.create(
-                        subject=subject,
-                        vid_file=file,
-                        vid_title=title
-                    )
             # Handle prerequisite subjects
             prerequisite_ids = request.POST.getlist('prerequisite_subjects[]')
             for prerequisite_id in prerequisite_ids:
                 if prerequisite_id:
                     prerequisite_subject = Subject.objects.get(id=prerequisite_id)
                     subject.prerequisites.add(prerequisite_subject)
-
-            # Handle reading materials
-            reading_material_titles = request.POST.getlist('reading_material_title[]')
-            reading_material_contents = request.POST.getlist('reading_material_content[]')
-            for title, content in zip(reading_material_titles, reading_material_contents):
-                if title and content:
-                    ReadingMaterial.objects.create(
-                        subject=subject,
-                        title=title,
-                        content=content
-                    )
 
             messages.success(request, 'Subject created successfully.')
             return redirect('subject:subject_list')
@@ -257,40 +225,6 @@ def subject_edit(request, pk):
             subject.creator = request.user
             subject_form.save()
 
-            # Handle document deletion
-            documents = Document.objects.filter(subject=subject)
-            for document in documents:
-                if f'delete_document_{document.id}' in request.POST:
-                    document.delete()
-
-            # Handle video deletion
-            videos = Video.objects.filter(subject=subject)
-            for video in videos:
-                if f'delete_video_{video.id}' in request.POST:
-                    video.delete()
-
-            # Handle multiple document uploads
-            doc_files = request.FILES.getlist('doc_file[]')
-            doc_titles = request.POST.getlist('doc_title[]')
-            for file, title in zip(doc_files, doc_titles):
-                if file and title:
-                    Document.objects.create(
-                        subject=subject,
-                        doc_file=file,
-                        doc_title=title
-                    )
-
-            # Handle multiple video uploads
-            vid_files = request.FILES.getlist('vid_file[]')
-            vid_titles = request.POST.getlist('vid_title[]')
-            for file, title in zip(vid_files, vid_titles):
-                if file and title:
-                    Video.objects.create(
-                        subject=subject,
-                        vid_file=file,
-                        vid_title=title
-                    )
-
             # Handle prerequisite subjects
             prerequisite_ids = request.POST.getlist('prerequisite_subjects[]')
             subject.prerequisites.clear()  # Clear the current prerequisites
@@ -305,14 +239,10 @@ def subject_edit(request, pk):
             messages.error(request, 'There was an error updating the subject. Please check the form.')
     else:
         subject_form = SubjectForm(instance=subject)
-        documents = Document.objects.filter(subject=subject)
-        videos = Video.objects.filter(subject=subject)
         prerequisites = subject.prerequisites.all()  # Get the prerequisites from the prerequisite column
 
     return render(request, 'edit_form.html', {
         'subject_form': subject_form,
-        'documents': documents,
-        'videos': videos,
         'subject': subject,
         'prerequisites': prerequisites,  # Pass prerequisites to the template
         'all_subjects': all_subjects,
@@ -443,20 +373,18 @@ def course_search(request):
 @login_required
 def subject_content(request, pk):
     subject = get_object_or_404(Subject, pk=pk)
-    documents = list(Document.objects.filter(subject=subject).order_by('id'))
-    videos = list(Video.objects.filter(subject=subject).order_by('id'))
-    reading_materials = list(ReadingMaterial.objects.filter(subject=subject).order_by('id'))
-    all_items = documents + videos + reading_materials
+    all_materials = SubjectMaterial.objects.filter(subject=subject).order_by('order')
+
     preview_url = None
     download_url = None
     file_type = None
     content_type = None
     file_id = None
     current_item = None
-    next_item_type = None
-    next_item_id = None
+    next_item = None
     completion_status = False
     preview_content = None
+
     if 'file_id' in request.GET and 'file_type' in request.GET:
         file_id = request.GET.get('file_id')
         file_type = request.GET.get('file_type')
@@ -464,93 +392,61 @@ def subject_content(request, pk):
         if file_type == 'document':
             current_item = get_object_or_404(Document, id=file_id, subject=subject)
             file_url = current_item.doc_file.url
-
+            content_type = 'document'
         elif file_type == 'video':
             current_item = get_object_or_404(Video, id=file_id, subject=subject)
             file_url = current_item.vid_file.url
-
+            content_type = 'video'
         elif file_type == 'reading':
+            current_item = get_object_or_404(ReadingMaterial, id=file_id, subject=subject)
             preview_url = True
             content_type = 'reading'
-            current_item = get_object_or_404(ReadingMaterial, id=file_id, subject=subject)
             preview_content = current_item.content
-            completion = Completion.objects.filter(subject=subject, **{file_type: current_item}).first()
-            completion_status = completion.completed if completion else False
 
-            context = {
-                'subject': subject,
-                'documents': documents,
-                'videos': videos,
-                'preview_url': preview_url,
-                'download_url': download_url,
-                'file_type': file_type,
-                'content_type': content_type,
-                'file_id': file_id,
-                'current_item': current_item,
-                'next_item_type': next_item_type,
-                'next_item_id': next_item_id,
-                'completion_status': completion_status,
-                'preview_content': preview_content,
-                'reading_materials': reading_materials,
-            }
-
-            return render(request, 'subject_content.html', context)
-
-        else:
-            raise Http404("Invalid file type")
-
-        current_index = all_items.index(current_item)
-        if current_index < len(all_items) - 1:
-            next_item = all_items[current_index + 1]
-            if isinstance(next_item, Document):
-                next_item_type = 'document'
-            elif isinstance(next_item, Video):
-                next_item_type = 'video'
-            else:
-                next_item_type = 'reading'
-            next_item_id = next_item.id
-        else:
-            next_item_type = None
-            next_item_id = None
-
-        file_name = os.path.basename(file_url)
-        file_extension = os.path.splitext(file_name)[1].lower()
-
-        previewable_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm', '.ogg', '.pdf']
-        if file_extension in previewable_extensions:
-            preview_url = file_url
-            if file_extension in ['.jpg', '.jpeg', '.png', '.gif']:
-                content_type = 'image'
-            elif file_extension in ['.mp4', '.webm', '.ogg']:
-                content_type = 'video'
-            elif file_extension == '.pdf':
-                content_type = 'pdf'
-        else:
-            download_url = reverse('subject:file_download', kwargs={'file_type': file_type, 'file_id': file_id})
+        # Find the next item
+        current_material = all_materials.filter(material_id=file_id, material_type=file_type).first()
+        if current_material:
+            next_material = all_materials.filter(order__gt=current_material.order).first()
+            if next_material:
+                next_item = {
+                    'type': next_material.material_type,
+                    'id': next_material.material_id
+                }
 
         # Check completion status
         completion = Completion.objects.filter(subject=subject, **{file_type: current_item}).first()
         completion_status = completion.completed if completion else False
 
+        if file_type in ['document', 'video']:
+            file_name = os.path.basename(file_url)
+            file_extension = os.path.splitext(file_name)[1].lower()
+            previewable_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm', '.ogg', '.pdf']
+            if file_extension in previewable_extensions:
+                preview_url = file_url
+                if file_extension in ['.jpg', '.jpeg', '.png', '.gif']:
+                    content_type = 'image'
+                elif file_extension in ['.mp4', '.webm', '.ogg']:
+                    content_type = 'video'
+                elif file_extension == '.pdf':
+                    content_type = 'pdf'
+            else:
+                download_url = reverse('subject:file_download', kwargs={'file_type': file_type, 'file_id': file_id})
+
     context = {
         'subject': subject,
-        'documents': documents,
-        'videos': videos,
+        'all_materials': all_materials,
         'preview_url': preview_url,
         'download_url': download_url,
         'file_type': file_type,
         'content_type': content_type,
         'file_id': file_id,
         'current_item': current_item,
-        'next_item_type': next_item_type,
-        'next_item_id': next_item_id,
+        'next_item': next_item,
         'completion_status': completion_status,
         'preview_content': preview_content,
-        'reading_materials': reading_materials,
     }
 
     return render(request, 'subject_content.html', context)
-
 
 @require_POST
 @login_required
@@ -563,7 +459,7 @@ def toggle_completion(request, pk):
         content_object = get_object_or_404(Document, id=file_id, subject=subject)
     elif file_type == 'video':
         content_object = get_object_or_404(Video, id=file_id, subject=subject)
-    elif file_type == 'reading_material':
+    elif file_type == 'reading':
         content_object = get_object_or_404(ReadingMaterial, id=file_id, subject=subject)
     else:
         return JsonResponse({'error': 'Invalid file type'}, status=400)
@@ -579,6 +475,9 @@ def toggle_completion(request, pk):
     videos = list(Video.objects.filter(subject=subject).order_by('id'))
     reading_materials = list(ReadingMaterial.objects.filter(subject=subject).order_by('id'))
 
+    next_item_type = None
+    next_item_id = None
+
     if file_type == 'document':
         current_index = documents.index(content_object)
         if current_index < len(documents) - 1:
@@ -591,11 +490,8 @@ def toggle_completion(request, pk):
             next_item_id = next_item.id
         elif reading_materials:
             next_item = reading_materials[0]
-            next_item_type = 'reading_material'
+            next_item_type = 'reading'
             next_item_id = next_item.id
-        else:
-            next_item_type = None
-            next_item_id = None
     elif file_type == 'video':
         current_index = videos.index(content_object)
         if current_index < len(videos) - 1:
@@ -604,20 +500,14 @@ def toggle_completion(request, pk):
             next_item_id = next_item.id
         elif reading_materials:
             next_item = reading_materials[0]
-            next_item_type = 'reading_material'
+            next_item_type = 'reading'
             next_item_id = next_item.id
-        else:
-            next_item_type = None
-            next_item_id = None
-    elif file_type == 'reading_material':
+    elif file_type == 'reading':
         current_index = reading_materials.index(content_object)
         if current_index < len(reading_materials) - 1:
             next_item = reading_materials[current_index + 1]
-            next_item_type = 'reading_material'
+            next_item_type = 'reading'
             next_item_id = next_item.id
-        else:
-            next_item_type = None
-            next_item_id = None
 
     return JsonResponse({
         'completed': completion.completed,
@@ -628,6 +518,7 @@ def toggle_completion(request, pk):
 
 @login_required
 def subject_content_edit(request, pk):
+    order = 1
     subject = get_object_or_404(Subject, pk=pk)
     documents = Document.objects.filter(subject=subject)
     videos = Video.objects.filter(subject=subject)
@@ -653,35 +544,58 @@ def subject_content_edit(request, pk):
         doc_files = request.FILES.getlist('doc_file[]')
         doc_titles = request.POST.getlist('doc_title[]')
         for file, title in zip(doc_files, doc_titles):
-            if file and title:  # Ensure both file and title are provided
-                Document.objects.create(
+            if file and title:
+                document = Document.objects.create(
                     subject=subject,
                     doc_file=file,
                     doc_title=title
                 )
+                SubjectMaterial.objects.create(
+                    subject=subject,
+                    material_id=document.id,
+                    material_type='document',
+                    title=document.doc_title,  # Changed from document.title to document.doc_title
+                    order=order
+                )
+            order += 1
 
         # Handle multiple video uploads
         vid_files = request.FILES.getlist('vid_file[]')
         vid_titles = request.POST.getlist('vid_title[]')
         for file, title in zip(vid_files, vid_titles):
-            if file and title:  # Ensure both file and title are provided
-                Video.objects.create(
+            if file and title:
+                video = Video.objects.create(
                     subject=subject,
                     vid_file=file,
                     vid_title=title
                 )
+                SubjectMaterial.objects.create(
+                    subject=subject,
+                    material_id=video.id,
+                    material_type='video',
+                    title=video.vid_title,  # Changed from video.title to video.vid_title
+                    order=order
+                )
+            order += 1
 
         # Handle reading materials
         reading_material_titles = request.POST.getlist('reading_material_title[]')
         reading_material_contents = request.POST.getlist('reading_material_content[]')
         for title, content in zip(reading_material_titles, reading_material_contents):
-            # Only create a ReadingMaterial if both title and content are provided
-            if title.strip() and content.strip():  # Check for non-empty title and content
-                ReadingMaterial.objects.create(
+            if title and content:
+                reading_material = ReadingMaterial.objects.create(
                     subject=subject,
                     title=title,
                     content=content
                 )
+                SubjectMaterial.objects.create(
+                    subject=subject,
+                    material_id=reading_material.id,
+                    material_type='reading',
+                    title=reading_material.title,
+                    order=order
+                )
+            order += 1
 
         messages.success(request, 'Subject content updated successfully.')
         return redirect('subject:subject_content_edit', pk=subject.pk)

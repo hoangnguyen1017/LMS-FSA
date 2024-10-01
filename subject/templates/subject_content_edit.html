@@ -87,7 +87,7 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Save</button>
-    <a href="{% url 'subject:subject_content' subject.pk %}" class="btn btn-secondary">Back to Subject Content</a>
+    <a href="{% url 'subject:subject_edit' subject.id %}" class="btn btn-warning btn-sm">Back to Subject Edit</a>
 </form>
 
 {% block extra_js %}

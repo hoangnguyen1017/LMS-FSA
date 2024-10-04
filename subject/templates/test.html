@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load form_filters %} 
+{% block title %}Edit Content for {{ subject.name }}{% endblock %}
+
+{% block content %}
+<h1>Edit Content for {{ subject.name }}</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h2>Documents</h2>
+    <ul>
+        {% for document in documents %}
+            <li>
+                <a href="{{ document.doc_file.url }}">{{ document.doc_title }}</a>
+                <input type="checkbox" name="delete_document_{{ document.id }}"> Delete
+            </li>
+        {% empty %}
+            <li>No documents available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Videos</h2>
+    <ul>
+        {% for video in videos %}
+            <li>
+                <a href="{{ video.vid_file.url }}">{{ video.vid_title }}</a>
+                <input type="checkbox" name="delete_video_{{ video.id }}"> Delete
+            </li>
+        {% empty %}
+            <li>No videos available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Reading Material</h2>
+    <ul>
+        {% for reading_material in reading_materials %}
+            <li>
+                <a href="{% url 'subject:reading_material_detail' reading_material.id %}" target="_blank" style="font-size: 1em;">{{ reading_material.title }}</a>
+                <input type="checkbox" name="delete_reading_material_{{ reading_material.id }}" style="margin-left: 10px;"> Delete
+            </li>
+        {% empty %}
+            <li>No reading materials available.</li>
+        {% endfor %}
+    </ul>
+    
+    <h3>Add New Content</h3>
+
+    <div>
+        <h4>Upload Documents</h4>
+        <div id="document-container">
+            <div class="document-entry">
+                <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
+                <input type="file" name="doc_file[]" class="form-control-file" accept=".pdf,.doc,.docx,.ppt,.pptx">
+                <button type="button" class="btn btn-danger delete-document" style="margin-left: 10px;">Delete</button>
+            </div>
+        </div>
+        <button type="button" id="add-document" class="btn btn-secondary mt-2">Add Another Document</button>
+    </div>
+
+    <div>
+        <h4>Upload Videos</h4>
+        <div id="video-container">
+            <div class="video-entry">
+                <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
+                <input type="file" name="vid_file[]" class="form-control-file" accept="video/*">
+                <button type="button" class="btn btn-danger delete-video" style="margin-left: 10px;">Delete</button>
+            </div>
+        </div>
+        <button type="button" id="add-video" class="btn btn-secondary mt-2">Add Another Video</button>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'subject:subject_edit' subject.id %}" class="btn btn-warning btn-sm">Back to Subject Edit</a>
+</form>
+
+<div id="reading-materials">
+    <h3>Add Reading Material</h3>
+    <div class="reading-material-entry">
+        <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title" required>
+        <textarea name="reading_material_content[]" class="form-control ckeditor" required></textarea>
+    </div>
+</div>
+<button type="button" id="add-reading-material" class="btn btn-secondary">Add Another Reading Material</button>
+
+<script>
+    let readingMaterialCounter = 1; // Start with 1 since we already have one entry
+
+    function addRMEntry() {
+        const container = document.getElementById('reading-materials');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'reading-material-entry';
+        newEntry.innerHTML = `
+            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title" required>
+            <textarea name="reading_material_content_${readingMaterialCounter++}[]" class="form-control ckeditor" required></textarea>
+        `;
+        container.appendChild(newEntry);
+        initializeCKEditor(newEntry.querySelector('textarea').name);
+    }
+
+    function initializeCKEditor(textareaName) {
+        console.log(`Initializing CKEditor for: ${textareaName}`); // Debugging line
+        CKEDITOR.replace(textareaName, {
+            height: 300,
+        });
+    }
+
+    // Initialize CKEditor for the initial textarea
+    initializeCKEditor('reading_material_content[]');
+
+    // Add event listener to the "Add Another Reading Material" button
+    document.getElementById('add-reading-material').addEventListener('click', addRMEntry);
+</script>
+{% endblock %}

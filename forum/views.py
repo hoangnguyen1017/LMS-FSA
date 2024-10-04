@@ -5,19 +5,30 @@ from .forms import ForumQuestionForm, ForumCommentForm, ReplyForm, ReportForm
 from subject.models import Subject
 from django.core.paginator import Paginator
 from module_group.models import ModuleGroup, Module
+from django.contrib.auth.models import User
 
 
 def question_list(request):
     selected_subject_id = request.GET.get('subject_id')  # Change 'id' to 'subject_id'
+    selected_creator_id = request.GET.get('creator_id')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
 
     # Get all subjects for the dropdown
     subjects = Subject.objects.all()
+    users = User.objects.all()
 
     # Filter questions based on selected subject, or show all questions
+    questions = ForumQuestion.objects.all()
+
     if selected_subject_id:
-        questions = ForumQuestion.objects.filter(subject_id=selected_subject_id)  # Filter by subject_id
-    else:
-        questions = ForumQuestion.objects.all()
+        questions = questions.filter(subject_id=selected_subject_id)
+    if selected_creator_id:
+        questions = questions.filter(user_id=selected_creator_id)
+    if start_date:
+        questions = questions.filter(created_at__gte=start_date)
+    if end_date:
+        questions = questions.filter(created_at__lte=end_date)
 
     questions = questions.order_by('-created_at')
 
@@ -32,7 +43,11 @@ def question_list(request):
     return render(request, 'forum_question_list.html', {
         'page_obj': page_obj,
         'subjects': subjects,
+        'users': users,
         'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
+        'selected_creator_id': int(selected_creator_id) if selected_creator_id else None,
+        'start_date': start_date,
+        'end_date': end_date,
         'module_groups': module_groups,
         'module': module,
     })
@@ -237,4 +252,18 @@ def report_list(request):
     if not request.user.is_superuser:
         return redirect('main:home')
     reports = Report.objects.all().order_by('-created_at')
-    return render(request, 'forum_report_list.html', {'reports': reports})
+    reported_contents = [
+        (report, get_reported_content(report.report_type, report.report_id))
+        for report in reports
+    ]
+    return render(request, 'forum_report_list.html', {'reported_contents': reported_contents})
+
+
+def get_reported_content(report_type, report_id):
+    if report_type == 'question':
+        return get_object_or_404(ForumQuestion, pk=report_id)
+    elif report_type == 'comment':
+        return get_object_or_404(ForumComment, pk=report_id)
+    elif report_type == 'reply':
+        return get_object_or_404(Reply, pk=report_id)
+    return None

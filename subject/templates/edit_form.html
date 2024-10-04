@@ -59,6 +59,7 @@
 
         <div class="mb-4 mt-3">
             <a href="{% url 'subject:subject_content_edit' subject.pk %}" class="btn btn-primary">Edit Subject Content</a>
+            <a href="{% url 'subject:reorder_subject_materials' subject.pk %}" class="btn btn-primary">Edit Subject Order</a>
         </div>
 
         <button type="submit" class="btn btn-primary">Save Changes</button>

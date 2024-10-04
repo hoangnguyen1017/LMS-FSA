@@ -18,6 +18,10 @@ from django.contrib.auth.models import User
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.paginator import Paginator
+from django.template.loader import get_template
+from io import BytesIO
+from datetime import datetime
+import base64
 
 
 def export_subject(request):
@@ -172,6 +176,10 @@ def subject_list(request):
     enrollments = Enrollment.objects.filter(student=request.user)
     enrolled_subjects = {enrollment.subject.id for enrollment in enrollments}
 
+    # Calculate completion percentage for each subject
+    for subject in subjects:
+        subject.completion_percent = subject.get_completion_percent()
+
     # Pagination
     paginator = Paginator(subjects, 10)  # Show 10 subjects per page
     page_number = request.GET.get('page')
@@ -212,7 +220,6 @@ def subject_add(request):
         'all_subjects': all_subjects,
     })
 
-
 # subject/views.py
 def subject_edit(request, pk):
     subject = get_object_or_404(Subject, pk=pk)
@@ -247,8 +254,6 @@ def subject_edit(request, pk):
         'prerequisites': prerequisites,  # Pass prerequisites to the template
         'all_subjects': all_subjects,
     })
-
-
 
 def subject_delete(request, pk):
     subject = get_object_or_404(Subject, pk=pk)
@@ -370,6 +375,37 @@ def course_search(request):
         'subjects': page_obj,  # Pass the paginated subjects as 'subjects' for template consistency
     }
     return render(request, 'subject_list.html', context)
+
+@login_required
+def reorder_subject_materials(request, pk):
+    # Fetch the subject
+    subject = get_object_or_404(Subject, pk=pk)
+    # Fetch the materials for the subject
+    materials = SubjectMaterial.objects.filter(subject=subject).order_by('id')
+
+    if request.method == 'POST':
+        for material in materials:
+            new_order = request.POST.get(f'order_{material.id}')
+            if new_order:
+                # Update material order with the new value from the form
+                material.order = int(new_order)  # Convert to integer
+                material.save()
+
+        # Optionally, you can add a success message to the context
+        success_message = "Order updated successfully!"
+        return render(request, 'reorder_subject_material.html', {
+            'subject': subject,
+            'materials': materials,
+            'success_message': success_message,
+        })
+
+    # Pass the subject along with the materials to the template
+    return render(request, 'reorder_subject_material.html', {'subject': subject, 'materials': materials})
+def reading_material_detail(request, id):
+    # Fetch the reading material by ID or return a 404 if it doesn't exist
+    reading_material = get_object_or_404(ReadingMaterial, id=id)
+    return render(request, 'reading_material_detail.html', {'reading_material': reading_material})
+
 @login_required
 def subject_content(request, pk):
     subject = get_object_or_404(Subject, pk=pk)
@@ -432,6 +468,20 @@ def subject_content(request, pk):
             else:
                 download_url = reverse('subject:file_download', kwargs={'file_type': file_type, 'file_id': file_id})
 
+    # Calculate completion percentage
+    total_materials = all_materials.count()
+    completed_materials = Completion.objects.filter(
+        subject=subject,
+        completed=True
+    ).count()
+
+    completion_percent = (completed_materials / total_materials) * 100 if total_materials > 0 else 0
+
+    # Check if the course is completed and generate certificate
+    certificate_url = None
+    if completion_percent == 100:
+        certificate_url = reverse('subject:generate_certificate', kwargs={'pk': subject.pk})
+
     context = {
         'subject': subject,
         'all_materials': all_materials,
@@ -444,6 +494,7 @@ def subject_content(request, pk):
         'next_item': next_item,
         'completion_status': completion_status,
         'preview_content': preview_content,
+        'certificate_url': certificate_url,
     }
 
     return render(request, 'subject_content.html', context)
@@ -614,3 +665,43 @@ def toggle_publish(request, pk):
         subject.published = not subject.published
         subject.save()
     return redirect('subject:subject_detail', pk=pk)
+
+@login_required
+def generate_certificate_png(request, pk):
+    subject = get_object_or_404(Subject, pk=pk)
+    student = request.user
+
+    # Verify that the student has completed the course
+    total_materials = SubjectMaterial.objects.filter(subject=subject).count()
+    completed_materials = Completion.objects.filter(
+        subject=subject,
+        completed=True
+    ).filter(
+        Q(document__subject=subject) |
+        Q(video__subject=subject) |
+        Q(reading__subject=subject)
+    ).distinct().count()
+
+    if completed_materials != total_materials:
+        return HttpResponse("You have not completed this course yet.", status=403)
+
+    # Dynamically find the background image in the subject app's static directory
+    app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Root of the project
+    background_image_path = os.path.join(app_dir, 'subject', 'static', 'subject', 'images', 'certificate_background.jpg')
+
+    if os.path.exists(background_image_path):
+        with open(background_image_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+    else:
+        return HttpResponse(f"Background image not found at {background_image_path}", status=500)
+
+    # Generate the certificate
+    context = {
+        'student_name': student.get_full_name() or student.username,
+        'course_name': subject.name,
+        'completion_date': datetime.now().strftime("%B %d, %Y"),
+        'background_image_base64': encoded_string,
+    }
+
+    return render(request, 'certificate_template.html', context)
+

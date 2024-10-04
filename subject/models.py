@@ -17,6 +17,18 @@ class Subject(models.Model):
     def __str__(self):
         return self.name
 
+    def get_completion_percent(self):
+        all_materials = SubjectMaterial.objects.filter(subject=self)
+        total_materials = all_materials.count()
+        completed_materials = Completion.objects.filter(
+            subject=self,
+            completed=True
+        ).count()
+
+        if total_materials > 0:
+            return (completed_materials / total_materials) * 100
+        return 0
+
 # Mô hình lưu trữ tài liệu
 class Document(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='documents')

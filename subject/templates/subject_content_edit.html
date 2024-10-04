@@ -32,33 +32,17 @@
         {% endfor %}
     </ul>
 
-    <h2>Reading Materials</h2>
-    <div id="reading-materials-container">
-        {% if reading_materials %}
-            <h4>Existing Reading Materials</h4>
-            <ul>
-                {% for reading_material in reading_materials %}
-                    <li>
-                        <input type="checkbox" name="delete_reading_material_{{ reading_material.id }}" id="delete_reading_material_{{ reading_material.id }}">
-                        <label for="delete_reading_material_{{ reading_material.id }}">Delete</label>
-                        <strong>{{ reading_material.title }}</strong>
-                        <p>{{ reading_material.content|safe }}</p>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
+    <h2>Reading Material</h2>
+    <ul>
+        {% for reading_material in reading_materials %}
+            <li>
+                <a href="{% url 'subject:reading_material_detail' reading_material.id %}" target="_blank" style="font-size: 1em;">{{ reading_material.title }}</a>
+                <input type="checkbox" name="delete_reading_material_{{ reading_material.id }}" style="margin-left: 10px;"> Delete
+            </li>
+        {% empty %}
             <li>No reading materials available.</li>
-        {% endif %}
-        <h4>Add New Reading Materials</h4>
-        <div id="reading-materials">
-            <div class="reading-material-entry">
-                <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title (optional)">
-                <textarea name="reading_material_content[]" class="form-control ckeditor" placeholder="Reading Material Content (optional)"></textarea>
-            </div>
-        </div>
-        <p class="text-muted">Leave fields blank if you do not wish to add new reading materials.</p>
-        <button type="button" id="add-reading-material" class="btn btn-secondary mt-2">Add Another Reading Material</button>
-    </div>
+        {% endfor %}
+    </ul>
 
     <h3>Add New Content</h3>
 
@@ -86,35 +70,47 @@
         <button type="button" id="add-video" class="btn btn-secondary mt-2">Add Another Video</button>
     </div>
 
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a href="{% url 'subject:subject_edit' subject.id %}" class="btn btn-warning btn-sm">Back to Subject Edit</a>
+    <div id="reading-materials">
+        <h3>Add Reading Material</h3>
+        <div class="reading-material-entry">
+            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
+            <textarea name="reading_material_content[]" class="form-control ckeditor"></textarea>
+        </div>
+    </div>
+    <button type="button" id="add-reading-material" class="btn btn-secondary">Add Another Reading Material</button>
+
+    <!-- Moved buttons below the add-reading-material button -->
+    <button type="submit" class="btn btn-primary mt-3">Save</button>
+    <a href="{% url 'subject:subject_edit' subject.id %}" class="btn btn-warning btn-sm mt-3">Back to Subject Edit</a>
 </form>
 
-{% block extra_js %}
-<script src="https://cdn.ckeditor.com/4.16.0/standard/ckeditor.js"></script>
 <script>
-    // CKEditor initialization for existing textareas
-    document.querySelectorAll('.ckeditor').forEach(function(textarea) {
-        CKEDITOR.replace(textarea.name, {
-            height: 300
-        });
-    });
+    let readingMaterialCounter = 1; // Start with 1 since we already have one entry
 
-    // Function to add a new reading material entry
-    document.getElementById('add-reading-material').addEventListener('click', function() {
+    function addRMEntry() {
         const container = document.getElementById('reading-materials');
         const newEntry = document.createElement('div');
         newEntry.className = 'reading-material-entry';
         newEntry.innerHTML = `
-            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title" required>
-            <textarea name="reading_material_content[]" class="form-control ckeditor" required></textarea>
+            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
+            <textarea name="reading_material_content_${readingMaterialCounter++}[]" class="form-control ckeditor"></textarea>
         `;
         container.appendChild(newEntry);
-        // Initialize CKEditor for the new textarea after it's added
-        CKEDITOR.replace(newEntry.querySelector('textarea').name, {
-            height: 300
+        initializeCKEditor(newEntry.querySelector('textarea').name);
+    }
+
+    function initializeCKEditor(textareaName) {
+        console.log(`Initializing CKEditor for: ${textareaName}`); // Debugging line
+        CKEDITOR.replace(textareaName, {
+            height: 300,
         });
-    });
+    }
+
+    // Initialize CKEditor for the initial textarea
+    initializeCKEditor('reading_material_content[]');
+
+    // Add event listener to the "Add Another Reading Material" button
+    document.getElementById('add-reading-material').addEventListener('click', addRMEntry);
 
     // Document and video addition code remains unchanged
     function addDocumentEntry() {
@@ -161,5 +157,4 @@
         });
     });
 </script>
-{% endblock %}
 {% endblock %}

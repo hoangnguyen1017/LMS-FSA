@@ -20,4 +20,7 @@ urlpatterns = [
     path('import/', views.import_subjects, name='import_subject'),
     path('subject/<int:pk>/toggle_publish/', views.toggle_publish, name='toggle_publish'),
     path('<int:pk>/toggle-completion/', views.toggle_completion, name='toggle_completion'),
+    path('edit/<int:pk>/reorder/', views.reorder_subject_materials, name='reorder_subject_materials'),
+    path('reading-material/<int:id>/', views.reading_material_detail, name='reading_material_detail'),
+    path('<int:pk>/generate-certificate/', views.generate_certificate_png, name='generate_certificate'),
 ]

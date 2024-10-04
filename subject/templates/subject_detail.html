@@ -101,6 +101,9 @@
                 <a href="{% url 'subject:subject_enroll' subject.pk %}" class="btn btn-primary mb-1">Enroll</a>
             {% endif %}
 
+            <!-- New button for Feedback -->
+            <a href="{% url 'feedback:give_course_feedback' subject.pk %}" class="btn btn-warning mb-1">Give Feedback</a>
+
             <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary mb-1">Return to Subject List</a>
 
             {% if user == subject.instructor or user.is_superuser %}

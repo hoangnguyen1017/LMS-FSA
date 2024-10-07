@@ -32,7 +32,7 @@
                 <ul>
                     {% for prereq in prerequisites %}
                     <li>
-                        {{ prereq.prerequisite_subject.name }}
+                        {{ prereq.name }}
                         <input type="checkbox" name="delete_prerequisite_{{ prereq.id }}" id="delete_prerequisite_{{ prereq.id }}">
                         <label for="delete_prerequisite_{{ prereq.id }}">Delete</label>
                     </li>

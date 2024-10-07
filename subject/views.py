@@ -230,15 +230,23 @@ def subject_edit(request, pk):
         if subject_form.is_valid():
             subject = subject_form.save(commit=False)
             subject.creator = request.user
-            subject_form.save()
+            subject.save()  # Lưu đối tượng trước khi làm việc với ManyToManyField
 
-            # Handle prerequisite subjects
-            prerequisite_ids = request.POST.getlist('prerequisite_subjects[]')
-            subject.prerequisites.clear()  # Clear the current prerequisites
+            # Lưu lại tất cả prerequisites hiện tại trước khi xử lý thêm/xóa
+            current_prerequisites = list(subject.prerequisites.all())
+
+            # Xóa các prerequisites đã được đánh dấu
+            for prereq in current_prerequisites:
+                if request.POST.get(f'delete_prerequisite_{prereq.id}'):
+                    subject.prerequisites.remove(prereq)
+
+            # Thêm các prerequisite mới mà không thay thế cái cũ
+            prerequisite_ids = request.POST.getlist('prerequisite_subjects')
             for prerequisite_id in prerequisite_ids:
-                if prerequisite_id:  # Ensure the ID is not empty
+                if prerequisite_id:  # Đảm bảo rằng ID không rỗng
                     prerequisite_subject = Subject.objects.get(id=prerequisite_id)
-                    subject.prerequisites.add(prerequisite_subject)
+                    if prerequisite_subject not in subject.prerequisites.all():
+                        subject.prerequisites.add(prerequisite_subject)
 
             messages.success(request, 'Subject updated successfully.')
             return redirect('subject:subject_list')
@@ -246,12 +254,12 @@ def subject_edit(request, pk):
             messages.error(request, 'There was an error updating the subject. Please check the form.')
     else:
         subject_form = SubjectForm(instance=subject)
-        prerequisites = subject.prerequisites.all()  # Get the prerequisites from the prerequisite column
+        prerequisites = subject.prerequisites.all()
 
     return render(request, 'edit_form.html', {
         'subject_form': subject_form,
         'subject': subject,
-        'prerequisites': prerequisites,  # Pass prerequisites to the template
+        'prerequisites': prerequisites,
         'all_subjects': all_subjects,
     })
 

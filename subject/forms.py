@@ -7,9 +7,10 @@ from django.contrib.auth.models import User
 class SubjectForm(forms.ModelForm):
     creator = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Creator")
     instructor = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Instructor")
+    prerequisites = forms.ModelMultipleChoiceField(queryset=Subject.objects.all(),required=False,widget=forms.CheckboxSelectMultiple)
     class Meta:
         model = Subject
-        fields = ['name','subject_code', 'description', 'creator','instructor']
+        fields = ['name','subject_code', 'description', 'creator','instructor', 'prerequisites']
 
 # Form cho việc thêm tài liệu
 class DocumentForm(forms.ModelForm):

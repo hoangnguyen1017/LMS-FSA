@@ -84,8 +84,12 @@
         </div>
 
         <div class="mb-4 mt-3">
-            <a href="{% url 'subject:subject_content_edit' subject.pk sessions.0.id %}" class="btn btn-primary">Edit Subject Content</a>
-            <a href="{% url 'subject:reorder_subject_materials' subject.pk sessions.0.id %}" class="btn btn-primary">Edit Subject Order</a>
+            {% if sessions %}
+                <a href="{% url 'subject:subject_content_edit' subject.pk sessions.0.id %}" class="btn btn-primary">Edit Subject Content</a>
+                <a href="{% url 'subject:reorder_subject_materials' subject.pk sessions.0.id %}" class="btn btn-primary">Edit Subject Order</a>
+            {% else %}
+                <span>No sessions available.</span>
+            {% endif %}
         </div>
 
         <button type="submit" class="btn btn-primary">Save Changes</button>

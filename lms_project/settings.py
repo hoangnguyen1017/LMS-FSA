@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+import import_export
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-%9tkr6=2x0koih$(9^sggb-z)ub@g$37t*57u7eymim46k+9)w'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['*']
@@ -54,7 +54,16 @@ INSTALLED_APPS = [
     'category',
     'question',
     # 'quiz',
+    'import_export',
     'user_module',
+    'ai_insights',
+    'analytics_report',
+    'assignment',
+    'certificate',
+    'Course_Completion',
+    'Performance_Analytics',
+    'progress_notification',
+    'student_performance',
 ]
 
 
@@ -74,7 +83,7 @@ ROOT_URLCONF = 'lms_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [import_export.__path__[0] + 'templates',],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -119,17 +128,12 @@ WSGI_APPLICATION = 'lms_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'hcmuafdb',
-        'USER': 'ngattt',
-        'PASSWORD': 'fsa@123456',
-        'HOST': 'hcmuafserver.database.windows.net',
-        'PORT': '1433',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 18 for SQL Server',
-            'encrypt': True,
-            'trustServerCertificate': False,
-        },
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'group05',
+        'USER': 'root',
+        'PASSWORD': 'Tranleduy2003@',
+        'HOST': 'localhost', 
+        'PORT': '3306',
     }
 }
 

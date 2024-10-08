@@ -35,7 +35,17 @@ urlpatterns = [
     path('training_program/', include('training_program.urls')),  
     path('training_program_subjects/', include('training_program_subjects.urls')),  
     path('user/', include('user.urls')),  
-    path('user_module/', include('user_module.urls')),  
+    path('user_module/', include('user_module.urls')), 
+    path('', include('ai_insights.urls')),
+    path('', include('analytics_report.urls')),
+    path('', include('assignment.urls')),
+    path('', include('Course_Completion.urls')),
+    path('', include('Performance_Analytics.urls')),
+    path('', include('progress_notification.urls')),
+    path('', include('student_performance.urls'))
+    
+
+
     
          
     # Add more paths for other new apps here

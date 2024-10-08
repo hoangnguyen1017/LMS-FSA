@@ -86,6 +86,7 @@
         <div class="reading-material-entry">
             <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
             <textarea name="reading_material_content[]" class="form-control ckeditor"></textarea>
+            <button type="button" class="btn btn-danger delete-reading-material" style="margin-left: 10px;">Delete</button>
         </div>
     </div>
     <button type="button" id="add-reading-material" class="btn btn-secondary">Add Another Reading Material</button>
@@ -94,7 +95,8 @@
     <button type="submit" class="btn btn-primary mt-3">Save</button>
     <a href="{% url 'subject:subject_edit' subject.id %}" class="btn btn-warning btn-sm mt-3">Back to Subject Edit</a>
 </form>
-
+{% load static %}
+<script src="{% static 'ckeditor/ckeditor-init.js' %}"></script>
 <script>
     let readingMaterialCounter = 1; // Start with 1 since we already have one entry
 
@@ -105,13 +107,14 @@
         newEntry.innerHTML = `
             <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
             <textarea name="reading_material_content_${readingMaterialCounter++}[]" class="form-control ckeditor"></textarea>
+            <button type="button" class="btn btn-danger delete-reading-material" style="margin-left: 10px;">Delete</button>
         `;
         container.appendChild(newEntry);
         initializeCKEditor(newEntry.querySelector('textarea').name);
+        attachDeleteButton(newEntry.querySelector('.delete-reading-material'));
     }
 
     function initializeCKEditor(textareaName) {
-        console.log(`Initializing CKEditor for: ${textareaName}`); // Debugging line
         CKEDITOR.replace(textareaName, {
             height: 300,
         });
@@ -164,6 +167,9 @@
             attachDeleteButton(button);
         });
         document.querySelectorAll('.delete-video').forEach(button => {
+            attachDeleteButton(button);
+        });
+        document.querySelectorAll('.delete-reading-material').forEach(button => {
             attachDeleteButton(button);
         });
     });

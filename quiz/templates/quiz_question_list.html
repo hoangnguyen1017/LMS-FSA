@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Questions for "{{ quiz.quiz_title }}"{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Questions for "{{ quiz.quiz_title }}"</h1>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Question Text</th>
+                <th>Type</th>
+                <th>Points</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for question in questions %}
+            <tr>
+                <td>{{ question.question_text }}</td>
+                <td>{{ question.question_type }}</td>
+                <td>{{ question.points }}</td>
+                <td>
+                    <a href="{% url 'quiz:answer_list' question.id %}" class="btn btn-info btn-sm">
+                        <i class="fas fa-plus"></i> Add Answer
+                    </a>
+                    <a href="{% url 'quiz:question_edit' quiz.id question.id %}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{% url 'quiz:question_delete' question.id %}" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No questions available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'quiz:add_question' quiz.id %}" class="btn btn-primary">
+        <i class="fas fa-plus-circle"></i> Add New Question
+    </a>
+    <a href="{% url 'quiz:quiz_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Quiz List
+    </a>
+</div>
+{% endblock %}

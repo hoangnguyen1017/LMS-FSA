@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load custom_filters %}  <!-- Tải các filter tùy chỉnh -->
+
+{% block title %}Quiz Result: {{ quiz.quiz_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">Quiz Result: {{ quiz.quiz_title }}</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <p><strong>Quiz taken on:</strong> {{ attempt.attempt_date|date:"F j, Y, g:i a" }}</p>
+            {% if attempt.end_time %}
+                <p><strong>Time spent:</strong> {{ attempt.end_time|timesince:attempt.attempt_date }}</p>
+            {% endif %}
+            <p><strong>Your score:</strong> {{ attempt.score }}%</p>
+            <div class="progress">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ attempt.score }}%;" aria-valuenow="{{ attempt.score }}" aria-valuemin="0" aria-valuemax="100">{{ attempt.score }}%</div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="list-group mb-4">
+        {% for question in quiz.question_set.all %}
+        <li class="list-group-item">
+            <strong>Question {{ forloop.counter }}:</strong> {{ question.question_text }}<br>
+
+            <strong>Answer Options:</strong><br>
+            {% for option in question.answeroption_set.all %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" disabled {% if option.is_correct %} checked {% endif %}>
+                    <label class="form-check-label">
+                        {{ forloop.counter|to_char }}. {{ option.option_text }}
+                    </label>
+                </div>
+            {% endfor %}
+
+            <!-- Tìm câu trả lời của sinh viên cho câu hỏi này -->
+            {% with selected_answer=None %}
+                {% for answer in student_answers %}
+                    {% if answer.question.id == question.id %}
+                        {% with selected_answer=answer %}
+                            <strong>Your Answer:</strong> {{ selected_answer.selected_option.option_text }}<br>
+                            {% if selected_answer.selected_option.is_correct %}
+                                <span class="badge bg-success text-light">Correct</span>
+                            {% else %}
+                                <span class="badge bg-danger text-light">Incorrect</span><br>
+                                <strong>Correct Answer:</strong> 
+                                {% for option in question.answeroption_set.all %}
+                                    {% if option.is_correct %}
+                                        {{ option.option_text }}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
+            {% endwith %}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'quiz:quiz_list' %}" class="btn btn-secondary">Back to Quiz List</a>
+</div>
+{% endblock %}

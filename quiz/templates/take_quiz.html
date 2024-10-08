@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">{{ quiz.quiz_title }}</h1>
+
+    <!-- Timer div, now moved to a better position -->
+    <div id="timer" style="position: fixed; top: 20px; right: 20px; font-size: 20px; background-color: #f8d7da; padding: 15px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2); z-index: 1000;">
+        <strong>Time Remaining:</strong> <span id="time">--:--</span>
+    </div>
+
+    <form method="POST" class="mt-4">
+        {% csrf_token %}
+        {% for question in questions %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ question.question_text }}</h5>
+                    {% for option in question.answeroption_set.all %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="{{ option.id }}" required>
+                            <label class="form-check-label">{{ option.option_text }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Submit Quiz</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let timeLimit = {{ time_limit }};
+    let timerElement = document.getElementById('time');
+
+    function startTimer(duration, display) {
+        let timer = duration, minutes, seconds;
+        let countdown = setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            display.textContent = minutes + ":" + seconds;
+
+            if (--timer < 0) {
+                clearInterval(countdown);
+                document.forms[0].submit();  // Auto-submit when time is up
+            }
+        }, 1000);
+    }
+
+    window.onload = function () {
+        let quizDuration = timeLimit * 60;  // Convert to seconds
+        startTimer(quizDuration, timerElement);
+    };
+</script>
+{% endblock %}

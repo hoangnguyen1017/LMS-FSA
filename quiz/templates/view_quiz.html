@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Quiz: {{ quiz.quiz_title }}</h2>
+  <p><strong>Description:</strong> {{ quiz.quiz_description }}</p>
+  <p><strong>Total Marks:</strong> {{ quiz.total_marks }}</p>
+
+  <hr>
+
+  <h3>Questions:</h3>
+  <ol>
+    {% for item in question_answer_data %}
+      <li>
+        <p><strong>Question:</strong> {{ item.question.question_text }}</p>
+
+        <ul>
+          {% for answer in item.answers %}
+            <li>
+              {{ answer.option_text }}
+              {% if answer.is_correct %}
+                <strong>(Correct Answer)</strong>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </li>
+    {% endfor %}
+  </ol>
+
+  <a href="{% url 'quiz_list' %}" class="btn btn-secondary">Back to Quiz List</a>
+{% endblock %}

@@ -50,6 +50,8 @@ class SubCategory(models.Model):
         self.clean()
         super().save(*args, **kwargs)
         # Inherit subjects from parent category
+        self.update_subjects()
+    def update_subjects(self):
         self.subjects.set(self.parent_category.subjects.all())
 
     @property

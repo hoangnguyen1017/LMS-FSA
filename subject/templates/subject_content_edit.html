@@ -8,6 +8,17 @@
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
+    <h3>Select Session</h3>
+    <select name="session_id" id="session-select" onchange="this.form.submit()">
+        <option value="" disabled selected>Select a session</option>
+        {% for session in sessions %}
+            <option value="{{ session.id }}" {% if session.id == selected_session.id %}selected{% endif %}>{{ session.name }}</option>
+        {% endfor %}
+    </select>
+
+    <!-- Hidden input to store selected session ID -->
+    <input type="hidden" name="session_id_hidden" value="{{ selected_session.id }}">
+
     <h2>Documents</h2>
     <ul>
         {% for document in documents %}

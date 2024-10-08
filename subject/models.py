@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from ckeditor.fields import RichTextField
 from ckeditor_uploader.fields import RichTextUploadingField
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 class Subject(models.Model):
@@ -17,21 +19,42 @@ class Subject(models.Model):
     def __str__(self):
         return self.name
 
-    def get_completion_percent(self):
-        all_materials = SubjectMaterial.objects.filter(subject=self)
-        total_materials = all_materials.count()
-        completed_materials = Completion.objects.filter(
-            subject=self,
-            completed=True
-        ).count()
+    def get_completion_percent(self, user):
+        total_sessions = self.sessions.count()
+        completed_sessions = SessionCompletion.objects.filter(session__subject=self, user=user, completed=True).count()
+        return (completed_sessions / total_sessions) * 100 if total_sessions > 0 else 0
 
-        if total_materials > 0:
-            return (completed_materials / total_materials) * 100
-        return 0
 
-# Mô hình lưu trữ tài liệu
+class Session(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='sessions', null=True)
+    name = models.CharField(max_length=255)
+    order = models.PositiveIntegerField()  # Order of appearance
+
+    def __str__(self):
+        return self.name
+
+
+class SubjectMaterial(models.Model):
+    MATERIAL_TYPE_CHOICES = [
+        ('document', 'Document'),
+        ('video', 'Video'),
+        ('reading', 'Reading Material'),
+    ]
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='materials', null=True)
+    material_id = models.PositiveIntegerField()  # Make sure this uniquely identifies the material
+    material_type = models.CharField(max_length=10, choices=MATERIAL_TYPE_CHOICES)
+    order = models.PositiveIntegerField()  # Order of appearance
+    title = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'session id: {self.session.id}   title: {self.title}'
+
+    class Meta:
+        ordering = ['order']
+
+
 class Document(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='documents')
+    material = models.ForeignKey(SubjectMaterial, on_delete=models.CASCADE, related_name='documents', null=True)
     doc_title = models.CharField(max_length=255)
     doc_file = models.FileField(upload_to='documents/', blank=True, null=True)
 
@@ -39,9 +62,8 @@ class Document(models.Model):
         return self.doc_title
 
 
-# Mô hình lưu trữ video
 class Video(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='videos')
+    material = models.ForeignKey(SubjectMaterial, on_delete=models.CASCADE, related_name='videos', null=True)
     vid_title = models.CharField(max_length=255)
     vid_file = models.FileField(upload_to='videos/', blank=True, null=True)
 
@@ -61,43 +83,67 @@ class Enrollment(models.Model):
         return f"{self.student} enrolled in {self.subject}"
 
 
-
 class ReadingMaterial(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='reading_materials')
+    material = models.ForeignKey(SubjectMaterial, on_delete=models.CASCADE, related_name='reading_materials', null=True)
     content = RichTextUploadingField()  # Use RichTextUploadingField for HTML content with file upload capability
     title = models.CharField(max_length=255)
 
     def __str__(self):
         return self.title
 
-class SubjectMaterial(models.Model):
-    MATERIAL_TYPE_CHOICES = [
-        ('document', 'Document'),
-        ('video', 'Video'),
-        ('reading', 'Reading Material'),
-    ]
-
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='materials')
-    material_id = models.PositiveIntegerField()
-    material_type = models.CharField(max_length=10, choices=MATERIAL_TYPE_CHOICES)
-    order = models.PositiveIntegerField()  # Order of appearance
-    title = models.CharField(max_length=255)
-
-    def __str__(self):
-        return 'subject id: ' +  str(self.subject.id ) + '   title: ' + str(self.title)
-
-    class Meta:
-        ordering = ['order']
 
 class Completion(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    document = models.ForeignKey(Document, on_delete=models.CASCADE, null=True, blank=True)
-    video = models.ForeignKey(Video, on_delete=models.CASCADE, null=True, blank=True)
-    reading = models.ForeignKey(ReadingMaterial, on_delete=models.CASCADE, null=True, blank=True)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    material = models.ForeignKey(SubjectMaterial, on_delete=models.CASCADE, null=True, blank=True)
     completed = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('subject', 'document', 'video', 'reading')
+        unique_together = ('session', 'material', 'user')
 
     def __str__(self):
-        return f"Completion for {'document' if self.document else 'video'} in {self.subject}"
+        return f"Completion for {self.material} in {self.session}"
+
+
+class SessionCompletion(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    completed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('subject', 'user', 'session')  # Ensures a user can only complete a session once
+
+    def __str__(self):
+        return f"{self.user} completed session: {self.session.name}"
+
+
+def mark_session_complete(subject, user, session):
+    # Count the total materials in the session
+    total_materials = session.materials.count()
+
+    # Count completed materials by checking the Completion model
+    completed_materials = Completion.objects.filter(session=session, user=user, completed=True).count()
+
+    # Check if all materials are completed
+    if total_materials == completed_materials:
+        # Mark the session as complete in the SessionCompletion model
+        SessionCompletion.objects.update_or_create(
+            user=user,
+            session=session,
+            defaults={'completed': True}
+        )
+
+@receiver(post_delete, sender=Document)
+def delete_subject_material_for_document(sender, instance, **kwargs):
+    SubjectMaterial.objects.filter(material_id=instance.id, material_type='document').delete()
+
+
+@receiver(post_delete, sender=Video)
+def delete_subject_material_for_video(sender, instance, **kwargs):
+    SubjectMaterial.objects.filter(material_id=instance.id, material_type='video').delete()
+
+
+@receiver(post_delete, sender=ReadingMaterial)
+def delete_subject_material_for_reading(sender, instance, **kwargs):
+    SubjectMaterial.objects.filter(material_id=instance.id, material_type='reading').delete()

@@ -57,9 +57,35 @@
 
         <button type="button" class="btn btn-secondary" id="add-prerequisite">Add Another Prerequisite Subject</button>
 
+        <div class="form-group">
+            <h3>Manage Sessions</h3>
+            {% for session in sessions %}
+                <div class="session-group">
+                    <label>Session Name:</label>
+                    <input type="hidden" name="session_ids" value="{{ session.id }}">
+                    <input type="text" name="session_names" class="form-control" value="{{ session.name }}">
+                    <input type="checkbox" name="delete_session_ids" value="{{ session.id }}">
+                    <label for="delete_session_ids">Delete Session</label>
+                </div>
+            {% empty %}
+                <p>No sessions added yet.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Add New Sessions -->
+        <div class="form-group">
+            <h3>Add New Sessions</h3>
+            <div id="new-session-container">
+                <div class="session-group">
+                    <input type="text" name="new_session_names" class="form-control" placeholder="New Session Name">
+                </div>
+            </div>
+            <button type="button" class="btn btn-secondary" id="add-new-session">Add Another Session</button>
+        </div>
+
         <div class="mb-4 mt-3">
-            <a href="{% url 'subject:subject_content_edit' subject.pk %}" class="btn btn-primary">Edit Subject Content</a>
-            <a href="{% url 'subject:reorder_subject_materials' subject.pk %}" class="btn btn-primary">Edit Subject Order</a>
+            <a href="{% url 'subject:subject_content_edit' subject.pk sessions.0.id %}" class="btn btn-primary">Edit Subject Content</a>
+            <a href="{% url 'subject:reorder_subject_materials' subject.pk sessions.0.id %}" class="btn btn-primary">Edit Subject Order</a>
         </div>
 
         <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -81,6 +107,16 @@
             </select>
         `;
         container.appendChild(newDropdown);
+    });
+
+    document.getElementById('add-new-session').addEventListener('click', function() {
+        var container = document.getElementById('new-session-container');
+        var newInput = document.createElement('div');
+        newInput.classList.add('session-group');
+        newInput.innerHTML = `
+            <input type="text" name="new_session_names" class="form-control" placeholder="New Session Name">
+        `;
+        container.appendChild(newInput);
     });
 </script>
 {% endblock %}

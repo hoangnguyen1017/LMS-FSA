@@ -95,7 +95,7 @@
             </a>
 
             {% if is_enrolled %}
-                <a href="{% url 'subject:subject_content' subject.pk %}" class="btn btn-success mb-1">Go to Content</a>
+                <a href="{% url 'subject:subject_content' subject.pk sessions.0.id %}" class="btn btn-success mb-1">Go to Content</a>
                 <a href="{% url 'subject:subject_unenroll' subject.pk %}" class="btn btn-danger mb-1">Unenroll</a>
             {% else %}
                 <a href="{% url 'subject:subject_enroll' subject.pk %}" class="btn btn-primary mb-1">Enroll</a>

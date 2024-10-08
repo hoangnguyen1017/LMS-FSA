@@ -8,17 +8,29 @@
     <div class="row">
         <div class="col-md-3" style="margin-left: 2cm; margin-right: 2cm;">
             <h2 class="text-xl font-semibold mb-4">Subject Information</h2>
+            <h3>Select Session</h3>
+            <form method="post" id="session-form">
+                {% csrf_token %}
+                <select name="session_id" onchange="this.form.submit();" class="form-control mb-4">
+                    {% for session in sessions %}
+                        <option value="{{ session.id }}" {% if session.id == selected_session_id %}selected{% endif %}>
+                            {{ session.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+
             <ul class="list-group mb-4">
-                {% if all_materials %}
-                    {% for material in all_materials %}
+                {% if materials %}
+                    {% for material in materials %}
                         <li class="list-group-item {% if material.material_id == file_id and material.material_type == file_type %}active{% endif %}">
-                            <a href="{% url 'subject:subject_content' subject.pk %}?file_id={{ material.material_id }}&file_type={{ material.material_type }}">
+                            <a href="{% url 'subject:subject_content' subject.pk selected_session_id %}?file_id={{ material.material_id }}&file_type={{ material.material_type }}">
                                 {{ material.title }}
                             </a>
                         </li>
                     {% endfor %}
                 {% else %}
-                    <p class="mb-4">No materials available for this subject.</p>
+                    <p class="mb-4">No materials available for this session.</p>
                 {% endif %}
             </ul>
             <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary">Return to Subject List</a>
@@ -74,7 +86,7 @@
         </div>
     </div>
 
-    <!-- đây là cái thêm của certificate -->
+    <!-- Certificate Section -->
     <div class="row mt-4">
         <div class="col-md-12">
             <h3>Course Completion Progress</h3>
@@ -129,10 +141,11 @@ $(document).ready(function() {
         var nextItemId = button.data('next-item-id');
 
         if (nextItemType && nextItemId) {
-            window.location.href = "{% url 'subject:subject_content' subject.pk %}?file_id=" + nextItemId + "&file_type=" + nextItemType;
+            window.location.href = "{% url 'subject:subject_content' subject.pk sessions.0.id %}?file_id=" + nextItemId + "&file_type=" + nextItemType;
         }
     });
-// đây là cái thêm của certificate
+
+    // Certificate functionality
     $('#view-certificate').click(function() {
         var certificateUrl = "{{ certificate_url }}";
         if (certificateUrl) {

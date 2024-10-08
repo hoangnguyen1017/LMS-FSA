@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Subject, Document, Video, Enrollment, ReadingMaterial, Completion, SubjectMaterial
-from .forms import SubjectForm, DocumentForm, VideoForm, EnrollmentForm, SubjectSearchForm
+from .models import Subject, Document, Video, Enrollment, ReadingMaterial, Completion, SubjectMaterial, Session
+from .forms import SubjectForm, DocumentForm, VideoForm, EnrollmentForm, SubjectSearchForm, SessionForm
 from module_group.models import ModuleGroup
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -178,7 +178,7 @@ def subject_list(request):
 
     # Calculate completion percentage for each subject
     for subject in subjects:
-        subject.completion_percent = subject.get_completion_percent()
+        subject.completion_percent = subject.get_completion_percent(request.user)
 
     # Pagination
     paginator = Paginator(subjects, 10)  # Show 10 subjects per page
@@ -195,28 +195,46 @@ def subject_list(request):
 def subject_add(request):
     if request.method == 'POST':
         subject_form = SubjectForm(request.POST)
+
         if subject_form.is_valid():
+            # Save the Subject
             subject = subject_form.save(commit=False)
             subject.creator = request.user
             subject.save()
 
-            # Handle prerequisite subjects
+            # Handle prerequisite subjects (optional)
             prerequisite_ids = request.POST.getlist('prerequisite_subjects[]')
             for prerequisite_id in prerequisite_ids:
                 if prerequisite_id:
                     prerequisite_subject = Subject.objects.get(id=prerequisite_id)
                     subject.prerequisites.add(prerequisite_subject)
 
-            messages.success(request, 'Subject created successfully.')
+            # Create sessions for the subject directly
+            session_name = request.POST.get('session_name')
+            session_quantity = int(request.POST.get('session_quantity', 0))
+            if session_name and session_quantity > 0:
+                for i in range(1, session_quantity + 1):
+                    session = Session(
+                        subject=subject,
+                        name=f"{session_name}{i}",
+                        order=i
+                    )
+                    session.save()
+
+            messages.success(request, 'Subject and sessions created successfully.')
             return redirect('subject:subject_list')
         else:
             messages.error(request, 'There was an error creating the subject. Please check the form.')
+
     else:
         subject_form = SubjectForm()
+        session_form = SessionForm()
+
     all_subjects = Subject.objects.all()
 
     return render(request, 'subject_form.html', {
         'subject_form': subject_form,
+        'session_form': session_form,
         'all_subjects': all_subjects,
     })
 
@@ -227,40 +245,60 @@ def subject_edit(request, pk):
 
     if request.method == 'POST':
         subject_form = SubjectForm(request.POST, instance=subject)
+
         if subject_form.is_valid():
             subject = subject_form.save(commit=False)
             subject.creator = request.user
-            subject.save()  # Lưu đối tượng trước khi làm việc với ManyToManyField
+            subject.save()
 
-            # Lưu lại tất cả prerequisites hiện tại trước khi xử lý thêm/xóa
+            # Handle prerequisite deletion
             current_prerequisites = list(subject.prerequisites.all())
-
-            # Xóa các prerequisites đã được đánh dấu
             for prereq in current_prerequisites:
                 if request.POST.get(f'delete_prerequisite_{prereq.id}'):
                     subject.prerequisites.remove(prereq)
 
-            # Thêm các prerequisite mới mà không thay thế cái cũ
+            # Handle adding new prerequisites
             prerequisite_ids = request.POST.getlist('prerequisite_subjects')
             for prerequisite_id in prerequisite_ids:
-                if prerequisite_id:  # Đảm bảo rằng ID không rỗng
+                if prerequisite_id:
                     prerequisite_subject = Subject.objects.get(id=prerequisite_id)
-                    if prerequisite_subject not in subject.prerequisites.all():
-                        subject.prerequisites.add(prerequisite_subject)
+                    subject.prerequisites.add(prerequisite_subject)
+
+            # Handle sessions update
+            session_ids = request.POST.getlist('session_ids')
+            session_names = request.POST.getlist('session_names')
+            for session_id, session_name in zip(session_ids, session_names):
+                session = Session.objects.get(id=session_id)
+                session.name = session_name
+                session.save()
+
+            # Handle adding new sessions
+            new_session_names = request.POST.getlist('new_session_names')
+            for session_name in new_session_names:
+                if session_name:
+                    Session.objects.create(subject=subject, name=session_name, order=subject.sessions.count() + 1)
+
+            # Handle session deletion
+            delete_session_ids = request.POST.getlist('delete_session_ids')
+            for session_id in delete_session_ids:
+                Session.objects.filter(id=session_id).delete()
 
             messages.success(request, 'Subject updated successfully.')
             return redirect('subject:subject_list')
         else:
             messages.error(request, 'There was an error updating the subject. Please check the form.')
+
     else:
         subject_form = SubjectForm(instance=subject)
         prerequisites = subject.prerequisites.all()
+        sessions = subject.sessions.all()
 
     return render(request, 'edit_form.html', {
         'subject_form': subject_form,
         'subject': subject,
         'prerequisites': prerequisites,
         'all_subjects': all_subjects,
+        'sessions': sessions,  # Pass sessions to template
     })
 
 def subject_delete(request, pk):
@@ -310,6 +348,8 @@ def subject_detail(request, pk):
     # Get prerequisite subjects directly from the subject's `prerequisites` column
     prerequisites = subject.prerequisites.all()
 
+    sessions = Session.objects.filter(subject=subject)
+
     context = {
         'subject': subject,
         'prerequisites': prerequisites,  # Pass prerequisites from the subject model
@@ -317,6 +357,7 @@ def subject_detail(request, pk):
         'users_enrolled_count': users_enrolled_count,
         'subject_average_rating': subject_average_rating,
         'feedbacks': feedbacks,  # Pass feedbacks to the template
+        'sessions': sessions,
     }
 
     return render(request, 'subject_detail.html', context)
@@ -385,39 +426,57 @@ def course_search(request):
     return render(request, 'subject_list.html', context)
 
 @login_required
-def reorder_subject_materials(request, pk):
+def reorder_subject_materials(request, pk, session_id):
     # Fetch the subject
     subject = get_object_or_404(Subject, pk=pk)
-    # Fetch the materials for the subject
-    materials = SubjectMaterial.objects.filter(subject=subject).order_by('id')
+
+    # Fetch all sessions related to the subject
+    sessions = Session.objects.filter(subject=subject)
+
+    # Fetch materials for the selected session, defaulting to the first session
+    selected_session_id = request.POST.get('session_id') or session_id
+    session = get_object_or_404(Session, id=selected_session_id)
+    materials = SubjectMaterial.objects.filter(session=session).order_by('order')
 
     if request.method == 'POST':
-        for material in materials:
-            new_order = request.POST.get(f'order_{material.id}')
-            if new_order:
-                # Update material order with the new value from the form
-                material.order = int(new_order)  # Convert to integer
-                material.save()
+        # Check if the request is for reordering materials
+        if 'order' in request.POST:
+            for material in materials:
+                new_order = request.POST.get(f'order_{material.id}')
+                if new_order:
+                    material.order = int(new_order)  # Convert to integer
+                    material.save()
 
-        # Optionally, you can add a success message to the context
-        success_message = "Order updated successfully!"
-        return render(request, 'reorder_subject_material.html', {
-            'subject': subject,
-            'materials': materials,
-            'success_message': success_message,
-        })
+            success_message = "Order updated successfully!"
+            return render(request, 'reorder_subject_material.html', {
+                'subject': subject,
+                'sessions': sessions,
+                'materials': materials,
+                'selected_session_id': selected_session_id,
+                'success_message': success_message,
+            })
 
-    # Pass the subject along with the materials to the template
-    return render(request, 'reorder_subject_material.html', {'subject': subject, 'materials': materials})
+    # Pass the subject, sessions, and materials to the template
+    return render(request, 'reorder_subject_material.html', {
+        'subject': subject,
+        'sessions': sessions,
+        'materials': materials,
+        'selected_session_id': selected_session_id,
+    })
 def reading_material_detail(request, id):
     # Fetch the reading material by ID or return a 404 if it doesn't exist
     reading_material = get_object_or_404(ReadingMaterial, id=id)
     return render(request, 'reading_material_detail.html', {'reading_material': reading_material})
 
 @login_required
-def subject_content(request, pk):
+def subject_content(request, pk, session_id):
     subject = get_object_or_404(Subject, pk=pk)
-    all_materials = SubjectMaterial.objects.filter(subject=subject).order_by('order')
+    sessions = Session.objects.filter(subject=subject)
+
+    # Fetch materials for the selected session
+    selected_session_id = request.POST.get('session_id') or session_id
+    session = get_object_or_404(Session, id=selected_session_id)
+    materials = SubjectMaterial.objects.filter(session=session).order_by('order')
 
     preview_url = None
     download_url = None
@@ -434,23 +493,23 @@ def subject_content(request, pk):
         file_type = request.GET.get('file_type')
 
         if file_type == 'document':
-            current_item = get_object_or_404(Document, id=file_id, subject=subject)
+            current_item = get_object_or_404(Document, id=file_id)
             file_url = current_item.doc_file.url
             content_type = 'document'
         elif file_type == 'video':
-            current_item = get_object_or_404(Video, id=file_id, subject=subject)
+            current_item = get_object_or_404(Video, id=file_id)
             file_url = current_item.vid_file.url
             content_type = 'video'
         elif file_type == 'reading':
-            current_item = get_object_or_404(ReadingMaterial, id=file_id, subject=subject)
+            current_item = get_object_or_404(ReadingMaterial, id=file_id)
             preview_url = True
             content_type = 'reading'
             preview_content = current_item.content
 
         # Find the next item
-        current_material = all_materials.filter(material_id=file_id, material_type=file_type).first()
+        current_material = materials.filter(material_id=file_id, material_type=file_type).first()
         if current_material:
-            next_material = all_materials.filter(order__gt=current_material.order).first()
+            next_material = materials.filter(order__gt=current_material.order).first()
             if next_material:
                 next_item = {
                     'type': next_material.material_type,
@@ -458,7 +517,7 @@ def subject_content(request, pk):
                 }
 
         # Check completion status
-        completion = Completion.objects.filter(subject=subject, **{file_type: current_item}).first()
+        completion = Completion.objects.filter(session=session, material__material_id=current_item.id, material__material_type=file_type).first()
         completion_status = completion.completed if completion else False
 
         if file_type in ['document', 'video']:
@@ -476,10 +535,11 @@ def subject_content(request, pk):
             else:
                 download_url = reverse('subject:file_download', kwargs={'file_type': file_type, 'file_id': file_id})
 
-    # Calculate completion percentage
+    # Calculate completion percentage based on all materials
+    all_materials = SubjectMaterial.objects.filter(session__subject=subject)  # Fetch all materials across all sessions
     total_materials = all_materials.count()
     completed_materials = Completion.objects.filter(
-        subject=subject,
+        session__subject=subject,
         completed=True
     ).count()
 
@@ -492,7 +552,8 @@ def subject_content(request, pk):
 
     context = {
         'subject': subject,
-        'all_materials': all_materials,
+        'sessions': sessions,
+        'materials': materials,  # Only show materials from the selected session
         'preview_url': preview_url,
         'download_url': download_url,
         'file_type': file_type,
@@ -503,6 +564,7 @@ def subject_content(request, pk):
         'completion_status': completion_status,
         'preview_content': preview_content,
         'certificate_url': certificate_url,
+        'selected_session_id': selected_session_id,
     }
 
     return render(request, 'subject_content.html', context)
@@ -576,20 +638,36 @@ def toggle_completion(request, pk):
 # In subject/views.py
 
 @login_required
-def subject_content_edit(request, pk):
+def subject_content_edit(request, pk, session_id):
     order = 1
     subject = get_object_or_404(Subject, pk=pk)
-    documents = Document.objects.filter(subject=subject)
-    videos = Video.objects.filter(subject=subject)
-    reading_materials = ReadingMaterial.objects.filter(subject=subject)
+    sessions = Session.objects.filter(subject=subject)
+
+    # Default to the first session if not specified in POST
+    selected_session_id = request.POST.get('session_id') or session_id
+    session = get_object_or_404(Session, id=selected_session_id)
+
+    # Fetch materials associated with the selected session
+    materials = SubjectMaterial.objects.filter(session=session)
+    #print("Materials associated with selected session:", [vars(material) for material in materials])  # List comprehension for material attributes
+
+    # Get documents, videos, and reading materials based on the filtered materials
+    document_ids = materials.filter(material_type='document').values_list('material_id', flat=True)
+    video_ids = materials.filter(material_type='video').values_list('material_id', flat=True)
+    reading_ids = materials.filter(material_type='reading').values_list('material_id', flat=True)
+
+    documents = Document.objects.filter(id__in=document_ids)
+    videos = Video.objects.filter(id__in=video_ids)
+    reading_materials = ReadingMaterial.objects.filter(id__in=reading_ids)
 
     if request.method == 'POST':
-        # Process documents
+        print("Session ID POST:", request.POST.get('session_id'))  # Debugging line
+        # Process documents for deletion
         for document in documents:
             if f'delete_document_{document.id}' in request.POST:
                 document.delete()
 
-        # Process videos
+        # Process videos for deletion
         for video in videos:
             if f'delete_video_{video.id}' in request.POST:
                 video.delete()
@@ -605,18 +683,21 @@ def subject_content_edit(request, pk):
         for file, title in zip(doc_files, doc_titles):
             if file and title:
                 document = Document.objects.create(
-                    subject=subject,
+                    #material=None,  # Set the material reference later
                     doc_file=file,
                     doc_title=title
                 )
-                SubjectMaterial.objects.create(
-                    subject=subject,
+                # Create a SubjectMaterial instance for the document
+                subject_material = SubjectMaterial.objects.create(
+                    session=session,
                     material_id=document.id,
                     material_type='document',
-                    title=document.doc_title,  # Changed from document.title to document.doc_title
+                    title=document.doc_title,
                     order=order
                 )
-            order += 1
+                document.material = subject_material  # Set the reverse relationship
+                document.save()
+                order += 1
 
         # Handle multiple video uploads
         vid_files = request.FILES.getlist('vid_file[]')
@@ -624,18 +705,21 @@ def subject_content_edit(request, pk):
         for file, title in zip(vid_files, vid_titles):
             if file and title:
                 video = Video.objects.create(
-                    subject=subject,
+                    #material=None,  # Set the material reference later
                     vid_file=file,
                     vid_title=title
                 )
-                SubjectMaterial.objects.create(
-                    subject=subject,
+                # Create a SubjectMaterial instance for the video
+                subject_material = SubjectMaterial.objects.create(
+                    session=session,
                     material_id=video.id,
                     material_type='video',
-                    title=video.vid_title,  # Changed from video.title to video.vid_title
+                    title=video.vid_title,
                     order=order
                 )
-            order += 1
+                video.material = subject_material  # Set the reverse relationship
+                video.save()
+                order += 1
 
         # Handle reading materials
         reading_material_titles = request.POST.getlist('reading_material_title[]')
@@ -643,28 +727,36 @@ def subject_content_edit(request, pk):
         for title, content in zip(reading_material_titles, reading_material_contents):
             if title and content:
                 reading_material = ReadingMaterial.objects.create(
-                    subject=subject,
+                    material=None,  # Set the material reference later
                     title=title,
                     content=content
                 )
-                SubjectMaterial.objects.create(
-                    subject=subject,
+                # Create a SubjectMaterial instance for the reading material
+                subject_material = SubjectMaterial.objects.create(
+                    session=session,
                     material_id=reading_material.id,
                     material_type='reading',
                     title=reading_material.title,
                     order=order
                 )
-            order += 1
+                reading_material.material = subject_material  # Set the reverse relationship
+                reading_material.save()
+                order += 1
 
         messages.success(request, 'Subject content updated successfully.')
-        return redirect('subject:subject_content_edit', pk=subject.pk)
+        return redirect(reverse('subject:subject_content_edit', args=[subject.pk, session.id]))
 
-    return render(request, 'subject_content_edit.html', {
+    # Context to render the template
+    context = {
         'subject': subject,
+        'sessions': sessions,
+        'selected_session': session,
         'documents': documents,
         'videos': videos,
-        'reading_materials': reading_materials,  # Pass reading materials to the template
-    })
+        'reading_materials': reading_materials,
+    }
+
+    return render(request, 'subject_content_edit.html', context)
 
 @login_required
 def toggle_publish(request, pk):

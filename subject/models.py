@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from ckeditor.fields import RichTextField
 from ckeditor_uploader.fields import RichTextUploadingField
-from django.db.models.signals import post_delete
-from django.dispatch import receiver
 
 
 class Subject(models.Model):
@@ -133,17 +131,3 @@ def mark_session_complete(subject, user, session):
             session=session,
             defaults={'completed': True}
         )
-
-@receiver(post_delete, sender=Document)
-def delete_subject_material_for_document(sender, instance, **kwargs):
-    SubjectMaterial.objects.filter(material_id=instance.id, material_type='document').delete()
-
-
-@receiver(post_delete, sender=Video)
-def delete_subject_material_for_video(sender, instance, **kwargs):
-    SubjectMaterial.objects.filter(material_id=instance.id, material_type='video').delete()
-
-
-@receiver(post_delete, sender=ReadingMaterial)
-def delete_subject_material_for_reading(sender, instance, **kwargs):
-    SubjectMaterial.objects.filter(material_id=instance.id, material_type='reading').delete()

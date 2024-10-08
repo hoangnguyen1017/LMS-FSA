@@ -4,78 +4,81 @@ from .forms import CourseForm, UserCourseProgressForm
 from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Q
-from user.models import User 
+
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 
 def course_list(request):
     query = request.GET.get('q', '')
-    selected_creator = request.GET.get('created_by', '')
+    created_by_filter = request.GET.get('created_by', '')
 
     courses = Course.objects.all()
-    created_by_list = User.objects.values_list('username', flat=True).distinct()
+    users = User.objects.filter(course__isnull=False).distinct()  # Get users who have created courses
 
-    if query and selected_creator:
+    # Apply search filters if provided
+
+    if query and created_by_filter:
         courses = courses.filter(
             Q(course_name__icontains=query),
-            created_by__username=selected_creator 
+            created_by_id=created_by_filter
         )
-    elif query:
-        courses = courses.filter(Q(course_name__icontains=query))
-    elif selected_creator:
-        courses = courses.filter(created_by__username=selected_creator)  
+    elif query: 
+        courses = courses.filter(course_name__icontains=query)
+    elif created_by_filter: 
+        courses = courses.filter(created_by_id=created_by_filter)
 
     not_found = not courses.exists()
 
+    # Pagination
+    paginator = Paginator(courses, 5)  # Show 5 courses per page
+    page_number = request.GET.get('page', 1)
+
+    try:
+        courses_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        courses_page = paginator.page(1)
+    except EmptyPage:
+        courses_page = paginator.page(paginator.num_pages)
+
     return render(request, 'course_list.html', {
-        'courses': courses,
+        'courses': courses_page,  # Use paginated courses
         'query': query,
-        'created_by_list': created_by_list,
-        'selected_creator': selected_creator,
-        'not_found': not_found,
+        'created_by_filter': created_by_filter,
+        'users': users,  # Pass the list of users to the template
+        'not_found': not_found,  # Check if any courses were found
+
     })
 
+
+
+
 def course_detail(request, pk):
-    """Display details about a course and user progress in that course."""
+    """Hiển thị chi tiết một khóa học và tiến độ của người dùng trong khóa học đó."""
     course = get_object_or_404(Course, pk=pk)
     
-    user_query = request.GET.get('user', '')
-    selected_progress = request.GET.get('progress', '')
-
+    # Lấy danh sách tiến độ của người dùng cho khóa học này
     user_progress = UserCourseProgress.objects.filter(course=course)
+    
+    # Lọc theo tên người dùng (nếu có tìm kiếm)
+    query = request.GET.get('q', '')
+    if query:
+        user_progress = user_progress.filter(user__username__icontains=query)
 
-    if user_query and selected_progress:
-        user_progress = user_progress.filter(
-            Q(user__username__icontains=user_query) | Q(user__full_name__icontains=user_query),
-            progress_percentage__in=get_progress_range(selected_progress)
-        )
-    elif user_query:
-        user_progress = user_progress.filter(
-            Q(user__username__icontains=user_query) | Q(user__full_name__icontains=user_query)
-        )
-    elif selected_progress:
-        user_progress = user_progress.filter(progress_percentage__in=get_progress_range(selected_progress))
-
-    not_found = not user_progress.exists()
-
+    # Lọc theo phần trăm tiến độ (nếu có lựa chọn)
+    progress_filter = request.GET.get('progress_filter', '')
+    if progress_filter == 'under_50':
+        user_progress = user_progress.filter(progress_percentage__lt=50)
+    elif progress_filter == 'under_90':
+        user_progress = user_progress.filter(progress_percentage__lt=90)
+    elif progress_filter == '100':
+        user_progress = user_progress.filter(progress_percentage=100)
+    
     return render(request, 'course_detail.html', {
         'course': course,
         'user_progress': user_progress,
-        'user_query': user_query,
-        'selected_progress': selected_progress,
-        'not_found': not_found,
+        'query': query,
+        'progress_filter': progress_filter,
     })
-
-def get_progress_range(selected_progress):
-    """Return the appropriate progress range based on the selected option."""
-    if selected_progress == 'under_50':
-        return range(0, 50)
-    elif selected_progress == '50_to_90':
-        return range(50, 90)
-    elif selected_progress == 'over_90':
-        return range(91, 101)
-    elif selected_progress == '100':
-        return [100]  
-    return []
-
 
 
 def course_add(request):
@@ -83,7 +86,7 @@ def course_add(request):
         course_form = CourseForm(request.POST)
         if course_form.is_valid():
             course_form.save()
-            return redirect('course:course_list')  
+            return redirect('course:course_list')  # Redirect after saving
     else:
         course_form = CourseForm()
     
@@ -109,33 +112,21 @@ def course_delete(request, pk):
     
     if request.method == 'POST':
         course.delete()
-        return redirect('course:course_list') 
+        return redirect('course:course_list')  # Chuyển hướng về trang danh sách khóa học sau khi xóa
     
     return render(request, 'course_confirm_delete.html', {'course': course})
 
-def delete_user_progress(request, course_id, user_id):
-    user_progress = get_object_or_404(UserCourseProgress, course_id=course_id, user_id=user_id)
-    course = get_object_or_404(Course, id=course_id)
-
-    if request.method == 'POST':
-        user_progress.delete()
-        return redirect('course:course_detail', pk=course.pk)  
-
-    return render(request, 'course_confirm_delete.html', {
-        'user': user_progress.user,
-        'course': course
-    })
-
 def create_progress(request, course_id):
     """Tạo tiến độ của người dùng trong một khóa học cụ thể."""
-    course = get_object_or_404(Course, pk=course_id) 
-    users = User.objects.all() 
+    course = get_object_or_404(Course, pk=course_id)  # Lấy thông tin khóa học
+    users = User.objects.all()  # Lấy danh sách người dùng
 
     if request.method == 'POST':
         progress_form = UserCourseProgressForm(request.POST)
         if progress_form.is_valid():
             user = progress_form.cleaned_data['user']
             progress_percentage = progress_form.cleaned_data['progress_percentage']
+            # Tạo mới tiến độ của người dùng trong khóa học
             UserCourseProgress.objects.create(
                 user=user,
                 course=course,
@@ -148,6 +139,7 @@ def create_progress(request, course_id):
     else:
         progress_form = UserCourseProgressForm()
 
+    # Truyền biến course và users đến template
     return render(request, 'create_progress.html', {'form': progress_form, 'course': course, 'users': users})
 
 def update_progress_percentage(request, course_id, user_id):
@@ -158,6 +150,7 @@ def update_progress_percentage(request, course_id, user_id):
     if request.method == 'POST':
         progress_percentage = request.POST.get('progress_percentage')
 
+        # Cập nhật hoặc tạo mới tiến độ của người dùng trong khóa học
         progress, created = UserCourseProgress.objects.update_or_create(
             user=user, course=course,
             defaults={'progress_percentage': progress_percentage, 'last_accessed': timezone.now()}
@@ -170,6 +163,7 @@ def update_progress_percentage(request, course_id, user_id):
         
         return redirect('course:course_detail', pk=course_id)
     
+    # Lấy thông tin hiện tại của tiến độ người dùng
     progress = UserCourseProgress.objects.filter(user=user, course=course).first()
     
     return render(request, 'update_progress_percentage.html', {

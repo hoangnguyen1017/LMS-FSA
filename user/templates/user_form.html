@@ -1,60 +1,184 @@
 {% extends 'base.html' %}
 {% load form_filters %}
-
-
-
-
-{% block title %}{{ user_form.instance.pk|yesno:"Edit User,Add New User" }}{% endblock %}
+{% block title %}{{ form.instance.pk|yesno:"Edit User,Add New User" }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>{{ user_form.instance.pk|yesno:"Edit User,Add New User" }}</h2>
-    <form method="post">
+    <h2>{{ form.instance.pk|yesno:"Edit User,Add New User" }}</h2>
+    
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            <strong>Invalid form</strong>
+            <ul class="errorlist">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+        
         <div class="form-group">
-            {{ user_form.username.label_tag }}
-            {{ user_form.username }} 
+            {{ form.username.label_tag }}
+            {{ form.username|add_class:"form-control" }}
+            {% if form.username.errors %}
+                <ul class="errorlist">
+                    {% for error in form.username.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
         <div class="form-group">
-            {{ user_form.password.label_tag }}
-            {{ user_form.password }} 
+            {{ form.first_name.label_tag }}
+            {{ form.first_name|add_class:"form-control" }}
+            {% if form.first_name.errors %}
+                <ul class="errorlist">
+                    {% for error in form.first_name.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
+        
         <div class="form-group">
-            {{ user_form.email.label_tag }}
-            {{ user_form.email }} 
+            {{ form.last_name.label_tag }}
+            {{ form.last_name|add_class:"form-control" }}
+            {% if form.last_name.errors %}
+                <ul class="errorlist">
+                    {% for error in form.last_name.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
+        
         <div class="form-group">
-            {{ user_form.full_name.label_tag }}
-            {{ user_form.full_name }} 
+            {{ form.email.label_tag }}
+            {{ form.email|add_class:"form-control" }}
+            {% if form.email.errors %}
+                <ul class="errorlist">
+                    {% for error in form.email.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
+
         <div class="form-group">
-            {{ user_form.role.label_tag }}
-            {{ user_form.role }} 
+            {{ form.password1.label_tag }}
+            {{ form.password1|add_class:"form-control" }}
+            {% if form.password1.errors %}
+                <ul class="errorlist">
+                    {% for error in form.password1.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
+        
         <div class="form-group">
-            {{ user_form.profile_picture_url.label_tag }}
-            {{ user_form.profile_picture_url }} 
+            {{ form.password2.label_tag }}
+            {{ form.password2|add_class:"form-control" }}
+            {% if form.password2.errors %}
+                <ul class="errorlist">
+                    {% for error in form.password2.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
-        <!-- User Profile Fields -->
-        <h3>User Profile</h3>
+
         <div class="form-group">
-            {{ profile_form.bio.label_tag }}
-            {{ profile_form.bio }} 
+            {{ form.role.label_tag }}
+            {{ form.role|add_class:"form-control" }}
+            {% if form.role.errors %}
+                <ul class="errorlist">
+                    {% for error in form.role.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
+
+        <!-- Hidden input for role field if it is disabled -->
+        {% if form.role.field.widget.attrs.disabled %}
+            <input type="hidden" name="role" value="{{ form.role.value }}">
+        {% endif %}
+
         <div class="form-group">
-            {{ profile_form.interests.label_tag }}
-            {{ profile_form.interests }} 
+            <label for="id_profile_picture_url">Profile Picture URL:</label>
+            <input type="url" name="profile_picture_url" id="id_profile_picture_url" class="form-control" placeholder="Enter profile picture URL" value="{{ form.fields.profile_picture_url.initial }}">
+            {% if form.fields.profile_picture_url.initial %}
+                <small class="form-text text-muted">Current: <a href="{{ form.fields.profile_picture_url.initial }}" target="_blank">{{ form.fields.profile_picture_url.initial }}</a></small>
+            {% endif %}
+            {% if form.profile_picture_url.errors %}
+                <ul class="errorlist">
+                    {% for error in form.profile_picture_url.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
+
         <div class="form-group">
-            {{ profile_form.learning_style.label_tag }}
-            {{ profile_form.learning_style }} 
+            {{ form.bio.label_tag }}
+            {{ form.bio|add_class:"form-control" }}
+            {% if form.bio.errors %}
+                <ul class="errorlist">
+                    {% for error in form.bio.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
+
         <div class="form-group">
-            {{ profile_form.preferred_language.label_tag }}
-            {{ profile_form.preferred_language }} 
+            {{ form.interests.label_tag }}
+            {{ form.interests|add_class:"form-control" }}
+            {% if form.interests.errors %}
+                <ul class="errorlist">
+                    {% for error in form.interests.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
-        <button type="submit" class="btn btn-primary">Save</button>
-        <a href="{% url 'user:user_list' %}" class="btn btn-secondary">Back to User List</a>
+
+        <div class="form-group">
+            {{ form.learning_style.label_tag }}
+            {{ form.learning_style|add_class:"form-control" }}
+            {% if form.learning_style.errors %}
+                <ul class="errorlist">
+                    {% for error in form.learning_style.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.preferred_language.label_tag }}
+            {{ form.preferred_language|add_class:"form-control" }}
+            {% if form.preferred_language.errors %}
+                <ul class="errorlist">
+                    {% for error in form.preferred_language.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">{{ form.instance.pk|yesno:"Update,Create" }}</button>
     </form>
+    
+    <div class="text-center mt-3">
+        <a href="{% url 'user:user_list' %}" class="btn btn-outline-dark btn-lg rounded-pill shadow-sm">
+            <i class="fas fa-arrow-left"></i> Back to User List
+        </a>
+    </div>
+
 </div>
 {% endblock %}

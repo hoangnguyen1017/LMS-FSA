@@ -5,7 +5,8 @@ class ModuleGroupForm(forms.ModelForm):
         model = ModuleGroup
         fields = ['group_name']
 
-
+class ExcelImportForm(forms.Form):
+    excel_file = forms.FileField(label="Upload Excel File")
 
 class ModuleForm(forms.ModelForm):
     class Meta:

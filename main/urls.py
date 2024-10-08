@@ -1,15 +1,18 @@
+
+# main/urls.py
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from . import views  # Import your views from the main app
+from . import views
+from django.contrib.auth.views import LogoutView
+
 
 app_name = 'main'
 
 urlpatterns = [
-    # Your other URL patterns
-    path('', views.home, name='home'),
-    
-    # Authentication URLs
-    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
-]
+    path('home/', views.home, name='home'),
+    path('register/', views.register_view, name='register'), 
+    path('', views.login_view, name='login'),
+    path('logout/', LogoutView.as_view(next_page='main:login'), name='logout'),
+    path('accounts/login/', views.login_view, name='login'),
 
+]

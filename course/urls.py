@@ -11,5 +11,4 @@ urlpatterns = [
     path('course/<int:pk>/delete/', views.course_delete, name='course_delete'),
     path('course/<int:course_id>/create_progress/', views.create_progress, name='create_progress'),
     path('course/<int:course_id>/update_progress_percentage/<int:user_id>/', views.update_progress_percentage, name='update_progress_percentage'),
-    path('progress/delete/<int:course_id>/<int:user_id>/', views.delete_user_progress, name='delete_user_progress'),
 ]

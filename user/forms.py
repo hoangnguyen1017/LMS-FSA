@@ -1,36 +1,91 @@
-
-
-# from django import forms
-from .models import User, Role
-
-
 from django import forms
-from .models import User, UserProfile
+from role.models import Role
+from user.models import Profile
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from training_program_subjects.models import TrainingProgram
 
 
 class UserForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    email = forms.EmailField(required=True)
+    role = forms.ModelChoiceField(queryset=Role.objects.all(), required=True)
+    profile_picture_url = forms.URLField(required=False, widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Enter profile picture URL'}))
+    bio = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter your bio'}), required=False)
+    interests = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter your interests'}), required=False)
+    learning_style = forms.CharField(max_length=50, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your learning style'}), required=False)
+    preferred_language = forms.CharField(max_length=50, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your preferred language'}), required=False)
+
+    # Mật khẩu không bắt buộc khi chỉnh sửa
+    password1 = forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter new password'}),
+        required=False
+    )
+    password2 = forms.CharField(
+        label='Confirm Password',
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm new password'}),
+        required=False
+    )
+
     class Meta:
         model = User
-        fields = ['username', 'password', 'email', 'full_name', 'role', 'profile_picture_url']
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'password': forms.PasswordInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'role': forms.Select(attrs={'class': 'form-control'}),
-            'profile_picture_url': forms.URLInput(attrs={'class': 'form-control'}),
-        }
+        fields = ['username', 'first_name', 'last_name', 'email', 'role', 'password1', 'password2', 'profile_picture_url', 'bio', 'interests', 'learning_style', 'preferred_language']
 
-class UserProfileForm(forms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ['bio', 'interests', 'learning_style', 'preferred_language']
-        widgets = {
-            'bio': forms.Textarea(attrs={'class': 'form-control'}),
-            'interests': forms.Textarea(attrs={'class': 'form-control'}),
-            'learning_style': forms.TextInput(attrs={'class': 'form-control'}),
-            'preferred_language': forms.TextInput(attrs={'class': 'form-control'}),
-        }
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('A user with that username already exists.')
+        return username
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+
+        # Nếu đang tạo mới người dùng (instance không có pk) thì bắt buộc nhập mật khẩu
+        if not self.instance.pk and (not password1 or not password2):
+            raise forms.ValidationError("Password is required when creating a new user.")
+
+        # Kiểm tra hai mật khẩu phải khớp nhau nếu có nhập
+        if password1 and password1 != password2:
+            raise forms.ValidationError("Passwords do not match.")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+
+        # Cập nhật các thông tin khác
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.email = self.cleaned_data['email']
+        # Nếu có mật khẩu mới, cập nhật mật khẩu
+        if self.cleaned_data.get('password1'):
+            user.set_password(self.cleaned_data['password1'])
+        elif self.instance.pk:
+            # Nếu không có mật khẩu mới và là đang chỉnh sửa, giữ nguyên mật khẩu cũ
+            current_user = User.objects.get(pk=self.instance.pk)
+            user.password = current_user.password
+
+        if commit:
+            user.save()
+
+            # Lưu thông tin profile
+            profile, created = Profile.objects.get_or_create(user=user)
+            profile.role = self.cleaned_data['role']
+            profile.profile_picture_url = self.cleaned_data.get('profile_picture_url')
+            profile.bio = self.cleaned_data.get('bio', '')
+            profile.interests = self.cleaned_data.get('interests', '')
+            profile.learning_style = self.cleaned_data.get('learning_style', '')
+            profile.preferred_language = self.cleaned_data.get('preferred_language', '')
+            profile.save()
+
+        return user
+    
+class ExcelImportForm(forms.Form):
+    excel_file = forms.FileField()
 
 
 class RoleForm(forms.ModelForm):
@@ -38,25 +93,29 @@ class RoleForm(forms.ModelForm):
         model = Role
         fields = ['role_name']
 
+class UserEditForm(UserChangeForm):
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    email = forms.EmailField(required=True)
+    role = forms.ModelChoiceField(queryset=Role.objects.all(), required=True)
+    profile_picture_url = forms.URLField(required=False, widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Enter profile picture URL'}))
+    bio = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter your bio'}), required=False)
+    interests = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter your interests'}), required=False)
+    learning_style = forms.CharField(max_length=50, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your learning style'}), required=False)
+    preferred_language = forms.CharField(max_length=50, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your preferred language'}), required=False)
 
-from django import forms
-from .models import UserPersonalization
-
-class UserPersonalizationForm(forms.ModelForm):
     class Meta:
-        model = UserPersonalization
-        fields = ['recommended_courses', 'personalized_learning_path', 'learning_style']
-        widgets = {
-            'recommended_courses': forms.Textarea(attrs={'rows': 3}),
-            'personalized_learning_path': forms.Textarea(attrs={'rows': 5}),
-        }
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'role', 'profile_picture_url', 'bio', 'interests', 'learning_style', 'preferred_language']
+        
 
+class AssignTrainingProgramForm(forms.ModelForm):
+    training_programs = forms.ModelMultipleChoiceField(
+        queryset=TrainingProgram.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=True
+    )
 
-
-
-
-
-
-
-
-
+    class Meta:
+        model = User
+        fields = ['training_programs']

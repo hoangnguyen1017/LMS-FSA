@@ -19,6 +19,9 @@ from django.contrib import admin
 from django.urls import path, include
 from main.views import home
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     
@@ -35,8 +38,12 @@ urlpatterns = [
     path('training_program/', include('training_program.urls')),  
     path('training_program_subjects/', include('training_program_subjects.urls')),  
     path('user/', include('user.urls')),  
-    path('user_module/', include('user_module.urls')),  
-    
-         
+    path('user_module/', include('user_module.urls')),
+    path('courses/', include('course.urls')),
     # Add more paths for other new apps here
+
 ]
+
+
+
+

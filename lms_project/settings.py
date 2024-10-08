@@ -11,10 +11,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -23,15 +24,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-%9tkr6=2x0koih$(9^sggb-z)ub@g$37t*57u7eymim46k+9)w'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['*']
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'  # or 'bootstrap5'
 
+# Cấu hình để chuyển hướng sau khi đăng nhập thành công
+LOGIN_REDIRECT_URL = '/home/'
 
-# Application definition
+# Cấu hình để chuyển hướng sau khi đăng xuất thành công
+LOGOUT_REDIRECT_URL = '/'
+
+
+
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# # Giữ session với mỗi request để tránh mất session
+# SESSION_SAVE_EVERY_REQUEST = True
+
+
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'main/static'),  # Thêm đường dẫn đến thư mục static của ứng dụng
+]
+
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,9 +75,9 @@ INSTALLED_APPS = [
     'question',
     # 'quiz',
     'user_module',
+    'course',
+    'import_export'
 ]
-
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -119,18 +139,13 @@ WSGI_APPLICATION = 'lms_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'hcmuafdb',
-        'USER': 'ngattt',
-        'PASSWORD': 'fsa@123456',
-        'HOST': 'hcmuafserver.database.windows.net',
-        'PORT': '1433',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 18 for SQL Server',
-            'encrypt': True,
-            'trustServerCertificate': False,
-        },
-    }
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'hoang',
+        'USER': 'root',
+        'PASSWORD': '24635789asd',
+        'HOST': 'localhost',
+        'PORT': '3306',
+    },
 }
 
 
@@ -179,9 +194,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 
-USE_I18N = True
+USE_L10N = True
 
 USE_TZ = True
 
@@ -195,3 +210,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

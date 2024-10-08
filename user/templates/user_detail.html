@@ -1,55 +1,133 @@
 {% extends 'base.html' %}
-
-{% block title %}{{ user.username }} Details{% endblock %}
+{% block title %}{{ user.username }} - Details{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Details</h2>
-    <div class="d-flex justify-content-between">
-        <div class="card p-3 me-2" style="width: 48%;">
-            <h3>Information</h3>
-            <p><strong>Username:</strong> {{ user.username }}</p>
-            <p><strong>Email:</strong> {{ user.email }}</p>
-            <p><strong>Full Name:</strong> {{ user.full_name }}</p>
-            <p><strong>Role:</strong> {{ user.role }}</p>
-            <p><strong>Profile Picture:</strong>
-                {% if user.profile_picture_url %}
-                <img src="{{ user.profile_picture_url }}" alt="Profile Picture" width="150">
-                {% else %}
-                No profile picture available
-                {% endif %}
-            </p>
-            <p><strong>Created At:</strong> {{ user.created_at }}</p>
-            <p><strong>Updated At:</strong> {{ user.updated_at }}</p>
+<div class="container mt-5">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-dark text-white py-4 d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0;">
+            <h3 class="mb-0"><i class="fas fa-user"></i> {{ user.username }}'s Details</h3>
+            <a href="#" class="btn btn-warning btn-sm" title="Edit User" data-toggle="tooltip" id="edit-button" onclick="togglePasswordForm(event)">
+                <i class="fas fa-edit"></i>
+            </a>
         </div>
+        <div class="card-body px-5 py-4 bg-light">
 
-        <div class="card p-3" style="width: 48%;">
-            <h3>Profile</h3>
-            {% if profile %}
-                <p><strong>Bio:</strong> {{ profile.bio }}</p>
-                <p><strong>Interests:</strong> {{ profile.interests }}</p>
-                <p><strong>Learning Style:</strong> {{ profile.learning_style }}</p>
-                <p><strong>Preferred Language:</strong> {{ profile.preferred_language }}</p>
-            {% else %}
-                <p>This user does not have a profile.</p>
-            {% endif %}
+            <!-- Form nhập mật khẩu cũ -->
+            <div class="row mb-4" id="password-form" style="display: none;">
+                <div class="col-md-12">
+                    <form method="POST" action="{% url 'user:user_edit_password' user.pk %}" class="d-flex align-items-center">
+                        {% csrf_token %}
+                        <div class="form-group me-4 w-100 position-relative">                           
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="old_password" name="old_password" placeholder="Enter your old password" required>   
+                                </button>
+                                <button type="submit" class="btn btn-warning ms-2">Submit</button>
+                            </div>
+                        </div>
+                        
+                    </form>
+                </div>
+            </div>
 
-            <h3>Personalization</h3>
-            {% if Personalization %}
-                <p><strong>Recommended Courses:</strong> {{ Personalization.recommended_courses }}</p>
-                <p><strong>Personalized Learning Path:</strong> {{ Personalization.personalized_learning_path }}</p>
-                <p><strong>Learning Style:</strong> {{ Personalization.learning_style }}</p>
-                
-            {% else %}
-                <p>This user does not have a profile.</p>
-            {% endif %}
+            <!-- Thông tin người dùng -->
+            <div class="row mb-4 align-items-center">
+                <div class="col-md-3 text-center">
+                    <p><strong>Profile Picture:</strong></p>
+                    <div class="avatar-wrapper position-relative d-inline-block">
+                        {% if user.profile.profile_picture_url %}
+                            <img src="{{ user.profile.profile_picture_url }}" alt="{{ user.username }}'s Profile Picture" class="img-fluid rounded-circle shadow-lg" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #343a40;">
+                        {% else %}
+                            <span class="text-muted">No Image</span>
+                        {% endif %}
+                        <div class="avatar-shadow"></div>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> <span class="text-dark">{{ user.username }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong> <span class="text-dark">{{ user.email }}</span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Full Name:</strong> <span class="text-dark">{{ user.first_name }} {{ user.last_name }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Role:</strong> <span class="text-dark">{{ user.profile.role.role_name }}</span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Bio:</strong> <span class="text-dark">{{ user.profile.bio|default:"N/A" }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Interests:</strong> <span class="text-dark">{{ user.profile.interests|default:"N/A" }}</span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Learning Style:</strong> <span class="text-dark">{{ user.profile.learning_style|default:"N/A" }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Preferred Language:</strong> <span class="text-dark">{{ user.profile.preferred_language|default:"N/A" }}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút quay lại danh sách người dùng -->
+            <div class="text-center mt-5">
+                <a href="{% url 'user:user_list' %}" class="btn btn-outline-dark btn-lg rounded-pill shadow-sm">
+                    <i class="fas fa-arrow-left"></i> Back to User List
+                </a>
+            </div>
         </div>
-    </div>
-
-    <div class="mt-4">
-        <a href="{% url 'user:user_edit' user.pk %}" class="btn btn-warning">Edit</a>
-        <a href="{% url 'user:user_delete' user.pk %}" class="btn btn-danger">Delete</a>
-        <a href="{% url 'user:user_list' %}" class="btn btn-secondary">Back to User List</a>
     </div>
 </div>
+
+<style>
+    .avatar-wrapper {
+        position: relative;
+        width: 150px;
+        height: 150px;
+    }
+    .avatar-shadow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .btn-outline-dark {
+        background-color: #fff;
+        transition: all 0.3s ease-in-out;
+        color: #343a40;
+        border: 2px solid #343a40;
+    }
+    .btn-outline-dark:hover {
+        background-color: #343a40;
+        color: #fff;
+    }
+    .card-header.bg-dark {
+        background-color: #343a40;
+    }
+    .card-body.bg-light {
+        background-color: #f8f9fa;
+    }
+</style>
+
+<script>
+    function togglePasswordForm(event) {
+        event.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
+        var form = document.getElementById('password-form');
+        form.style.display = (form.style.display === "none" || form.style.display === "") ? "block" : "none"; // Chuyển đổi hiển thị của form
+    }
+</script>
+
 {% endblock %}

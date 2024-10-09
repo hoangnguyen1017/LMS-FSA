@@ -18,10 +18,10 @@ from django.contrib.auth.models import User
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-from django.template.loader import get_template
-from io import BytesIO
 from datetime import datetime
 import base64
+from itertools import zip_longest
+import numpy as np
 
 
 def export_course(request):
@@ -34,22 +34,38 @@ def export_course(request):
     worksheet.title = 'Course'
 
     # Define the columns
-    columns = ['name', 'course_code', 'description', 'creator', 'instructor']
+    columns = [
+        'name',
+        'course_code',
+        'description',
+        'creator',
+        'instructor',
+        'published',
+        'prerequisites'
+    ]
     worksheet.append(columns)
 
     # Fetch all courses and write to the Excel file
     for course in Course.objects.all():
+        prerequisites_list = ', '.join([prerequisite.name for prerequisite in course.prerequisites.all()])
         worksheet.append([
             course.name,
             course.course_code,
             course.description,
             course.creator.username if course.creator else 'N/A',  # Use username or other identifier
-            course.instructor.username if course.instructor else 'N/A'  # Use username or other identifier
+            course.instructor.username if course.instructor else 'N/A',  # Use username or other identifier
+            course.published,
+            prerequisites_list or 'N/A'  # Show N/A if there are no prerequisites
         ])
 
     workbook.save(response)
     return response
 
+def to_none_if_nan(value):
+    """Convert value to None if it is NaN."""
+    if isinstance(value, float) and np.isnan(value):
+        return None
+    return value
 
 def import_courses(request):
     if request.method == 'POST':
@@ -65,22 +81,29 @@ def import_courses(request):
                     name = row['name']
                     course_code = row['course_code']
                     description = row['description']
-                    creator_username = row['creator']
-                    instructor_username = row['instructor']
+                    creator_username = to_none_if_nan(row.get('creator'))
+                    instructor_username = to_none_if_nan(row.get('instructor'))
+                    prerequisites = to_none_if_nan(row.get('prerequisites'))
 
                     print(f"Processing row: {name}")
                     # Fetch User instances
-                    try:
-                        creator = User.objects.get(username=creator_username)
-                    except User.DoesNotExist:
-                        messages.warning(request, f"Creator '{creator_username}' does not exist. Skipping course '{name}'.")
-                        continue
+                    creator = None
+                    if creator_username:
+                        try:
+                            creator = User.objects.get(username=creator_username)
+                        except User.DoesNotExist:
+                            messages.warning(request,
+                                             f"Creator '{creator_username}' does not exist. Skipping course '{name}'.")
+                            continue
 
-                    try:
-                        instructor = User.objects.get(username=instructor_username)
-                    except User.DoesNotExist:
-                        messages.warning(request, f"Instructor '{instructor_username}' does not exist. Skipping course '{name}'.")
-                        continue
+                    instructor = None
+                    if instructor_username:
+                        try:
+                            instructor = User.objects.get(username=instructor_username)
+                        except User.DoesNotExist:
+                            messages.warning(request,
+                                             f"Instructor '{instructor_username}' does not exist. Skipping course '{name}'.")
+                            continue
 
                     # Get or create the course
                     course, created = Course.objects.get_or_create(
@@ -99,6 +122,19 @@ def import_courses(request):
                     else:
                         course_updated += 1
                         print(f"Course '{name}' already exists and was not created")
+                    # Handle prerequisites
+                    if prerequisites:
+                        prerequisite_names = [prerequisite.strip() for prerequisite in prerequisites.split(',')]
+                        # Clear existing prerequisites
+                        course.prerequisites.clear()
+                        # Add new prerequisites
+                        for prerequisite_name in prerequisite_names:
+                            try:
+                                prerequisite = Course.objects.get(name=prerequisite_name)
+                                course.prerequisites.add(prerequisite)
+                                print(f"Added prerequisite '{prerequisite_name}' to course '{name}'.")
+                            except Course.DoesNotExist:
+                                print(f"Prerequisite '{prerequisite_name}' does not exist for course '{name}'.")
 
                 messages.success(request,
                                  f"{course_imported} courses imported successfully! {course_updated} courses already existed.")
@@ -111,6 +147,7 @@ def import_courses(request):
         form = ExcelImportForm()
 
     return render(request, 'course_list.html', {'form': form})
+
 
 @login_required
 def course_enroll(request, pk):

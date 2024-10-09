@@ -58,4 +58,7 @@ class ReadingMaterialForm(forms.ModelForm):
         model = ReadingMaterial
         fields = ['title', 'content', 'material']  # Include the course if needed
 
+class UploadFileForm(forms.Form):
+    file = forms.FileField()
+
 

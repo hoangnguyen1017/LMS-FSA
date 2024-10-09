@@ -5,7 +5,7 @@ from django.contrib.admin.widgets import AdminDateWidget
 class AssignmentForm(forms.ModelForm):
     class Meta:
         model = Assignment
-        fields = ['title', 'description', 'subject', 'category', 'start_date', 'end_date']
+        fields = ['title', 'description', 'course', 'category', 'start_date', 'end_date']
         widgets = {
             'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),

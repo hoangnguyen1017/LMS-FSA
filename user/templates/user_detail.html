@@ -23,10 +23,10 @@
     <!-- Enrolled Courses Section -->
     <div class="mt-4">
         <h3>Enrolled Courses</h3>
-        {% if subject_names %}
+        {% if course_names %}
             <ul>
-                {% for subject in subject_names %}
-                    <li>{{ subject }}</li>
+                {% for course in course_names %}
+                    <li>{{ course }}</li>
                 {% endfor %}
             </ul>
         {% else %}

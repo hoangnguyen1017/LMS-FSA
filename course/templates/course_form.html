@@ -1,0 +1,103 @@
+<!-- course_form.html -->
+
+{% extends 'base.html' %}
+{% load form_filters %}
+
+{% block title %}{{ form.instance.pk|yesno:"Edit Course,Add New Course" }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{{ form.instance.pk|yesno:"Edit Course,Add New Course" }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-8" style="margin-left: 2cm; margin-right: 2cm;">
+                <div class="form-group">
+                    {{ course_form.name.label_tag }}
+                    {{ course_form.name|add_class:"form-control" }}
+                </div>
+                <div class="form-group">
+                    {{ course_form.course_code.label_tag }}
+                    {{ course_form.course_code|add_class:"form-control" }}
+                </div>
+                <div class="form-group">
+                    {{ course_form.description.label_tag }}
+                    {{ course_form.description|add_class:"form-control" }}
+                </div>
+                <div class="form-group">
+                    {{ course_form.creator.label_tag }}
+                    {{ course_form.creator|add_class:"form-control" }}
+                </div>
+                <div class="form-group">
+                    {{ course_form.instructor.label_tag }}
+                    {{ course_form.instructor|add_class:"form-control" }}
+                </div>
+
+                <!-- Prerequisite Courses -->
+                <div class="form-group">
+                    <h3>Prerequisite Courses</h3>
+                    <div id="prerequisite-container">
+                        <div class="prerequisite-entry">
+                            <select name="prerequisite_courses[]" class="form-control">
+                                <option value="">Select a prerequisite course (optional)</option>
+                                {% for course in all_courses %}
+                                    <option value="{{ course.id }}">{{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" id="add-prerequisite" class="btn btn-secondary mt-2">Add Another Prerequisite</button>
+                </div>
+
+                <!-- Session Fields -->
+                <div class="form-group">
+                    <h3>Session Information</h3>
+                    <div class="form-group">
+                        {{ session_form.session_name.label_tag }}
+                        {{ session_form.session_name|add_class:"form-control" }}
+                    </div>
+                    <div class="form-group">
+                        {{ session_form.session_quantity.label_tag }}
+                        {{ session_form.session_quantity|add_class:"form-control" }}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-4">Save</button>
+                <a href="{% url 'course:course_list' %}" class="btn btn-secondary mt-2">Back to Course List</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function createPrerequisiteSelect() {
+        const selectHtml = `
+            <div class="prerequisite-entry mt-2">
+                <select name="prerequisite_courses[]" class="form-control">
+                    <option value="">Select a prerequisite course (optional)</option>
+                    {% for course in all_courses %}
+                        <option value="{{ course.id }}">{{ course.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-danger btn-sm mt-1 remove-prerequisite">Remove</button>
+            </div>
+        `;
+        return selectHtml;
+    }
+
+    document.getElementById('add-prerequisite').addEventListener('click', function() {
+        const container = document.getElementById('prerequisite-container');
+        const newPrerequisite = document.createElement('div');
+        newPrerequisite.innerHTML = createPrerequisiteSelect();
+        container.appendChild(newPrerequisite);
+    });
+
+    document.getElementById('prerequisite-container').addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('remove-prerequisite')) {
+            e.target.closest('.prerequisite-entry').remove();
+        }
+    });
+</script>
+{% endblock %}

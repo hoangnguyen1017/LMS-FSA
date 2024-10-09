@@ -1,6 +1,6 @@
 from django.db import models
 from category.models import Category
-from subject.models import Subject
+from course.models import Course
 from question.models import Question, Answer
 from django.utils import timezone
 from django.conf import settings
@@ -13,7 +13,7 @@ User = get_user_model()
 
 
 class Quiz(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     questions = models.ManyToManyField('question.Question')
     title = models.CharField(max_length=255)

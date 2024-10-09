@@ -11,7 +11,7 @@
                 <th>Name</th>
                 <th>Type</th>
                 <th>Parent Category</th>
-                <th>Subjects</th>
+                <th>Courses</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -22,10 +22,10 @@
                 <td>Parent Category</td>
                 <td>-</td>
                 <td>
-                    {% for subject in category.subjects.all %}
-                        {{ subject.name }}{% if not forloop.last %}, {% endif %}
+                    {% for course in category.courses.all %}
+                        {{ course.name }}{% if not forloop.last %}, {% endif %}
                     {% empty %}
-                        No subjects assigned
+                        No courses assigned
                     {% endfor %}
                 </td>
                 <td>
@@ -39,10 +39,10 @@
                     <td>Subcategory</td>
                     <td>{{ category.category_name|title }}</td>
                     <td>
-                        {% for subject in category.subjects.all %}
-                            {{ subject.name }}{% if not forloop.last %}, {% endif %}
+                        {% for course in category.courses.all %}
+                            {{ course.name }}{% if not forloop.last %}, {% endif %}
                         {% empty %}
-                            No subjects assigned
+                            No courses assigned
                         {% endfor %}
                     </td>
                     <td>

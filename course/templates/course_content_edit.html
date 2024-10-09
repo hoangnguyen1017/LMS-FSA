@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Content for {{ course.name }}{% endblock %}
+
+{% block content %}
+<h1>Edit Content for {{ course.name }}</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h3>Select Session</h3>
+    <select name="session_id" id="session-select" onchange="this.form.submit()">
+        <option value="" disabled selected>Select a session</option>
+        {% for session in sessions %}
+            <option value="{{ session.id }}" {% if session.id == selected_session.id %}selected{% endif %}>{{ session.name }}</option>
+        {% endfor %}
+    </select>
+
+    <!-- Hidden input to store selected session ID -->
+    <input type="hidden" name="session_id_hidden" value="{{ selected_session.id }}">
+
+    <h2>Documents</h2>
+    <ul>
+        {% for document in documents %}
+            <li>
+                <a href="{{ document.doc_file.url }}">{{ document.doc_title }}</a>
+                <input type="checkbox" name="delete_document_{{ document.id }}"> Delete
+            </li>
+        {% empty %}
+            <li>No documents available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Videos</h2>
+    <ul>
+        {% for video in videos %}
+            <li>
+                <a href="{{ video.vid_file.url }}">{{ video.vid_title }}</a>
+                <input type="checkbox" name="delete_video_{{ video.id }}"> Delete
+            </li>
+        {% empty %}
+            <li>No videos available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Reading Material</h2>
+    <ul>
+        {% for reading_material in reading_materials %}
+            <li>
+                <a href="{% url 'course:reading_material_detail' reading_material.id %}" target="_blank" style="font-size: 1em;">{{ reading_material.title }}</a>
+                <input type="checkbox" name="delete_reading_material_{{ reading_material.id }}" style="margin-left: 10px;"> Delete
+            </li>
+        {% empty %}
+            <li>No reading materials available.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Add New Content</h3>
+
+    <div>
+        <h4>Upload Documents</h4>
+        <div id="document-container">
+            <div class="document-entry">
+                <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
+                <input type="file" name="doc_file[]" class="form-control-file" accept=".pdf,.doc,.docx,.ppt,.pptx">
+                <button type="button" class="btn btn-danger delete-document" style="margin-left: 10px;">Delete</button>
+            </div>
+        </div>
+        <button type="button" id="add-document" class="btn btn-secondary mt-2">Add Another Document</button>
+    </div>
+
+    <div>
+        <h4>Upload Videos</h4>
+        <div id="video-container">
+            <div class="video-entry">
+                <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
+                <input type="file" name="vid_file[]" class="form-control-file" accept="video/*">
+                <button type="button" class="btn btn-danger delete-video" style="margin-left: 10px;">Delete</button>
+            </div>
+        </div>
+        <button type="button" id="add-video" class="btn btn-secondary mt-2">Add Another Video</button>
+    </div>
+
+    <div id="reading-materials">
+        <h3>Add Reading Material</h3>
+        <div class="reading-material-entry">
+            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
+            <textarea name="reading_material_content[]" class="form-control ckeditor"></textarea>
+            <button type="button" class="btn btn-danger delete-reading-material" style="margin-left: 10px;">Delete</button>
+        </div>
+    </div>
+    <button type="button" id="add-reading-material" class="btn btn-secondary">Add Another Reading Material</button>
+
+    <!-- Moved buttons below the add-reading-material button -->
+    <button type="submit" class="btn btn-primary mt-3">Save</button>
+    <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm mt-3">Back to Course Edit</a>
+</form>
+{% load static %}
+<script src="{% static 'ckeditor/ckeditor-init.js' %}"></script>
+<script>
+    let readingMaterialCounter = 1; // Start with 1 since we already have one entry
+
+    function addRMEntry() {
+        const container = document.getElementById('reading-materials');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'reading-material-entry';
+        newEntry.innerHTML = `
+            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
+            <textarea name="reading_material_content_${readingMaterialCounter++}[]" class="form-control ckeditor"></textarea>
+            <button type="button" class="btn btn-danger delete-reading-material" style="margin-left: 10px;">Delete</button>
+        `;
+        container.appendChild(newEntry);
+        initializeCKEditor(newEntry.querySelector('textarea').name);
+        attachDeleteButton(newEntry.querySelector('.delete-reading-material'));
+    }
+
+    function initializeCKEditor(textareaName) {
+        CKEDITOR.replace(textareaName, {
+            height: 300,
+        });
+    }
+
+    // Initialize CKEditor for the initial textarea
+    initializeCKEditor('reading_material_content[]');
+
+    // Add event listener to the "Add Another Reading Material" button
+    document.getElementById('add-reading-material').addEventListener('click', addRMEntry);
+
+    // Document and video addition code remains unchanged
+    function addDocumentEntry() {
+        const container = document.getElementById('document-container');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'document-entry';
+        newEntry.innerHTML = `
+            <input type="text" name="doc_title[]" class="form-control" placeholder="Document Title">
+            <input type="file" name="doc_file[]" class="form-control-file" accept=".pdf,.doc,.docx,.ppt,.pptx">
+            <button type="button" class="btn btn-danger delete-document" style="margin-left: 10px;">Delete</button>
+        `;
+        container.appendChild(newEntry);
+        attachDeleteButton(newEntry.querySelector('.delete-document'));
+    }
+
+    function addVideoEntry() {
+        const container = document.getElementById('video-container');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'video-entry';
+        newEntry.innerHTML = `
+            <input type="text" name="vid_title[]" class="form-control" placeholder="Video Title">
+            <input type="file" name="vid_file[]" class="form-control-file" accept="video/*">
+            <button type="button" class="btn btn-danger delete-video" style="margin-left: 10px;">Delete</button>
+        `;
+        container.appendChild(newEntry);
+        attachDeleteButton(newEntry.querySelector('.delete-video'));
+    }
+
+    function attachDeleteButton(button) {
+        button.addEventListener('click', function() {
+            const entry = this.parentNode;
+            entry.parentNode.removeChild(entry);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('add-document').addEventListener('click', addDocumentEntry);
+        document.getElementById('add-video').addEventListener('click', addVideoEntry);
+        document.querySelectorAll('.delete-document').forEach(button => {
+            attachDeleteButton(button);
+        });
+        document.querySelectorAll('.delete-video').forEach(button => {
+            attachDeleteButton(button);
+        });
+        document.querySelectorAll('.delete-reading-material').forEach(button => {
+            attachDeleteButton(button);
+        });
+    });
+</script>
+{% endblock %}

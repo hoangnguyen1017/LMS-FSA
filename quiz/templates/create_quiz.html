@@ -14,8 +14,8 @@
             {{ form.title }}
         </div>
         <div class="mb-3">
-            <label for="{{ form.subject.id_for_label }}" class="form-label">Subject</label>
-            {{ form.subject }}
+            <label for="{{ form.course.id_for_label }}" class="form-label">Course</label>
+            {{ form.course }}
         </div>
         <div class="mb-3">
             <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
@@ -77,11 +77,11 @@ document.getElementById('question_selection_method').addEventListener('change', 
 });
 
 document.getElementById('selectQuestionsBtn').addEventListener('click', function() {
-    var subject = document.getElementById('{{ form.subject.id_for_label }}').value;
+    var course = document.getElementById('{{ form.course.id_for_label }}').value;
     var category = document.getElementById('{{ form.category.id_for_label }}').value;
 
-    if (subject && category) {
-        fetch(`{% url 'quiz:load_questions' %}?subject=${subject}&category=${category}`)
+    if (course && category) {
+        fetch(`{% url 'quiz:load_questions' %}?course=${course}&category=${category}`)
             .then(response => response.json())
             .then(data => {
                 var questionList = document.getElementById('questionList');
@@ -116,7 +116,7 @@ document.getElementById('selectQuestionsBtn').addEventListener('click', function
                 alert('An error occurred while loading questions. Please try again.');
             });
     } else {
-        alert('Please select a subject and category first.');
+        alert('Please select a course and category first.');
     }
 });
 </script>

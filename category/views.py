@@ -6,7 +6,7 @@ from django.contrib import messages
 
 # Category views
 def category_list(request):
-    categories = Category.objects.all().prefetch_related('subjects', 'subcategories')
+    categories = Category.objects.all().prefetch_related('courses', 'subcategories')
     return render(request, 'category_list.html', {
         'categories': categories,
     })
@@ -63,7 +63,7 @@ def category_edit(request, pk):
         form = CategoryForm(request.POST, instance=category)
         if form.is_valid():
             category = form.save()
-            category.update_subcategories_subjects()
+            category.update_subcategories_courses()
             return redirect('category:category_list')
     else:
         form = CategoryForm(instance=category)

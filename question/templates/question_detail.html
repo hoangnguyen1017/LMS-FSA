@@ -6,12 +6,12 @@
 <h2>{{ question.question_text }}</h2>
 <p><strong>Created At:</strong> {{ question.created_at }}</p>
 <p><strong>Correct Answer:</strong> {{ question.correct_answer }}</p>
-<!-- Hiển thị Subject -->
-<p><strong>Subject:</strong>
-    {% if question.subject %}
-        {{ question.subject.name }}
+<!-- Hiển thị Course -->
+<p><strong>Course:</strong>
+    {% if question.course %}
+        {{ question.course.name }}
     {% else %}
-        No Subject
+        No Course
     {% endif %}
 </p>
 

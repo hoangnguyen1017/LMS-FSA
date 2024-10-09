@@ -3,22 +3,22 @@ from .models import Question, Answer
 from .forms import QuestionForm, AnswerForm
 from module_group.models import ModuleGroup
 from django.urls import reverse
-from subject.models import Subject
+from course.models import Course
 from category.models import Category, SubCategory
 from django.contrib import messages
 
 
 # Question views
 def question_list(request):
-    subjects = Subject.objects.all()
+    courses = Course.objects.all()
     categories = Category.objects.all()
     subcategories = SubCategory.objects.all()
     questions = Question.objects.all()
 
-    # Filter by subject
-    subject_id = request.GET.get('subject')
-    if subject_id:
-        questions = questions.filter(id=subject_id)
+    # Filter by course
+    course_id = request.GET.get('course')
+    if course_id:
+        questions = questions.filter(id=course_id)
 
     # Filter by category
     category_id = request.GET.get('category')
@@ -40,10 +40,10 @@ def question_list(request):
 
     context = {
         'questions': questions,
-        'subjects': subjects,
+        'courses': courses,
         'categories': categories,
         'subcategories': subcategories,
-        'selected_subject': subject_id,
+        'selected_course': course_id,
         'selected_category': category_id,
         'selected_subcategory': subcategory_id,
         'selected_method': method,
@@ -122,13 +122,13 @@ def answer_add(request, question_id):
 
 def question_filter(request):
     module_groups = ModuleGroup.objects.all()
-    subjects = Subject.objects.all()
+    courses = Course.objects.all()
     categories = Category.objects.all()
     subcategories = SubCategory.objects.all()  # Add this line
 
     context = {
         'module_groups': module_groups,
-        'subjects': subjects,
+        'courses': courses,
         'categories': categories,
         'subcategories': subcategories,  # Add this line
     }

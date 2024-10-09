@@ -1,103 +1,22 @@
-<!-- subject_form.html -->
-
 {% extends 'base.html' %}
 {% load form_filters %}
-
 {% block title %}{{ form.instance.pk|yesno:"Edit Subject,Add New Subject" }}{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container mt-4">
     <h2>{{ form.instance.pk|yesno:"Edit Subject,Add New Subject" }}</h2>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post">
         {% csrf_token %}
-        <div class="row">
-            <div class="col-md-8" style="margin-left: 2cm; margin-right: 2cm;">
-                <div class="form-group">
-                    {{ subject_form.name.label_tag }}
-                    {{ subject_form.name|add_class:"form-control" }}
-                </div>
-                <div class="form-group">
-                    {{ subject_form.subject_code.label_tag }}
-                    {{ subject_form.subject_code|add_class:"form-control" }}
-                </div>
-                <div class="form-group">
-                    {{ subject_form.description.label_tag }}
-                    {{ subject_form.description|add_class:"form-control" }}
-                </div>
-                <div class="form-group">
-                    {{ subject_form.creator.label_tag }}
-                    {{ subject_form.creator|add_class:"form-control" }}
-                </div>
-                <div class="form-group">
-                    {{ subject_form.instructor.label_tag }}
-                    {{ subject_form.instructor|add_class:"form-control" }}
-                </div>
-
-                <!-- Prerequisite Subjects -->
-                <div class="form-group">
-                    <h3>Prerequisite Subjects</h3>
-                    <div id="prerequisite-container">
-                        <div class="prerequisite-entry">
-                            <select name="prerequisite_subjects[]" class="form-control">
-                                <option value="">Select a prerequisite subject (optional)</option>
-                                {% for subject in all_subjects %}
-                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <button type="button" id="add-prerequisite" class="btn btn-secondary mt-2">Add Another Prerequisite</button>
-                </div>
-
-                <!-- Session Fields -->
-                <div class="form-group">
-                    <h3>Session Information</h3>
-                    <div class="form-group">
-                        {{ session_form.session_name.label_tag }}
-                        {{ session_form.session_name|add_class:"form-control" }}
-                    </div>
-                    <div class="form-group">
-                        {{ session_form.session_quantity.label_tag }}
-                        {{ session_form.session_quantity|add_class:"form-control" }}
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary mt-4">Save</button>
-                <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary mt-2">Back to Subject List</a>
-            </div>
+        <div class="form-group">
+            {{ form.name.label_tag }}
+            {{ form.name|add_class:"form-control" }}
         </div>
+        <div class="form-group">
+            {{ form.description.label_tag }}
+            {{ form.description|add_class:"form-control" }}
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary">Back to Subject List</a>
     </form>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    function createPrerequisiteSelect() {
-        const selectHtml = `
-            <div class="prerequisite-entry mt-2">
-                <select name="prerequisite_subjects[]" class="form-control">
-                    <option value="">Select a prerequisite subject (optional)</option>
-                    {% for subject in all_subjects %}
-                        <option value="{{ subject.id }}">{{ subject.name }}</option>
-                    {% endfor %}
-                </select>
-                <button type="button" class="btn btn-danger btn-sm mt-1 remove-prerequisite">Remove</button>
-            </div>
-        `;
-        return selectHtml;
-    }
-
-    document.getElementById('add-prerequisite').addEventListener('click', function() {
-        const container = document.getElementById('prerequisite-container');
-        const newPrerequisite = document.createElement('div');
-        newPrerequisite.innerHTML = createPrerequisiteSelect();
-        container.appendChild(newPrerequisite);
-    });
-
-    document.getElementById('prerequisite-container').addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('remove-prerequisite')) {
-            e.target.closest('.prerequisite-entry').remove();
-        }
-    });
-</script>
 {% endblock %}

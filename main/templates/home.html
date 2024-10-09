@@ -16,8 +16,8 @@
                     <div class="course-list collapse" id="courseDropdown" style="margin-top: 10px;">
                         {% if user.is_authenticated %}
                             {% for enrollment in enrollments %}
-                                <a class="dropdown-item" href="{% url 'subject:subject_detail' enrollment.subject.id %}">
-                                    {{ enrollment.subject.subject_code }}
+                                <a class="dropdown-item" href="{% url 'course:course_detail' enrollment.course.id %}">
+                                    {{ enrollment.course.course_code }}
                                 </a>
                             {% endfor %}
                         {% else %}

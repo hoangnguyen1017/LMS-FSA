@@ -4,7 +4,7 @@ from .models import Quiz, Submission
 class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
-        fields = ['title', 'subject', 'category', 'due_date', 'attempts_allowed', 'grading_method']
+        fields = ['title', 'course', 'category', 'due_date', 'attempts_allowed', 'grading_method']
         widgets = {
             'due_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'attempts_allowed': forms.NumberInput(attrs={'min': 1}),

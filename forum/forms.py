@@ -4,7 +4,7 @@ from .models import ForumQuestion, ForumComment, Reply, Report
 class ForumQuestionForm(forms.ModelForm):
     class Meta:
         model = ForumQuestion
-        fields = ['subject', 'title', 'content', 'image']
+        fields = ['course', 'title', 'content', 'image']
         widgets = {
             'image': forms.ClearableFileInput(attrs={'required': False}),
         }

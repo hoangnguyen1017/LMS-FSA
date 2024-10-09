@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from .forms import InstructorFeedbackForm, CourseFeedbackForm, TrainingProgramFeedbackForm
 from .models import InstructorFeedback, CourseFeedback, TrainingProgramFeedback
-from subject.models import Subject as Course
+from course.models import Course
 from training_program.models import TrainingProgram
 from django.contrib.auth.models import User
 from module_group.models import ModuleGroup, Module

@@ -11,7 +11,7 @@
             <tr>
                 <th>Question</th>
                 <th>Correct Answer</th>
-                <th>Subject</th>
+                <th>Course</th>
                 <th>Category</th>
                 <th>Date Created</th>
                 <th>Actions</th>
@@ -31,10 +31,10 @@
                     {% endfor %}
                 </td>
                 <td>
-                    {% if question.subject %}
-                        {{ question.subject.name }}
+                    {% if question.course %}
+                        {{ question.course.name }}
                     {% else %}
-                        No Subject
+                        No Course
                     {% endif %}
                 </td>
                 <td>

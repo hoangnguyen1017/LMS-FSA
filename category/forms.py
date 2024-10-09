@@ -1,25 +1,25 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Category, SubCategory  # Import SubCategory
-from subject.models import Subject  # Make sure this import is present
+from course.models import Course  # Make sure this import is present
 
 
 # Form để tạo/chỉnh sửa Category
 class CategoryForm(forms.ModelForm):
-    subjects = forms.ModelMultipleChoiceField(
-        queryset=Subject.objects.all(),
+    courses = forms.ModelMultipleChoiceField(
+        queryset=Course.objects.all(),
         widget=forms.CheckboxSelectMultiple,
         required=False
     )
 
     class Meta:
         model = Category
-        fields = ['category_name', 'subjects']
+        fields = ['category_name', 'courses']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
-            self.fields['subjects'].initial = self.instance.subjects.all()
+            self.fields['courses'].initial = self.instance.courses.all()
 
     def clean_category_name(self):
         category_name = self.cleaned_data['category_name'].lower()
@@ -32,7 +32,7 @@ class CategoryForm(forms.ModelForm):
         if commit:
             category.save()
             self.save_m2m()
-            category.update_subcategories_subjects()
+            category.update_subcategories_courses()
         return category
 
 
@@ -79,10 +79,10 @@ class SubCategoryForm(forms.ModelForm):
         subcategory = super().save(commit=False)
         if commit:
             subcategory.save()
-            subcategory.update_subjects()
+            subcategory.update_courses()
         return subcategory
 
-    def update_subjects(self):
+    def update_courses(self):
         parent_category = self.cleaned_data.get('parent_category')
         if parent_category:
-            self.instance.subjects.set(parent_category.subjects.all())
+            self.instance.courses.set(parent_category.courses.all())

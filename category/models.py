@@ -1,10 +1,10 @@
 from django.db import models
-from subject.models import Subject
+from course.models import Course
 from django.core.exceptions import ValidationError
 
 class Category(models.Model):
     category_name = models.CharField(max_length=255)
-    subjects = models.ManyToManyField(Subject, related_name='categories', blank=True)
+    courses = models.ManyToManyField(Course, related_name='categories', blank=True)
 
     class Meta:
         unique_together = ('category_name',)
@@ -23,11 +23,11 @@ class Category(models.Model):
     def save(self, *args, **kwargs):
         self.category_name = self.category_name.lower()
         super().save(*args, **kwargs)
-        self.update_subcategories_subjects()
+        self.update_subcategories_courses()
 
-    def update_subcategories_subjects(self):
+    def update_subcategories_courses(self):
         for subcategory in self.subcategories.all():
-            subcategory.subjects.set(self.subjects.all())
+            subcategory.courses.set(self.courses.all())
             subcategory.save()
 
 class SubCategory(models.Model):
@@ -49,11 +49,11 @@ class SubCategory(models.Model):
         self.subcategory_name = self.subcategory_name.lower()
         self.clean()
         super().save(*args, **kwargs)
-        # Inherit subjects from parent category
-        self.update_subjects()
-    def update_subjects(self):
-        self.subjects.set(self.parent_category.subjects.all())
+        # Inherit courses from parent category
+        self.update_courses()
+    def update_courses(self):
+        self.courses.set(self.parent_category.courses.all())
 
     @property
-    def subjects(self):
-        return self.parent_category.subjects
+    def courses(self):
+        return self.parent_category.courses

@@ -5,22 +5,23 @@ app_name = 'subject'
 urlpatterns = [
     path('', views.subject_list, name='subject_list'),
     path('add/', views.subject_add, name='subject_add'),
-    path('edit/<int:pk>/', views.subject_edit, name='subject_edit'),
+    path('subjects/edit/<int:pk>/', views.subject_edit, name='subject_edit'),
     path('subjects/delete/<int:pk>/', views.subject_delete, name='subject_delete'),
-    path('subject/enroll/<int:pk>/', views.subject_enroll, name='subject_enroll'),
-    path('unenroll/<int:pk>/', views.subject_unenroll, name='subject_unenroll'),
-    path('resources/', views.resource_library, name='resource_library'),
-    path('<int:pk>/detail/', views.subject_detail, name='subject_detail'),
-    path('<int:pk>/enrolled/', views.users_enrolled, name='users_enrolled'),
-    path('search/', views.course_search, name='course_search'),
-    path('download/<str:file_type>/<int:file_id>/', views.file_download, name='file_download'),
-    path('<int:pk>/content/<int:session_id>/', views.subject_content, name='subject_content'),
-    path('<int:pk>/content/edit/<int:session_id>/', views.subject_content_edit, name='subject_content_edit'),
-    path('export/', views.export_subject, name='export_subject'),
-    path('import/', views.import_subjects, name='import_subject'),
-    path('subject/<int:pk>/toggle_publish/', views.toggle_publish, name='toggle_publish'),
-    path('<int:pk>/toggle-completion/', views.toggle_completion, name='toggle_completion'),
-    path('edit/<int:pk>/reorder/<int:session_id>/', views.reorder_subject_materials, name='reorder_subject_materials'),
-    path('reading-material/<int:id>/', views.reading_material_detail, name='reading_material_detail'),
-    path('<int:pk>/generate-certificate/', views.generate_certificate_png, name='generate_certificate'),
 ]
+
+
+# urlpatterns = [
+#     # Module Group URLs
+#     path('', views.module_group_list, name='module_group_list'),
+#     path('add/', views.module_group_add, name='module_group_add'),
+#     path('<int:pk>/', views.module_group_detail, name='module_group_detail'),
+#     path('<int:pk>/edit/', views.module_group_edit, name='module_group_edit'),
+#     path('<int:pk>/delete/', views.module_group_delete, name='module_group_delete'),
+    
+#     # Module URLs
+#     path('modules/', views.module_list, name='module_list'),
+#     path('modules/add/', views.module_add, name='module_add'),
+#     path('modules/<int:pk>/', views.module_detail, name='module_detail'),
+#     path('modules/<int:pk>/edit/', views.module_edit, name='module_edit'),
+#     path('modules/<int:pk>/delete/', views.module_delete, name='module_delete'),
+# ]

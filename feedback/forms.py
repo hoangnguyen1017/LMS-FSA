@@ -5,7 +5,7 @@ from .models import InstructorFeedback, CourseFeedback, TrainingProgramFeedback
 class InstructorFeedbackForm(forms.ModelForm):
     class Meta:
         model = InstructorFeedback
-        fields = ['subject_knowledge', 'communication_skills', 'approachability', 'engagement', 'professionalism', 'comments']
+        fields = ['course_knowledge', 'communication_skills', 'approachability', 'engagement', 'professionalism', 'comments']
 
 class CourseFeedbackForm(forms.ModelForm):
     class Meta:

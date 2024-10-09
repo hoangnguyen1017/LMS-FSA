@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from subject.models import Subject
+from course.models import Course
 from category.models import Category
 
 User = get_user_model()
@@ -9,7 +9,7 @@ User = get_user_model()
 class Assignment(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, default=1)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_assignments')
     start_date = models.DateTimeField()

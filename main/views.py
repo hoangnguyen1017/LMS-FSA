@@ -7,7 +7,7 @@ from .models import News, Event, UserProfile
 from user.models import User
 from user.forms import UserForm
 from django.contrib.auth.models import User as AuthUser
-from subject.models import *
+from course.models import *
 
 def home(request):
     module_groups = ModuleGroup.objects.all()
@@ -20,7 +20,7 @@ def home(request):
     })
 
 def base_view(request):
-    enrolled_subjects = Enrollment.objects.filter(student=request.user).select_related('subject')
+    enrolled_courses = Enrollment.objects.filter(student=request.user).select_related('course')
     module_groups = ModuleGroup.objects.all()
     modules = Module.objects.all()
     return render(request, 'base.html', {

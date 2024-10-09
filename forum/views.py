@@ -2,27 +2,27 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import ForumQuestion, ForumComment, Reply, Report
 from .forms import ForumQuestionForm, ForumCommentForm, ReplyForm, ReportForm
-from subject.models import Subject
+from course.models import Course
 from django.core.paginator import Paginator
 from module_group.models import ModuleGroup, Module
 from django.contrib.auth.models import User
 
 
 def question_list(request):
-    selected_subject_id = request.GET.get('subject_id')  # Change 'id' to 'subject_id'
+    selected_course_id = request.GET.get('course_id')  # Change 'id' to 'course_id'
     selected_creator_id = request.GET.get('creator_id')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    # Get all subjects for the dropdown
-    subjects = Subject.objects.all()
+    # Get all courses for the dropdown
+    courses = Course.objects.all()
     users = User.objects.all()
 
-    # Filter questions based on selected subject, or show all questions
+    # Filter questions based on selected course, or show all questions
     questions = ForumQuestion.objects.all()
 
-    if selected_subject_id:
-        questions = questions.filter(subject_id=selected_subject_id)
+    if selected_course_id:
+        questions = questions.filter(course_id=selected_course_id)
     if selected_creator_id:
         questions = questions.filter(user_id=selected_creator_id)
     if start_date:
@@ -42,9 +42,9 @@ def question_list(request):
 
     return render(request, 'forum_question_list.html', {
         'page_obj': page_obj,
-        'subjects': subjects,
+        'courses': courses,
         'users': users,
-        'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
+        'selected_course_id': int(selected_course_id) if selected_course_id else None,
         'selected_creator_id': int(selected_creator_id) if selected_creator_id else None,
         'start_date': start_date,
         'end_date': end_date,

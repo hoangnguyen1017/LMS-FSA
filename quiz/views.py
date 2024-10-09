@@ -50,13 +50,13 @@ def create_quiz(request):
             quiz.created_by = request.user
             quiz.save()
 
-            subject = form.cleaned_data['subject']
+            course = form.cleaned_data['course']
             category = form.cleaned_data['category']
             num_questions = request.POST.get('num_questions')
 
             if num_questions:
                 # Randomly select questions
-                available_questions = Question.objects.filter(subject=subject, category=category)
+                available_questions = Question.objects.filter(course=course, category=category)
                 num_questions = min(int(num_questions), available_questions.count())
                 selected_questions = random.sample(list(available_questions), num_questions)
             else:
@@ -183,22 +183,22 @@ def submission_result(request, submission_id):
 
 @login_required
 def make_question(request):
-    subject = request.GET.get('subject')
+    course = request.GET.get('course')
     category = request.GET.get('category')
 
     questions = Question.objects.filter(
-        Q(subject__id=subject) & Q(category__id=category)
+        Q(course__id=course) & Q(category__id=category)
     )
 
     return render(request, 'make_question.html', {'questions': questions})
 
 @login_required
 def load_questions(request):
-    subject_id = request.GET.get('subject')
+    course_id = request.GET.get('course')
     category_id = request.GET.get('category')
 
     questions = Question.objects.filter(
-        id=subject_id,
+        id=course_id,
         category_id=category_id
     )
 

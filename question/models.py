@@ -1,10 +1,10 @@
 from django.db import models
 from category.models import Category, SubCategory  # Add SubCategory import
-from subject.models import Subject
+from course.models import Course
 from django.utils import timezone
 
 class Question(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True)  # Add this line
     correct_answer = models.CharField(max_length=255, default='')  # Added with default value

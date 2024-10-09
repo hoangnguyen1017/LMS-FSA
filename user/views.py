@@ -6,7 +6,7 @@ from django.contrib.auth.models import User as AuthUser, Permission
 import os
 from django.conf import settings
 from django.core.files.storage import default_storage
-from subject.models import Enrollment
+from course.models import Enrollment
 
 def authuser_to_role(user):
     username = user.username
@@ -30,13 +30,13 @@ def user_list(request):
 def user_detail(request, pk):
     user = get_object_or_404(User, auth_user_id=pk)
     enrollments = Enrollment.objects.filter(student_id=user.auth_user_id)
-    # Extract subject names
-    subject_names = [enrollment.subject.name for enrollment in enrollments]
+    # Extract course names
+    course_names = [enrollment.course.name for enrollment in enrollments]
 
     return render(request, 'user_detail.html', {
         'user': user,
         'enrollments': enrollments,
-        'subject_names': subject_names,
+        'course_names': course_names,
     })
 
 

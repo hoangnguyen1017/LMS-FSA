@@ -1,18 +1,18 @@
 {% extends "base.html" %}
-{% load subject_filters %}
+{% load course_filters %}
 
 {% block content %}
-<h2>Discussion{% if selected_subject_id %} for {{ subjects|get_selected_subject_name:selected_subject_id }}{% endif %}</h2>
+<h2>Discussion{% if selected_course_id %} for {{ courses|get_selected_course_name:selected_course_id }}{% endif %}</h2>
 
 <!-- Filter Form -->
 <form method="get">
     <div class="form-group">
-        <label for="subject">Choose a Subject:</label>
-        <select name="subject_id" id="subject" class="form-control" onchange="this.form.submit()">
-            <option value="">All Subjects</option>
-            {% for subject in subjects %}
-            <option value="{{ subject.id }}" {% if subject.id == selected_subject_id %}selected{% endif %}>
-                {{ subject.name }}
+        <label for="course">Choose a Course:</label>
+        <select name="course_id" id="course" class="form-control" onchange="this.form.submit()">
+            <option value="">All Courses</option>
+            {% for course in courses %}
+            <option value="{{ course.id }}" {% if course.id == selected_course_id %}selected{% endif %}>
+                {{ course.name }}
             </option>
             {% endfor %}
         </select>
@@ -61,13 +61,13 @@
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
-            <a href="?{% if selected_subject_id %}subject_id={{ selected_subject_id }}&{% endif %}{% if selected_creator_id %}creator_id={{ selected_creator_id }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+            <a href="?{% if selected_course_id %}course_id={{ selected_course_id }}&{% endif %}{% if selected_creator_id %}creator_id={{ selected_creator_id }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
         {% endif %}
 
         <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
 
         {% if page_obj.has_next %}
-            <a href="?{% if selected_subject_id %}subject_id={{ selected_subject_id }}&{% endif %}{% if selected_creator_id %}creator_id={{ selected_creator_id }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+            <a href="?{% if selected_course_id %}course_id={{ selected_course_id }}&{% endif %}{% if selected_creator_id %}creator_id={{ selected_creator_id }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
         {% endif %}
     </span>
 </div>

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Training Program List{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Training Program for Courses</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Completion</th>
+                <th>Actions</th>
+                <th>Manage Courses</th>
+                <th>View Courses</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in user_completion_data %}
+            <tr>
+                <td>{{ data.program.program_name }}</td>
+                <td>{{ data.program.program_code }}</td>
+                <td>{{ data.program.description }}</td>
+                <td>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ data.completion_percent }}%;" aria-valuenow="{{ data.completion_percent }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ data.completion_percent }}%
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <a href="{% url 'training_program_for_courses:training_program_edit' data.program.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'training_program_for_courses:training_program_delete' data.program.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                    <a href="{% url 'training_program_for_courses:training_program_enroll' data.program.pk %}" class="btn btn-primary btn-sm">Enroll</a>
+                    <a href="{% url 'training_program_for_courses:training_program_unenroll' data.program.pk %}" class="btn btn-primary btn-sm">Unenroll</a>
+                </td>
+                <td>
+                    <a href="{% url 'training_program_for_courses:training_program_manage_courses' data.program.pk %}" class="btn btn-info btn-sm">Manage Courses</a>
+                </td>
+                <td>
+                    <a href="{% url 'training_program_for_courses:training_program_view_courses' data.program.pk %}" class="btn btn-info btn-sm">View Courses</a>
+                    <a href="{% url 'training_program_for_courses:users_enrolled' data.program.pk %}" class="btn btn-info btn-sm">View Enrolled Users</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'training_program_for_courses:training_program_add' %}" class="btn btn-primary">Add New Training Program</a>
+</div>
+{% endblock %}

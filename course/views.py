@@ -387,6 +387,9 @@ def course_detail(request, pk):
 
     sessions = Session.objects.filter(course=course)
 
+    # Fetch the 5 newest feedback entries for this course
+    latest_feedbacks = CourseFeedback.objects.filter(course=course).order_by('-created_at')[:5]
+
     context = {
         'course': course,
         'prerequisites': prerequisites,  # Pass prerequisites from the course model
@@ -395,6 +398,7 @@ def course_detail(request, pk):
         'course_average_rating': course_average_rating,
         'feedbacks': feedbacks,  # Pass feedbacks to the template
         'sessions': sessions,
+        'latest_feedbacks': latest_feedbacks,
     }
 
     return render(request, 'course_detail.html', context)

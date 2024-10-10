@@ -1,10 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .forms import InstructorFeedbackForm, CourseFeedbackForm, TrainingProgramFeedbackForm
 from .models import InstructorFeedback, CourseFeedback, TrainingProgramFeedback
 from course.models import Course
 from training_program.models import TrainingProgram
 from django.contrib.auth.models import User
 from module_group.models import ModuleGroup, Module
+from django.contrib import messages
+from django.core.paginator import Paginator
 
 '''def feedback_list(request):
     module_groups = ModuleGroup.objects.all()
@@ -68,10 +70,18 @@ def give_course_feedback(request, course_id):
             feedback.student = request.user
             feedback.course = course
             feedback.save()
-            return redirect('feedback:feedback_success')
+            return redirect('course:course_detail', pk=course.id)
     else:
         form = CourseFeedbackForm()
-    return render(request, 'feedback_Course.html', {'form': form, 'course': course})
+
+    # Fetch the 5 newest feedback entries for this course
+    latest_feedbacks = CourseFeedback.objects.filter(course=course).order_by('-created_at')[:5]
+
+    return render(request, 'feedback_Course.html', {
+        'form': form,
+        'course': course,
+        'latest_feedbacks': latest_feedbacks
+    })
 
 def give_training_program_feedback(request, training_program_id):
     training_program = TrainingProgram.objects.get(pk=training_program_id)
@@ -101,3 +111,17 @@ def course_feedback_detail(request, feedback_id):
 def program_feedback_detail(request, feedback_id):
     feedback = TrainingProgramFeedback.objects.get(pk=feedback_id)
     return render(request, 'feedback_detail.html', {'feedback': feedback, 'type': 'Training Program'})
+
+def course_all_feedback(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    all_feedbacks = CourseFeedback.objects.filter(course=course).order_by('-created_at')
+
+    # Pagination
+    paginator = Paginator(all_feedbacks, 10)  # Show 10 feedbacks per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'feedback_course_list.html', {
+        'course': course,
+        'page_obj': page_obj,
+    })

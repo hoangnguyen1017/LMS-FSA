@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     'ckeditor_uploader',
     'widget_tweaks',
     'course',
+    'training_program_for_courses',
+    'training_program_manage_courses',
 ]
 
 CKEDITOR_UPLOAD_PATH = "uploads/"

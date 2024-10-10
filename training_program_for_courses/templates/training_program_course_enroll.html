@@ -9,7 +9,7 @@
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="btn btn-primary">Enroll</button>
-        <a href="{% url 'training_program:training_program_list' %}" class="btn btn-secondary">Back to Training Program List</a>
+        <a href="{% url 'training_program_for_courses:training_program_list' %}" class="btn btn-secondary">Back to Training Program List</a>
     </form>
 </div>
 {% endblock %}

@@ -125,7 +125,7 @@ def users_enrolled(request, pk):
             course__in=courses_in_program,
             completed=True,
             course__enrollment__student=enrollment.student
-        ).count()
+        ).values('course').distinct().count()
 
         completion_percent = (completed_courses / total_courses) * 100 if total_courses > 0 else 0
         user_completion_data.append({

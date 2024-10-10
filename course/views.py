@@ -533,6 +533,12 @@ def course_content(request, pk, session_id):
         current_material = materials.first() if materials.exists() else None
 
     next_material = materials.filter(order__gt=current_material.order).first() if current_material else None
+    next_session = None
+
+    if not next_material:
+        next_session = Session.objects.filter(course=course, order__gt=current_session.order).order_by('order').first()
+        if next_session:
+            next_material = CourseMaterial.objects.filter(session=next_session).order_by('order').first()
 
     preview_url = None
     download_url = None
@@ -591,6 +597,7 @@ def course_content(request, pk, session_id):
         'completion_status': completion_status,
         'completion_percent': completion_percent,
         'certificate_url': certificate_url,
+        'next_session': next_session,
     }
 
     return render(request, 'course_content.html', context)
@@ -631,14 +638,21 @@ def toggle_completion(request, pk):
         order__gt=material.order
     ).order_by('order').first()
 
+    next_session = None
+    if not next_material:
+        next_session = Session.objects.filter(course=course, order__gt=session.order).order_by('order').first()
+        if next_session:
+            next_material = CourseMaterial.objects.filter(session=next_session).order_by('order').first()
+
     next_item_type = next_material.material_type if next_material else None
     next_item_id = next_material.id if next_material else None
+    next_session_id = next_session.id if next_session else None
 
     return JsonResponse({
         'completed': completion.completed,
         'next_item_type': next_item_type,
         'next_item_id': next_item_id,
-        'session_id': session.id
+        'next_session_id': next_session_id
     })
 # In course/views.py
 

@@ -75,8 +75,12 @@
                         {% endif %}
                     </button>
                     {% if next_material %}
-                        <a id="next-btn" href="{% url 'course:course_content' course.pk current_session.id %}?&file_id={{ next_material.id }}&file_type={{ next_material.material_type }}" class="btn btn-primary ml-2">
+                        <a id="next-btn" href="{% url 'course:course_content' course.pk next_material.session.id %}?file_id={{ next_material.id }}&file_type={{ next_material.material_type }}" class="btn btn-primary ml-2">
                             Next Item
+                        </a>
+                    {% elif next_session %}
+                        <a id="next-btn" href="{% url 'course:course_content' course.pk next_session.id %}" class="btn btn-primary ml-2">
+                            Next Session
                         </a>
                     {% endif %}
                 {% endif %}
@@ -126,7 +130,17 @@ $(document).ready(function() {
                 }
 
                 if (response.next_item_id) {
-                    window.location.href = "{% url 'course:course_content' course.pk current_session.id %}?file_id=" + response.next_item_id + "&file_type=" + response.next_item_type;
+                    var nextUrl = "{% url 'course:course_content' course.pk 0 %}".replace('/0', '/' + (response.next_session_id || "{{ current_session.id }}"));
+                    nextUrl += "?file_id=" + response.next_item_id + "&file_type=" + response.next_item_type;
+                    $('#next-btn').attr('href', nextUrl);
+
+                    if (response.next_session_id) {
+                        $('#next-btn').text('Next Session');
+                    } else {
+                        $('#next-btn').text('Next Item');
+                    }
+                } else {
+                    $('#next-btn').hide();
                 }
             },
             error: function(xhr, status, error) {

@@ -14,6 +14,7 @@ def home(request):
 # Manage courses in a training program
 def manage_courses(request, program_id):
     program = get_object_or_404(TrainingProgramCourse, pk=program_id)
+    courses = TrainingProgramCourses.objects.filter(program=program)
     if request.method == 'POST':
         form = TrainingProgramCoursesForm(request.POST, instance=program)
         if form.is_valid():
@@ -28,6 +29,10 @@ def manage_courses(request, program_id):
             return redirect('training_program_for_courses:training_program_list')
     else:
         form = TrainingProgramCoursesForm(instance=program)
+        # Prepopulate the form with the current subjects
+        for course in courses:
+            form.initial[f'course_{course.course.id}'] = course.course.id
+            form.initial[f'semester_{course.course.id}'] = course.semester
 
     return render(request, 'manage_courses.html', {'form': form, 'program': program})
 

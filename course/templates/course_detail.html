@@ -63,6 +63,21 @@
                     {% endif %}
                 </td>
             </tr>
+        <!-- mới thêm -->
+            <tr>
+                <th>Tags</th>
+                <td>
+                    {% if tags %}
+                        <ul class="list-unstyled">
+                            {% for tag in tags %}
+                                <li>{{ tag }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        No tags available.
+                    {% endif %}
+                </td>
+            </tr>
         </tbody>
     </table>
 

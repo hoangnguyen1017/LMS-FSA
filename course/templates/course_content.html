@@ -38,20 +38,7 @@
             <h2 class="text-2xl font-bold mb-4">File Preview</h2>
             <div id="preview-content" class="preview-container border p-3">
                 {% if current_material %}
-                    {% if content_type == 'video' %}
-                        <video controls class="w-100">
-                            <source src="{{ preview_url }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    {% elif content_type == 'image' %}
-                    <img src="{{ preview_url }}" alt="Image preview" class="img-fluid">
-                    {% elif content_type == 'document' %}
-                        {% if preview_url %}
-                            <iframe src="{{ preview_url }}" style="width: 100%; height: 600px;" frameborder="0"></iframe>
-                        {% else %}
-                            <p>This document cannot be previewed. <a href="{{ download_url }}" class="btn btn-primary">Download File</a></p>
-                        {% endif %}
-                    {% elif content_type == 'reading' %}
+                    {% if content_type == 'reading' %}
                         <h3>{{ current_material.title }}</h3>
                         <div class="reading-material-content">
                             {{ preview_content|safe }}

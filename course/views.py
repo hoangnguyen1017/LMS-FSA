@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Course, Document, Video, Enrollment, ReadingMaterial, Completion, CourseMaterial, Session, SessionCompletion
-from .forms import CourseForm, DocumentForm, VideoForm, EnrollmentForm, CourseSearchForm, SessionForm
+from .models import Course, Enrollment, ReadingMaterial, Completion, Session, SessionCompletion
+from .forms import CourseForm, EnrollmentForm, CourseSearchForm, SessionForm
 from module_group.models import ModuleGroup
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -214,6 +214,23 @@ def course_list(request):
     for course in courses:
         course.completion_percent = course.get_completion_percent(request.user)
 
+        # mới thêm
+    recommended_courses = []
+    for course in courses:
+        if course.id not in enrolled_courses:
+            for enrolled_course_id in enrolled_courses:
+                enrolled_course = Course.objects.get(id=enrolled_course_id)
+                enrolled_tags = set(enrolled_course.tags.split(',')) if enrolled_course.tags else set()
+                current_tags = set(course.tags.split(',')) if course.tags else set()
+
+                # Calculate the similarity
+                if enrolled_tags:
+                    shared_tags = enrolled_tags.intersection(current_tags)
+                    similarity = len(shared_tags) / len(enrolled_tags)
+                    if similarity >= 0.6:  # 60% similarity
+                        recommended_courses.append(course)
+                        break  # No need to check other enrolled courses
+
     # Pagination
     paginator = Paginator(courses, 10)  # Show 10 courses per page
     page_number = request.GET.get('page')
@@ -224,6 +241,7 @@ def course_list(request):
         'page_obj': page_obj,  # Pagination object for template
         'courses': page_obj,  # Consistent with template expectations
         'enrolled_courses': enrolled_courses,  # To show enrolled status
+        'recommended_courses': recommended_courses,
     })
 
 def course_add(request):
@@ -283,6 +301,12 @@ def course_edit(request, pk):
         if course_form.is_valid():
             course = course_form.save(commit=False)
             course.creator = request.user
+
+            # Handle tags
+            tags = request.POST.get('tags', '').split(',')
+            course.tags = ','.join(tag.strip() for tag in tags if tag.strip())  # Update tags
+
+            # Save the course
             course.save()
 
             # Handle prerequisite deletion
@@ -326,6 +350,7 @@ def course_edit(request, pk):
         course_form = CourseForm(instance=course)
         prerequisites = course.prerequisites.all()
         sessions = course.sessions.all()
+        tags_list = course.tags.split(',') if course.tags else []
 
     return render(request, 'edit_form.html', {
         'course_form': course_form,
@@ -341,24 +366,6 @@ def course_delete(request, pk):
         course.delete()
         return redirect('course:course_list')
     return render(request, 'course_confirm_delete.html', {'course': course})
-
-
-def resource_library(request):
-    documents = Document.objects.all()
-    videos = Video.objects.all()
-    courses = Course.objects.all()
-
-    selected_course_id = request.GET.get('course')
-    if selected_course_id:
-        documents = documents.filter(course_id=selected_course_id)
-        videos = videos.filter(course_id=selected_course_id)
-
-    return render(request, 'resource_library.html', {
-        'documents': documents,
-        'videos': videos,
-        'courses': courses,
-        'selected_course_id': selected_course_id,
-    })
 
 @login_required
 def course_detail(request, pk):
@@ -396,37 +403,10 @@ def course_detail(request, pk):
         'feedbacks': feedbacks,  # Pass feedbacks to the template
         'sessions': sessions,
         'latest_feedbacks': latest_feedbacks,
+        'tags': course.tags.split(',') if course.tags else [],  # Pass tags as a list
     }
 
     return render(request, 'course_detail.html', context)
-
-
-def file_download(request, file_type, file_id):
-    if file_type == 'document':
-        file_obj = get_object_or_404(Document, id=file_id)
-        file_path = file_obj.doc_file.path
-        file_name = file_obj.doc_title
-    elif file_type == 'video':
-        file_obj = get_object_or_404(Video, id=file_id)
-        file_path = file_obj.vid_file.path
-        file_name = file_obj.vid_title
-    else:
-        raise Http404("File not found")
-
-    file_extension = os.path.splitext(file_path)[1].lower()
-    previewable_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm', '.ogg']
-
-    if file_extension in previewable_extensions:
-        # For previewable files, open them in the browser
-        response = FileResponse(open(file_path, 'rb'))
-        response['Content-Disposition'] = f'inline; filename="{slugify(file_name)}{file_extension}"'
-    else:
-        # For non-previewable files, force download
-        response = FileResponse(open(file_path, 'rb'))
-        response['Content-Disposition'] = f'attachment; filename="{slugify(file_name)}{file_extension}"'
-
-    return response
-
 
 def users_enrolled(request, pk):
     # Lấy môn học dựa trên khóa chính (primary key)
@@ -474,7 +454,7 @@ def reorder_course_materials(request, pk, session_id):
     # Fetch materials for the selected session, defaulting to the first session
     selected_session_id = request.POST.get('session_id') or session_id
     session = get_object_or_404(Session, id=selected_session_id)
-    materials = CourseMaterial.objects.filter(session=session).order_by('order')
+    materials = ReadingMaterial.objects.filter(session=session).order_by('order')
 
     if request.method == 'POST':
         # Check if the request is for reordering materials
@@ -506,7 +486,6 @@ def reading_material_detail(request, id):
     reading_material = get_object_or_404(ReadingMaterial, id=id)
     return render(request, 'reading_material_detail.html', {'reading_material': reading_material})
 
-
 @login_required
 def course_content(request, pk, session_id):
     course = get_object_or_404(Course, pk=pk)
@@ -516,15 +495,15 @@ def course_content(request, pk, session_id):
 
     current_session = get_object_or_404(Session, id=selected_session_id)
 
-    materials = CourseMaterial.objects.filter(session=current_session).order_by('order')
+    materials = ReadingMaterial.objects.filter(session=current_session).order_by('order')
 
     file_id = request.GET.get('file_id')
-    file_type = request.GET.get('file_type')
+    file_type = 'reading'
     current_material = None
     if file_id and file_type:
         try:
-            current_material = CourseMaterial.objects.get(id=file_id, material_type=file_type, session=current_session)
-        except CourseMaterial.DoesNotExist:
+            current_material = ReadingMaterial.objects.get(id=file_id, material_type=file_type, session=current_session)
+        except ReadingMaterial.DoesNotExist:
             current_material = materials.first() if materials.exists() else None
     else:
         current_material = materials.first() if materials.exists() else None
@@ -535,25 +514,14 @@ def course_content(request, pk, session_id):
     if not next_material:
         next_session = Session.objects.filter(course=course, order__gt=current_session.order).order_by('order').first()
         if next_session:
-            next_material = CourseMaterial.objects.filter(session=next_session).order_by('order').first()
+            next_material = ReadingMaterial.objects.filter(session=next_session).order_by('order').first()
 
-    preview_url = None
-    download_url = None
     content_type = None
     preview_content = None
 
     if current_material:
-        if current_material.material_type == 'document':
-            document = Document.objects.get(id=current_material.material_id)
-            preview_url = document.doc_file.url if document.doc_file else None
-            download_url = preview_url
-            content_type = 'document'
-        elif current_material.material_type == 'video':
-            video = Video.objects.get(id=current_material.material_id)
-            preview_url = video.vid_file.url if video.vid_file else None
-            content_type = 'video'
-        elif current_material.material_type == 'reading':
-            reading = ReadingMaterial.objects.get(id=current_material.material_id)
+        if current_material.material_type == 'reading':
+            reading = ReadingMaterial.objects.get(id=current_material.id)
             preview_content = reading.content
             content_type = 'reading'
 
@@ -564,7 +532,7 @@ def course_content(request, pk, session_id):
         completed=True
     ).exists() if current_material else False
 
-    total_materials = CourseMaterial.objects.filter(session__course=course).count()
+    total_materials = ReadingMaterial.objects.filter(session__course=course).count()
     completed_materials = Completion.objects.filter(
         session__course=course,
         user=request.user,
@@ -587,8 +555,6 @@ def course_content(request, pk, session_id):
         'materials': materials,
         'current_material': current_material,
         'next_material': next_material,
-        'preview_url': preview_url,
-        'download_url': download_url,
         'content_type': content_type,
         'preview_content': preview_content,
         'completion_status': completion_status,
@@ -606,7 +572,7 @@ def toggle_completion(request, pk):
     course = get_object_or_404(Course, pk=pk)
     file_id = request.POST.get('file_id')
 
-    material = get_object_or_404(CourseMaterial, id=file_id, session__course=course)
+    material = get_object_or_404(ReadingMaterial, id=file_id, session__course=course)
     session = material.session
 
     completion, created = Completion.objects.get_or_create(
@@ -630,7 +596,7 @@ def toggle_completion(request, pk):
     )
 
     # Find the next item
-    next_material = CourseMaterial.objects.filter(
+    next_material = ReadingMaterial.objects.filter(
         session=session,
         order__gt=material.order
     ).order_by('order').first()
@@ -639,7 +605,7 @@ def toggle_completion(request, pk):
     if not next_material:
         next_session = Session.objects.filter(course=course, order__gt=session.order).order_by('order').first()
         if next_session:
-            next_material = CourseMaterial.objects.filter(session=next_session).order_by('order').first()
+            next_material = ReadingMaterial.objects.filter(session=next_session).order_by('order').first()
 
     next_item_type = next_material.material_type if next_material else None
     next_item_id = next_material.id if next_material else None
@@ -664,78 +630,20 @@ def course_content_edit(request, pk, session_id):
     session = get_object_or_404(Session, id=selected_session_id)
 
     # Fetch materials associated with the selected session
-    materials = CourseMaterial.objects.filter(session=session)
+    materials = ReadingMaterial.objects.filter(session=session)
     #print("Materials associated with selected session:", [vars(material) for material in materials])  # List comprehension for material attributes
 
-    # Get documents, videos, and reading materials based on the filtered materials
-    document_ids = materials.filter(material_type='document').values_list('material_id', flat=True)
-    video_ids = materials.filter(material_type='video').values_list('material_id', flat=True)
-    reading_ids = materials.filter(material_type='reading').values_list('material_id', flat=True)
+    reading_ids = materials.filter(material_type='reading').values_list('id', flat=True)
 
-    documents = Document.objects.filter(id__in=document_ids)
-    videos = Video.objects.filter(id__in=video_ids)
     reading_materials = ReadingMaterial.objects.filter(id__in=reading_ids)
 
     if request.method == 'POST':
         print("Session ID POST:", request.POST.get('session_id'))  # Debugging line
-        # Process documents for deletion
-        for document in documents:
-            if f'delete_document_{document.id}' in request.POST:
-                document.delete()
-
-        # Process videos for deletion
-        for video in videos:
-            if f'delete_video_{video.id}' in request.POST:
-                video.delete()
 
         # Process reading materials for deletion
         for reading_material in reading_materials:
             if f'delete_reading_material_{reading_material.id}' in request.POST:
                 reading_material.delete()
-
-        # Handle multiple document uploads
-        doc_files = request.FILES.getlist('doc_file[]')
-        doc_titles = request.POST.getlist('doc_title[]')
-        for file, title in zip(doc_files, doc_titles):
-            if file and title:
-                document = Document.objects.create(
-                    #material=None,  # Set the material reference later
-                    doc_file=file,
-                    doc_title=title
-                )
-                # Create a courseMaterial instance for the document
-                course_material = CourseMaterial.objects.create(
-                    session=session,
-                    material_id=document.id,
-                    material_type='document',
-                    title=document.doc_title,
-                    order=order
-                )
-                document.material = course_material  # Set the reverse relationship
-                document.save()
-                order += 1
-
-        # Handle multiple video uploads
-        vid_files = request.FILES.getlist('vid_file[]')
-        vid_titles = request.POST.getlist('vid_title[]')
-        for file, title in zip(vid_files, vid_titles):
-            if file and title:
-                video = Video.objects.create(
-                    #material=None,  # Set the material reference later
-                    vid_file=file,
-                    vid_title=title
-                )
-                # Create a courseMaterial instance for the video
-                course_material = CourseMaterial.objects.create(
-                    session=session,
-                    material_id=video.id,
-                    material_type='video',
-                    title=video.vid_title,
-                    order=order
-                )
-                video.material = course_material  # Set the reverse relationship
-                video.save()
-                order += 1
 
         # Handle reading materials
         reading_material_titles = request.POST.getlist('reading_material_title[]')
@@ -743,21 +651,12 @@ def course_content_edit(request, pk, session_id):
         for title, content in zip(reading_material_titles, reading_material_contents):
             if title and content:
                 reading_material = ReadingMaterial.objects.create(
-                    #material=None,  # Set the material reference later
-                    title=title,
-                    content=content
-                )
-                # Create a courseMaterial instance for the reading material
-                course_material = CourseMaterial.objects.create(
                     session=session,
-                    material_id=reading_material.id,
-                    material_type='reading',
-                    title=reading_material.title,
-                    order=order
+                    title=title,
+                    content=content,
+                    order=ReadingMaterial.objects.count() + 1
                 )
-                reading_material.material = course_material  # Set the reverse relationship
                 reading_material.save()
-                order += 1
 
         messages.success(request, 'course content updated successfully.')
         return redirect(reverse('course:course_content_edit', args=[course.pk, session.id]))
@@ -767,8 +666,6 @@ def course_content_edit(request, pk, session_id):
         'course': course,
         'sessions': sessions,
         'selected_session': session,
-        'documents': documents,
-        'videos': videos,
         'reading_materials': reading_materials,
     }
 

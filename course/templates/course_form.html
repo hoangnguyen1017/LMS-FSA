@@ -72,6 +72,42 @@
 
 {% block extra_js %}
 <script>
+    const tags = [];
+    // mới thêm
+    document.querySelectorAll('#tags-list .badge').forEach(tagElement => {
+        tags.push(tagElement.textContent);
+    });
+
+    document.getElementById('tag-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const tagValue = this.value.trim();
+            if (tagValue && !tags.includes(tagValue)) {
+                tags.push(tagValue);
+                updateTagsList();
+                this.value = ''; // Clear the input
+            }
+        }
+    });
+
+    function updateTagsList() {
+        const tagsList = document.getElementById('tags-list');
+        tagsList.innerHTML = ''; // Clear existing tags
+        tags.forEach((tag, index) => {
+            const tagElement = document.createElement('span');
+            tagElement.className = 'badge badge-info mr-1';
+            tagElement.textContent = tag;
+            tagElement.onclick = () => removeTag(index); // Allow tag removal
+            tagsList.appendChild(tagElement);
+        });
+    }
+
+    function removeTag(index) {
+        tags.splice(index, 1);
+        updateTagsList();
+    }
+
+    document.querySelector('form').addEventListener('submit', updateTagsInput);
     function createPrerequisiteSelect() {
         const selectHtml = `
             <div class="prerequisite-entry mt-2">

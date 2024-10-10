@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Course, Document, Video, Enrollment, ReadingMaterial, Completion, CourseMaterial, Session
+from .models import Course, Document, Video, Enrollment, ReadingMaterial, Completion, CourseMaterial, Session, SessionCompletion
 from .forms import CourseForm, DocumentForm, VideoForm, EnrollmentForm, CourseSearchForm, SessionForm
 from module_group.models import ModuleGroup
 from django.contrib.auth.decorators import login_required
@@ -505,172 +505,136 @@ def reading_material_detail(request, id):
     reading_material = get_object_or_404(ReadingMaterial, id=id)
     return render(request, 'reading_material_detail.html', {'reading_material': reading_material})
 
+
 @login_required
 def course_content(request, pk, session_id):
     course = get_object_or_404(Course, pk=pk)
-    sessions = Session.objects.filter(course=course)
+    sessions = Session.objects.filter(course=course).order_by('order')
 
-    # Fetch materials for the selected session
     selected_session_id = request.POST.get('session_id') or session_id
-    session = get_object_or_404(Session, id=selected_session_id)
-    materials = CourseMaterial.objects.filter(session=session).order_by('order')
+
+    current_session = get_object_or_404(Session, id=selected_session_id)
+
+    materials = CourseMaterial.objects.filter(session=current_session).order_by('order')
+
+    file_id = request.GET.get('file_id')
+    file_type = request.GET.get('file_type')
+    current_material = None
+    if file_id and file_type:
+        try:
+            current_material = CourseMaterial.objects.get(id=file_id, material_type=file_type, session=current_session)
+        except CourseMaterial.DoesNotExist:
+            current_material = materials.first() if materials.exists() else None
+    else:
+        current_material = materials.first() if materials.exists() else None
+
+    next_material = materials.filter(order__gt=current_material.order).first() if current_material else None
 
     preview_url = None
     download_url = None
-    file_type = None
     content_type = None
-    file_id = None
-    current_item = None
-    next_item = None
-    completion_status = False
     preview_content = None
 
-    if 'file_id' in request.GET and 'file_type' in request.GET:
-        file_id = request.GET.get('file_id')
-        file_type = request.GET.get('file_type')
-
-        if file_type == 'document':
-            current_item = get_object_or_404(Document, id=file_id)
-            file_url = current_item.doc_file.url
+    if current_material:
+        if current_material.material_type == 'document':
+            document = Document.objects.get(id=current_material.material_id)
+            preview_url = document.doc_file.url if document.doc_file else None
+            download_url = preview_url
             content_type = 'document'
-        elif file_type == 'video':
-            current_item = get_object_or_404(Video, id=file_id)
-            file_url = current_item.vid_file.url
+        elif current_material.material_type == 'video':
+            video = Video.objects.get(id=current_material.material_id)
+            preview_url = video.vid_file.url if video.vid_file else None
             content_type = 'video'
-        elif file_type == 'reading':
-            current_item = get_object_or_404(ReadingMaterial, id=file_id)
-            preview_url = True
+        elif current_material.material_type == 'reading':
+            reading = ReadingMaterial.objects.get(id=current_material.material_id)
+            preview_content = reading.content
             content_type = 'reading'
-            preview_content = current_item.content
 
-        # Find the next item
-        current_material = materials.filter(material_id=file_id, material_type=file_type).first()
-        if current_material:
-            next_material = materials.filter(order__gt=current_material.order).first()
-            if next_material:
-                next_item = {
-                    'type': next_material.material_type,
-                    'id': next_material.material_id
-                }
+    completion_status = Completion.objects.filter(
+        session=current_session,
+        material=current_material,
+        user=request.user,
+        completed=True
+    ).exists() if current_material else False
 
-        # Check completion status
-        completion = Completion.objects.filter(session=session, material__material_id=current_item.id, material__material_type=file_type).first()
-        completion_status = completion.completed if completion else False
-
-        if file_type in ['document', 'video']:
-            file_name = os.path.basename(file_url)
-            file_extension = os.path.splitext(file_name)[1].lower()
-            previewable_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm', '.ogg', '.pdf']
-            if file_extension in previewable_extensions:
-                preview_url = file_url
-                if file_extension in ['.jpg', '.jpeg', '.png', '.gif']:
-                    content_type = 'image'
-                elif file_extension in ['.mp4', '.webm', '.ogg']:
-                    content_type = 'video'
-                elif file_extension == '.pdf':
-                    content_type = 'pdf'
-            else:
-                download_url = reverse('course:file_download', kwargs={'file_type': file_type, 'file_id': file_id})
-
-    # Calculate completion percentage based on all materials
-    all_materials = CourseMaterial.objects.filter(session__course=course)  # Fetch all materials across all sessions
-    total_materials = all_materials.count()
+    total_materials = CourseMaterial.objects.filter(session__course=course).count()
     completed_materials = Completion.objects.filter(
         session__course=course,
+        user=request.user,
         completed=True
     ).count()
-
     completion_percent = (completed_materials / total_materials) * 100 if total_materials > 0 else 0
 
-    # Check if the course is completed and generate certificate
+    total_sessions = sessions.count()
+    completed_sessions = SessionCompletion.objects.filter(course=course, user=request.user, completed=True).count()
+
     certificate_url = None
-    if completion_percent == 100:
+    if total_sessions > 0 and completed_sessions == total_sessions:
+        # Call the function to generate the certificate URL
         certificate_url = reverse('course:generate_certificate', kwargs={'pk': course.pk})
 
     context = {
         'course': course,
         'sessions': sessions,
-        'materials': materials,  # Only show materials from the selected session
+        'current_session': current_session,
+        'materials': materials,
+        'current_material': current_material,
+        'next_material': next_material,
         'preview_url': preview_url,
         'download_url': download_url,
-        'file_type': file_type,
         'content_type': content_type,
-        'file_id': file_id,
-        'current_item': current_item,
-        'next_item': next_item,
-        'completion_status': completion_status,
         'preview_content': preview_content,
+        'completion_status': completion_status,
+        'completion_percent': completion_percent,
         'certificate_url': certificate_url,
-        'selected_session_id': selected_session_id,
     }
 
     return render(request, 'course_content.html', context)
+
 
 @require_POST
 @login_required
 def toggle_completion(request, pk):
     course = get_object_or_404(Course, pk=pk)
-    file_type = request.POST.get('file_type')
     file_id = request.POST.get('file_id')
 
-    if file_type == 'document':
-        content_object = get_object_or_404(Document, id=file_id, course=course)
-    elif file_type == 'video':
-        content_object = get_object_or_404(Video, id=file_id, course=course)
-    elif file_type == 'reading':
-        content_object = get_object_or_404(ReadingMaterial, id=file_id, course=course)
-    else:
-        return JsonResponse({'error': 'Invalid file type'}, status=400)
+    material = get_object_or_404(CourseMaterial, id=file_id, session__course=course)
+    session = material.session
 
     completion, created = Completion.objects.get_or_create(
-        course=course,
-        **{file_type: content_object}
+        session=session,
+        material=material,
+        user=request.user,
     )
     completion.completed = not completion.completed
     completion.save()
 
-    documents = list(Document.objects.filter(course=course).order_by('id'))
-    videos = list(Video.objects.filter(course=course).order_by('id'))
-    reading_materials = list(ReadingMaterial.objects.filter(course=course).order_by('id'))
+    # Check if all materials in the session are completed
+    total_materials = session.materials.count()
+    completed_materials = Completion.objects.filter(session=session, user=request.user, completed=True).count()
+    session_completed = total_materials == completed_materials
 
-    next_item_type = None
-    next_item_id = None
+    SessionCompletion.objects.update_or_create(
+        user=request.user,
+        session=session,
+        course=course,
+        defaults={'completed': session_completed}
+    )
 
-    if file_type == 'document':
-        current_index = documents.index(content_object)
-        if current_index < len(documents) - 1:
-            next_item = documents[current_index + 1]
-            next_item_type = 'document'
-            next_item_id = next_item.id
-        elif videos:
-            next_item = videos[0]
-            next_item_type = 'video'
-            next_item_id = next_item.id
-        elif reading_materials:
-            next_item = reading_materials[0]
-            next_item_type = 'reading'
-            next_item_id = next_item.id
-    elif file_type == 'video':
-        current_index = videos.index(content_object)
-        if current_index < len(videos) - 1:
-            next_item = videos[current_index + 1]
-            next_item_type = 'video'
-            next_item_id = next_item.id
-        elif reading_materials:
-            next_item = reading_materials[0]
-            next_item_type = 'reading'
-            next_item_id = next_item.id
-    elif file_type == 'reading':
-        current_index = reading_materials.index(content_object)
-        if current_index < len(reading_materials) - 1:
-            next_item = reading_materials[current_index + 1]
-            next_item_type = 'reading'
-            next_item_id = next_item.id
+    # Find the next item
+    next_material = CourseMaterial.objects.filter(
+        session=session,
+        order__gt=material.order
+    ).order_by('order').first()
+
+    next_item_type = next_material.material_type if next_material else None
+    next_item_id = next_material.id if next_material else None
 
     return JsonResponse({
         'completed': completion.completed,
         'next_item_type': next_item_type,
-        'next_item_id': next_item_id
+        'next_item_id': next_item_id,
+        'session_id': session.id
     })
 # In course/views.py
 
@@ -764,7 +728,7 @@ def course_content_edit(request, pk, session_id):
         for title, content in zip(reading_material_titles, reading_material_contents):
             if title and content:
                 reading_material = ReadingMaterial.objects.create(
-                    material=None,  # Set the material reference later
+                    #material=None,  # Set the material reference later
                     title=title,
                     content=content
                 )
@@ -809,17 +773,14 @@ def generate_certificate_png(request, pk):
     student = request.user
 
     # Verify that the student has completed the course
-    total_materials = CourseMaterial.objects.filter(course=course).count()
-    completed_materials = Completion.objects.filter(
+    sessions = Session.objects.filter(course=course).count()
+    completed_sessions = SessionCompletion.objects.filter(
         course=course,
+        user=student,
         completed=True
-    ).filter(
-        Q(document__course=course) |
-        Q(video__course=course) |
-        Q(reading__course=course)
     ).distinct().count()
 
-    if completed_materials != total_materials:
+    if completed_sessions != sessions:
         return HttpResponse("You have not completed this course yet.", status=403)
 
     # Dynamically find the background image in the course app's static directory
@@ -841,4 +802,3 @@ def generate_certificate_png(request, pk):
     }
 
     return render(request, 'certificate_template.html', context)
-

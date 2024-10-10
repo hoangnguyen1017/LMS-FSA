@@ -25,37 +25,40 @@ import numpy as np
 
 
 def export_course(request):
-    # Create a workbook and add a worksheet
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=lms_course.xlsx'
 
     workbook = openpyxl.Workbook()
-    worksheet = workbook.active
-    worksheet.title = 'Course'
 
-    # Define the columns
-    columns = [
-        'name',
-        'course_code',
-        'description',
-        'creator',
-        'instructor',
-        'published',
-        'prerequisites'
-    ]
-    worksheet.append(columns)
+    # Course sheet
+    course_worksheet = workbook.active
+    course_worksheet.title = 'Course'
+    course_columns = ['name', 'course_code', 'description', 'creator', 'instructor', 'published', 'prerequisites']
+    course_worksheet.append(course_columns)
 
-    # Fetch all courses and write to the Excel file
     for course in Course.objects.all():
-        prerequisites_list = ', '.join([prerequisite.name for prerequisite in course.prerequisites.all()])
-        worksheet.append([
+        prerequisites_list = ', '.join([prerequisite.name for prerequisite in course.prerequisites.all()]) or None
+        course_worksheet.append([
             course.name,
             course.course_code,
             course.description,
-            course.creator.username if course.creator else 'N/A',  # Use username or other identifier
-            course.instructor.username if course.instructor else 'N/A',  # Use username or other identifier
+            course.creator.username if course.creator else None,
+            course.instructor.username if course.instructor else None,
             course.published,
-            prerequisites_list or 'N/A'  # Show N/A if there are no prerequisites
+            prerequisites_list
+        ])
+
+    # Session sheet
+    session_worksheet = workbook.create_sheet(title='Session')
+    session_columns = ['session_id', 'course_name', 'session_name', 'session_order']
+    session_worksheet.append(session_columns)
+
+    for session in Session.objects.all():
+        session_worksheet.append([
+            session.id,  # Include session ID
+            session.course.name if session.course else None,
+            session.name,
+            session.order
         ])
 
     workbook.save(response)
@@ -63,9 +66,7 @@ def export_course(request):
 
 def to_none_if_nan(value):
     """Convert value to None if it is NaN."""
-    if isinstance(value, float) and np.isnan(value):
-        return None
-    return value
+    return None if isinstance(value, float) and np.isnan(value) else value
 
 def import_courses(request):
     if request.method == 'POST':
@@ -73,11 +74,15 @@ def import_courses(request):
         if form.is_valid():
             uploaded_file = request.FILES['excel_file']
             try:
-                df = pd.read_excel(uploaded_file)
+                # Read necessary sheets
+                course_df = pd.read_excel(uploaded_file, sheet_name='Course')
+                session_df = pd.read_excel(uploaded_file, sheet_name='Session')
+
+                # Import courses
                 course_imported = 0
                 course_updated = 0
 
-                for index, row in df.iterrows():
+                for index, row in course_df.iterrows():
                     name = row['name']
                     course_code = row['course_code']
                     description = row['description']
@@ -85,25 +90,9 @@ def import_courses(request):
                     instructor_username = to_none_if_nan(row.get('instructor'))
                     prerequisites = to_none_if_nan(row.get('prerequisites'))
 
-                    print(f"Processing row: {name}")
                     # Fetch User instances
-                    creator = None
-                    if creator_username:
-                        try:
-                            creator = User.objects.get(username=creator_username)
-                        except User.DoesNotExist:
-                            messages.warning(request,
-                                             f"Creator '{creator_username}' does not exist. Skipping course '{name}'.")
-                            continue
-
-                    instructor = None
-                    if instructor_username:
-                        try:
-                            instructor = User.objects.get(username=instructor_username)
-                        except User.DoesNotExist:
-                            messages.warning(request,
-                                             f"Instructor '{instructor_username}' does not exist. Skipping course '{name}'.")
-                            continue
+                    creator = User.objects.filter(username=creator_username).first() if creator_username else None
+                    instructor = User.objects.filter(username=instructor_username).first() if instructor_username else None
 
                     # Get or create the course
                     course, created = Course.objects.get_or_create(
@@ -118,29 +107,37 @@ def import_courses(request):
 
                     if created:
                         course_imported += 1
-                        print(f"Course '{name}' created")
                     else:
                         course_updated += 1
-                        print(f"Course '{name}' already exists and was not created")
+
                     # Handle prerequisites
                     if prerequisites:
                         prerequisite_names = [prerequisite.strip() for prerequisite in prerequisites.split(',')]
-                        # Clear existing prerequisites
                         course.prerequisites.clear()
-                        # Add new prerequisites
                         for prerequisite_name in prerequisite_names:
-                            try:
-                                prerequisite = Course.objects.get(name=prerequisite_name)
+                            prerequisite = Course.objects.filter(name=prerequisite_name).first()
+                            if prerequisite:
                                 course.prerequisites.add(prerequisite)
-                                print(f"Added prerequisite '{prerequisite_name}' to course '{name}'.")
-                            except Course.DoesNotExist:
-                                print(f"Prerequisite '{prerequisite_name}' does not exist for course '{name}'.")
+                            else:
+                                messages.warning(request, f"Prerequisite '{prerequisite_name}' does not exist for course '{name}'.")
 
-                messages.success(request,
-                                 f"{course_imported} courses imported successfully! {course_updated} courses already existed.")
+                # Import sessions
+                for index, row in session_df.iterrows():
+                    course_name = row['course_name']
+                    session_name = row['session_name']
+                    session_order = row['session_order']
+
+                    course = Course.objects.filter(name=course_name).first()
+                    if course:
+                        Session.objects.get_or_create(
+                            course=course,
+                            name=session_name,
+                            defaults={'order': session_order}
+                        )
+
+                messages.success(request, f"{course_imported} courses imported successfully! {course_updated} courses already existed.")
             except Exception as e:
                 messages.error(request, f"An error occurred during import: {e}")
-                print(f"Error during import: {e}")
 
             return redirect('course:course_list')
     else:

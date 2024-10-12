@@ -31,7 +31,7 @@ def user_detail(request, pk):
     user = get_object_or_404(User, auth_user_id=pk)
     enrollments = Enrollment.objects.filter(student_id=user.auth_user_id)
     # Extract course names
-    course_names = [enrollment.course.name for enrollment in enrollments]
+    course_names = [enrollment.course.course_name for enrollment in enrollments]
 
     return render(request, 'user_detail.html', {
         'user': user,

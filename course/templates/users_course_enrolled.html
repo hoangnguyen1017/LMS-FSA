@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}Users Enrolled in {{ course.name }}{% endblock %}
+{% block title %}Users Enrolled in {{ course.course_name }}{% endblock %}
 
 {% block content %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Users Enrolled - {{ course.name }}</title>
+    <title>Users Enrolled - {{ course.course_name }}</title>
 </head>
 <body>
-    <h1>Users Enrolled in {{ course.name }}</h1>
+    <h1>Users Enrolled in {{ course.course_name }}</h1>
 
     {% if enrolled_users %}
         <table class="table">

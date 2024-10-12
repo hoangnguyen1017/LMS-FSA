@@ -23,7 +23,7 @@
                 <td>-</td>
                 <td>
                     {% for course in category.courses.all %}
-                        {{ course.name }}{% if not forloop.last %}, {% endif %}
+                        {{ course.course_name }}{% if not forloop.last %}, {% endif %}
                     {% empty %}
                         No courses assigned
                     {% endfor %}
@@ -40,7 +40,7 @@
                     <td>{{ category.category_name|title }}</td>
                     <td>
                         {% for course in category.courses.all %}
-                            {{ course.name }}{% if not forloop.last %}, {% endif %}
+                            {{ course.course_name }}{% if not forloop.last %}, {% endif %}
                         {% empty %}
                             No courses assigned
                         {% endfor %}

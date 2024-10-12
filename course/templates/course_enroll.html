@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 
-{% block title %}Enroll in {{ course.name }}{% endblock %}
+{% block title %}Enroll in {{ course.course_name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Enroll in {{ course.name }}</h2>
+    <h2>Enroll in {{ course.course_name }}</h2>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}

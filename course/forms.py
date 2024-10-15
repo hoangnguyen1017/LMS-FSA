@@ -10,8 +10,12 @@ class CourseForm(forms.ModelForm):
     instructor = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Instructor")
     prerequisites = forms.ModelMultipleChoiceField(queryset=Course.objects.all(),required=False,widget=forms.CheckboxSelectMultiple)
     integer_field = forms.IntegerField(required=False)  # mới thêm
-    tags = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Enter tags separated by commas'}),
-                           required=False)
+    tags = forms.ModelMultipleChoiceField(
+        queryset=Tag.objects.all(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Tags"
+    )
 
     def clean_integer_field(self):
         data = self.cleaned_data.get('integer_field')
@@ -52,7 +56,17 @@ class ReadingMaterialForm(forms.ModelForm):
     #content = forms.CharField(widget=CKEditorWidget(config_name='default'))
     class Meta:
         model = ReadingMaterial
-        fields = ['title', 'content', 'order']
+        fields = ['title', 'content', 'material']
 
 class UploadFileForm(forms.Form):
     file = forms.FileField()
+
+class TopicForm(forms.ModelForm):
+    class Meta:
+        model = Topic
+        fields = ['name']
+
+class TagForm(forms.ModelForm):
+    class Meta:
+        model = Tag
+        fields = ['name', 'topic']

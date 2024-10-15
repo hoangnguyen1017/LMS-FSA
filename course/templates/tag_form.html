@@ -1,0 +1,8 @@
+<!-- tag_form.html -->
+<h2>{{ title }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+<a href="{% url 'course:tag_list' %}">Back to Tag List</a>

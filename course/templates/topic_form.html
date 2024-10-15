@@ -1,0 +1,8 @@
+<!-- topic_form.html -->
+<h2>{{ title }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+<a href="{% url 'course:topic_list' %}">Back to Topic List</a>

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Topics</h2>
+<a href="{% url 'course:topic_add' %}">Add New Topic</a>
+<ul>
+    {% for topic in topics %}
+        <li>
+            {{ topic.name }}
+            <a href="{% url 'course:topic_edit' topic.pk %}">Edit</a>
+            <a href="{% url 'course:topic_delete' topic.pk %}">Delete</a>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

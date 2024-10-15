@@ -1,70 +1,138 @@
-<!-- course_form.html -->
-
 {% extends 'base.html' %}
 {% load form_filters %}
 
 {% block title %}{{ form.instance.pk|yesno:"Edit Course,Add New Course" }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .main-color {
+        background-color: #389bb0;
+        color: white;
+    }
+    .main-color-text {
+        color: #389bb0;
+    }
+    .main-color-border {
+        border-color: #389bb0;
+    }
+    .full-width-container {
+        width: 100%;
+        max-width: none;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: -5px;
+        margin-left: -5px;
+    }
+    .form-row > .form-group {
+        flex: 1 1 calc(25% - 10px);
+        padding-right: 5px;
+        padding-left: 5px;
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        font-weight: bold;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+        transition: border-color 0.3s ease-in-out;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        border-color: #389bb0;
+        outline: none;
+    }
+    .btn {
+        transition: background-color 0.3s ease-in-out;
+    }
+    .btn:hover {
+        background-color: #2a7a8a;
+    }
+    .description-container {
+        width: 100%;
+        margin-top: 1rem;
+        font-weight: bold;
+    }
+    .description-input {
+        width: 100%;
+        min-height: 200px;
+    }
+    .form-group-inline {
+        display: flex;
+        gap: 1rem;
+    }
+    .form-group-inline .form-group {
+        flex: 1;
+    }
+    .button-group {
+        display: flex;
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>{{ form.instance.pk|yesno:"Edit Course,Add New Course" }}</h2>
-    <form method="post" enctype="multipart/form-data">
+<div class="container mx-auto p-8 bg-white rounded-lg shadow-xl">
+    <h2 class="text-2xl font-semibold text-teal-600 mb-4 main-color-text">{{ form.instance.pk|yesno:"Edit Course,Add New Course" }}</h2>
+    <form method="post" class="space-y-4" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="row">
-            <div class="col-md-8" style="margin-left: 2cm; margin-right: 2cm;">
-                <div class="form-group">
-                    {{ course_form.course_name.label_tag }}
-                    {{ course_form.course_name|add_class:"form-control" }}
-                </div>
-                <div class="form-group">
-                    {{ course_form.course_code.label_tag }}
-                    {{ course_form.course_code|add_class:"form-control" }}
-                </div>
-                <div class="form-group">
-                    {{ course_form.description.label_tag }}
-                    {{ course_form.description|add_class:"form-control" }}
-                </div>
-                <div class="form-group">
-                    {{ course_form.creator.label_tag }}
-                    {{ course_form.creator|add_class:"form-control" }}
-                </div>
-                <div class="form-group">
-                    {{ course_form.instructor.label_tag }}
-                    {{ course_form.instructor|add_class:"form-control" }}
-                </div>
-
-                <!-- Prerequisite Courses -->
-                <div class="form-group">
-                    <h3>Prerequisite Courses</h3>
-                    <div id="prerequisite-container">
-                        <div class="prerequisite-entry">
-                            <select name="prerequisite_courses[]" class="form-control">
-                                <option value="">Select a prerequisite course (optional)</option>
-                                {% for course in all_courses %}
-                                    <option value="{{ course.id }}">{{ course.course_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <button type="button" id="add-prerequisite" class="btn btn-secondary mt-2">Add Another Prerequisite</button>
-                </div>
-
-                <!-- Session Fields -->
-                <div class="form-group">
-                    <h3>Session Information</h3>
-                    <div class="form-group">
-                        {{ session_form.session_name.label_tag }}
-                        {{ session_form.session_name|add_class:"form-control" }}
-                    </div>
-                    <div class="form-group">
-                        {{ session_form.session_quantity.label_tag }}
-                        {{ session_form.session_quantity|add_class:"form-control" }}
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary mt-4">Save</button>
-                <a href="{% url 'course:course_list' %}" class="btn btn-secondary mt-2">Back to Course List</a>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="course_name" class="block text-sm font-medium mb-1">{{ course_form.course_name.label }}</label>
+                {{ course_form.course_name|add_class:"w-full p-2 border border-gray-300 rounded" }}
             </div>
+            <div class="form-group">
+                <label for="course_code" class="block text-sm font-medium mb-1">{{ course_form.course_code.label }}</label>
+                {{ course_form.course_code|add_class:"w-full p-2 border border-gray-300 rounded" }}
+            </div>
+            <div class="form-group">
+                <label for="creator" class="block text-sm font-medium mb-1">{{ course_form.creator.label }}</label>
+                {{ course_form.creator|add_class:"w-full p-2 border border-gray-300 rounded" }}
+            </div>
+            <div class="form-group">
+                <label for="instructor" class="block text-sm font-medium mb-1">{{ course_form.instructor.label }}</label>
+                {{ course_form.instructor|add_class:"w-full p-2 border border-gray-300 rounded" }}
+            </div>
+        </div>
+        <div class="description-container">
+            <label for="description" class="block text-lg font-bold mb-2">{{ course_form.description.label }}</label>
+            {{ course_form.description|add_class:"w-full p-2 border border-gray-300 rounded description-input" }}
+        </div>
+
+        <!-- Session and Prerequisite Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-xl font-semibold mb-4 main-color-text">Session Information</h3>
+                <div class="form-group-inline">
+                    <div class="form-group">
+                        <label for="session_name" class="block text-lg font-medium mb-2">{{ session_form.session_name.label }}</label>
+                        {{ session_form.session_name|add_class:"w-full p-2 border border-gray-300 rounded" }}
+                    </div>
+                    <div class="form-group">
+                        <label for="session_quantity" class="block text-lg font-medium mb-2">{{ session_form.session_quantity.label }}</label>
+                        {{ session_form.session_quantity|add_class:"w-full p-2 border border-gray-300 rounded" }}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-xl font-semibold mb-4 main-color-text">Prerequisite Courses</h3>
+                <div id="prerequisite-container" class="mb-4">
+                    <div class="prerequisite-entry mb-2">
+                        <select name="prerequisite_courses[]" class="w-full p-2 border border-gray-300 rounded">
+                            <option value="">Select a prerequisite course (optional)</option>
+                            {% for course in all_courses %}
+                                <option value="{{ course.id }}">{{ course.course_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="button" id="add-prerequisite" class="btn main-color px-4 py-2 rounded">Add Another Prerequisite</button>
+                </div>
+            </div>
+        </div>
+        <div class="button-group justify-end mt-6">
+            <button type="submit" class="btn main-color px-4 py-2 rounded">Save</button>
+            <a href="{% url 'course:course_list' %}" class="btn btn-secondary px-4 py-2 rounded">Back to Course List</a>
         </div>
     </form>
 </div>
@@ -72,46 +140,10 @@
 
 {% block extra_js %}
 <script>
-    const tags = [];
-    // mới thêm
-    document.querySelectorAll('#tags-list .badge').forEach(tagElement => {
-        tags.push(tagElement.textContent);
-    });
-
-    document.getElementById('tag-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const tagValue = this.value.trim();
-            if (tagValue && !tags.includes(tagValue)) {
-                tags.push(tagValue);
-                updateTagsList();
-                this.value = ''; // Clear the input
-            }
-        }
-    });
-
-    function updateTagsList() {
-        const tagsList = document.getElementById('tags-list');
-        tagsList.innerHTML = ''; // Clear existing tags
-        tags.forEach((tag, index) => {
-            const tagElement = document.createElement('span');
-            tagElement.className = 'badge badge-info mr-1';
-            tagElement.textContent = tag;
-            tagElement.onclick = () => removeTag(index); // Allow tag removal
-            tagsList.appendChild(tagElement);
-        });
-    }
-
-    function removeTag(index) {
-        tags.splice(index, 1);
-        updateTagsList();
-    }
-
-    document.querySelector('form').addEventListener('submit', updateTagsInput);
     function createPrerequisiteSelect() {
         const selectHtml = `
             <div class="prerequisite-entry mt-2">
-                <select name="prerequisite_courses[]" class="form-control">
+                <select name="prerequisite_courses[]" class="w-full p-2 border border-gray-300 rounded">
                     <option value="">Select a prerequisite course (optional)</option>
                     {% for course in all_courses %}
                         <option value="{{ course.id }}">{{ course.course_name }}</option>

@@ -12,13 +12,28 @@ urlpatterns = [
     path('<int:pk>/detail/', views.course_detail, name='course_detail'),
     path('<int:pk>/enrolled/', views.users_enrolled, name='users_enrolled'),
     path('search/', views.course_search, name='course_search'),
+    # Content
     path('<int:pk>/content/<int:session_id>/', views.course_content, name='course_content'),
     path('<int:pk>/content/edit/<int:session_id>/', views.course_content_edit, name='course_content_edit'),
+    #Export/Import
     path('export/', views.export_course, name='export_course'),
     path('import/', views.import_courses, name='import_course'),
     path('course/<int:pk>/toggle_publish/', views.toggle_publish, name='toggle_publish'),
     path('<int:pk>/toggle-completion/', views.toggle_completion, name='toggle_completion'),
+    # Material
     path('edit/<int:pk>/reorder/<int:session_id>/', views.reorder_course_materials, name='reorder_course_materials'),
     path('reading-material/<int:id>/', views.reading_material_detail, name='reading_material_detail'),
+    # Certificate
     path('<int:pk>/generate-certificate/', views.generate_certificate_png, name='generate_certificate'),
+    # Topic URLs
+    path('topics/', views.topic_list, name='topic_list'),
+    path('topics/add/', views.topic_add, name='topic_add'),
+    path('topics/edit/<int:pk>/', views.topic_edit, name='topic_edit'),
+    path('topics/delete/<int:pk>/', views.topic_delete, name='topic_delete'),
+
+    # Tag URLs
+    path('tags/', views.tag_list, name='tag_list'),
+    path('tags/add/', views.tag_add, name='tag_add'),
+    path('tags/edit/<int:pk>/', views.tag_edit, name='tag_edit'),
+    path('tags/delete/<int:pk>/', views.tag_delete, name='tag_delete'),
 ]

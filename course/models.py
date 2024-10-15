@@ -13,7 +13,7 @@ class Course(models.Model):
     instructor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='taught_courses')
     published = models.BooleanField(default=True)
     prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='is_prerequisite_for')
-    tags = models.TextField(blank=True)  # mới thêm
+    tags = models.ManyToManyField('Tag', blank=True, related_name='courses')
 
     def __str__(self):
         return self.course_name
@@ -23,6 +23,22 @@ class Course(models.Model):
         completed_sessions = SessionCompletion.objects.filter(session__course=self, user=user, completed=True).count()
         return (completed_sessions / total_sessions) * 100 if total_sessions > 0 else 0
 
+class Topic(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=255)
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='tag_set')  # Change 'tags' to 'tag_set'
+
+    class Meta:
+        unique_together = ('name', 'topic')
+
+    def __str__(self):
+        return self.name
 
 class Session(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sessions', null=True)
@@ -43,17 +59,17 @@ class Enrollment(models.Model):
     def __str__(self):
         return f"{self.student} enrolled in {self.course}"
 
-
-class ReadingMaterial(models.Model):
+class CourseMaterial(models.Model):
+    MATERIAL_TYPE_CHOICES = [
+        ('document', 'Document'),
+        ('video', 'Video'),
+        ('reading', 'Reading Material'),
+    ]
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='materials', null=True)
-    content = RichTextUploadingField()  # Use RichTextUploadingField for HTML content with file upload capability
-    title = models.CharField(max_length=255)
-    material_type = models.CharField(max_length=50, default='reading', editable=False)  # Add material_type as a database field
+    material_id = models.PositiveIntegerField()  # Make sure this uniquely identifies the material
+    material_type = models.CharField(max_length=10, choices=MATERIAL_TYPE_CHOICES)
     order = models.PositiveIntegerField()  # Order of appearance
-
-    def save(self, *args, **kwargs):
-        self.material_type = 'reading'  # Automatically set the material type before saving
-        super().save(*args, **kwargs)  # Call the parent class's save method
+    title = models.CharField(max_length=255)
 
     def __str__(self):
         return f'session id: {self.session.id}   title: {self.title}'
@@ -61,11 +77,20 @@ class ReadingMaterial(models.Model):
     class Meta:
         ordering = ['order']
 
+class ReadingMaterial(models.Model):
+    material = models.ForeignKey(CourseMaterial, on_delete=models.CASCADE, related_name='materials', null=True)
+    content = RichTextUploadingField()  # Use RichTextUploadingField for HTML content with file upload capability
+    title = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.title
+
+
 
 class Completion(models.Model):
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    material = models.ForeignKey(ReadingMaterial, on_delete=models.CASCADE, null=True, blank=True)
+    material = models.ForeignKey(CourseMaterial, on_delete=models.CASCADE, null=True, blank=True)
     completed = models.BooleanField(default=False)
 
     class Meta:

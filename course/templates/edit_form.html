@@ -28,21 +28,56 @@
             {{ course_form.instructor|add_class:"form-control" }}
         </div>
 
-        <!-- Tags Input -->
+        <!-- Select Topics -->
         <div class="form-group">
-            <h3>Tags</h3>
-            <div id="tags-container">
-                <input type="text" id="tag-input" class="form-control" placeholder="Enter a tag and press Enter" />
+            <h3>Select Topics</h3>
+            <div>
+                <input type="checkbox" value="technology" onchange="updateTagsDropdown()"> Technology
+                <input type="checkbox" value="business" onchange="updateTagsDropdown()"> Business
+                <input type="checkbox" value="language" onchange="updateTagsDropdown()"> Language
+                <input type="checkbox" value="design" onchange="updateTagsDropdown()"> Design
+                <input type="checkbox" value="skills" onchange="updateTagsDropdown()"> Skills
             </div>
-            <div id="tags-list" class="mt-2">
-                {% for tag in tags_list %}
-                    <span class="badge badge-info mr-1">
-                        {{ tag }}
-                        <button type="button" class="btn btn-danger btn-sm" onclick="removeTag('{{ forloop.counter0 }}')">X</button>
-                    </span>
-                {% endfor %}
-            </div>
+        </div>
 
+        <!-- Tags Sections -->
+        <div id="tags-container" class="form-group" style="display: none;">
+            <div id="technology-tags" class="tag-group" style="display: none;">
+                <h4>Technology</h4>
+                <div class="tags"></div>
+            </div>
+            <div id="business-tags" class="tag-group" style="display: none;">
+                <h4>Business</h4>
+                <div class="tags"></div>
+            </div>
+            <div id="language-tags" class="tag-group" style="display: none;">
+                <h4>Language</h4>
+                <div class="tags"></div>
+            </div>
+            <div id="design-tags" class="tag-group" style="display: none;">
+                <h4>Design</h4>
+                <div class="tags"></div>
+            </div>
+            <div id="skills-tags" class="tag-group" style="display: none;">
+                <h4>Skills</h4>
+                <div class="tags"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <h3>Existing Tags</h3>
+            <div id="tags-list" class="mt-2">
+                {% if tags_list|length == 0 %}
+                    <p>Not have any tags in this course.</p>
+                {% else %}
+                    {% for tag in tags_list %}
+                        <span class="badge badge-info mr-1">
+                            {{ tag }}
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeTag('{{ forloop.counter0 }}')">X</button>
+                        </span>
+                    {% endfor %}
+                {% endif %}
+            </div>
         </div>
 
         <div class="form-group">
@@ -119,25 +154,84 @@
 <script>
     const tags = [];
 
-    // Initialize the tags array with existing tags (excluding the delete button text)
     document.querySelectorAll('#tags-list .badge').forEach(tagElement => {
-        const tagText = tagElement.childNodes[0].nodeValue.trim(); // Get only the text part (ignoring the button)
+        const tagText = tagElement.childNodes[0].nodeValue.trim();
         tags.push(tagText.toUpperCase());
     });
 
-    document.getElementById('tag-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const tagValue = this.value.trim().toUpperCase();
-            if (tagValue && !tags.includes(tagValue)) {
-                tags.push(tagValue);
-                updateTagsList();
-                this.value = ''; // Clear the input
-            } else if (tagValue) {
-                alert('This tag already exists.'); // Alert if the tag is a duplicate
-            }
+    // 14/10/2024 bên dưới phần doc trên xóa nha, nhớ là bên dưới nó nhiều lắm ấy check kĩ
+    const tagsContainer = document.getElementById('tags-container');
+    const tagsByTopic = {
+        technology: ['AI', 'Web Development', 'Data Science', 'Machine Learning',
+        'Cybersecurity', 'Blockchain', 'Internet of Things (IoT)', 'Cloud Computing', 'Big Data',
+        'Augmented Reality (AR)', 'Virtual Reality (VR)', 'Robotics', '5G Technology', 'Quantum Computing',
+        'Software Development', 'Mobile App Development', 'DevOps', 'Digital Transformation', 'E-commerce',
+        'Fintech']
+        ,
+        business: ['Finance', 'Management', 'Marketing', 'Economics', 'Entrepreneurship',
+        'Accounting', 'Human Resources', 'Business Strategy', 'Sales', 'Customer Service',
+        'Project Management', 'Business Analytics', 'Supply Chain Management', 'Leadership',
+        'Corporate Social Responsibility', 'Negotiation', 'Startups', 'Business Development', 'Innovation', 'Investment']
+,
+        language: ['English', 'French', 'Spanish', 'German', 'Mandarin', 'Japanese',
+        'Korean', 'Italian', 'Portuguese', 'Russian', 'Arabic', 'Hindi', 'Dutch',
+        'Greek', 'Turkish', 'Vietnamese', 'Swedish', 'Danish', 'Norwegian', 'Thai']
+        ,
+        design: ['UI', 'UX', 'Graphic Design', '3D Modeling', 'Animation', 'Illustration',
+        'Interior Design', 'Fashion Design', 'Web Design', 'Product Design', 'Industrial Design',
+        'Typography', 'Branding', 'Motion Graphics', 'Visual Design', 'Packaging Design', 'Game Design',
+        'Architectural Design', 'Photography', 'Art Direction', 'Landscape Design']
+        ,
+        skills: ['Leadership', 'Communication', 'Time Management', 'Teamwork', 'Problem-Solving',
+        'Critical Thinking', 'Adaptability', 'Creativity', 'Emotional Intelligence', 'Conflict Resolution',
+        'Decision-Making', 'Public Speaking', 'Negotiation', 'Project Management', 'Networking',
+        'Customer Service', 'Technical Writing', 'Coaching', 'Mentoring', 'Self-Motivation']
+
+    };
+
+    function updateTagsDropdown() {
+    const selectedTopics = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
+    tagsContainer.style.display = selectedTopics.length > 0 ? 'block' : 'none'; // Show or hide the tags container
+    Object.keys(tagsByTopic).forEach(topic => {
+        const tagGroup = document.getElementById(`${topic}-tags`);
+        const tagsDiv = tagGroup.querySelector('.tags');
+        tagsDiv.innerHTML = ''; // Clear existing tags
+        tagGroup.style.display = selectedTopics.includes(topic) ? 'block' : 'none'; // Show or hide the topic group
+
+        if (selectedTopics.includes(topic)) {
+            tagsByTopic[topic].forEach(tag => {
+                const tagElement = document.createElement('span');
+                tagElement.className = 'badge badge-info mr-1';
+                tagElement.textContent = tag;
+                tagElement.onclick = () => addTag(tag); // Add tag on click
+
+                // Check if the tag is already selected
+                if (tags.includes(tag.toUpperCase())) {
+                    tagElement.classList.add('selected-tag');
+                }
+
+                tagsDiv.appendChild(tagElement); // Append the tag to the topic group
+            });
         }
     });
+}
+
+    function addTag(tag) {
+        const tagUpper = tag.toUpperCase();
+        if (!tags.includes(tagUpper)) { // Prevent duplicates
+            tags.push(tagUpper);
+            updateTagsList(); // Update the displayed list of tags
+        }
+        updateTagsDropdown(); // Refresh tags dropdown to apply the selected-tag class
+    }
+
+    function removeTag(index) {
+        // Remove the tag from the tags array
+        tags.splice(index, 1);
+        updateTagsList(); // Update the displayed list of tags
+        updateTagsDropdown(); // Refresh tags dropdown to remove the selected-tag class
+    }
+
 
     function updateTagsList() {
         const tagsList = document.getElementById('tags-list');
@@ -160,18 +254,15 @@
         updateTagsInput(); // Update the hidden input with the current tags
     }
 
-    function removeTag(index) {
-        tags.splice(index, 1); // Remove the tag from the array
-        updateTagsList(); // Update the displayed list of tags
-    }
-
     function updateTagsInput() {
         // Update the hidden input with the current tags
         document.getElementById('tags-input').value = tags.join(',');
     }
 
-    // Ensure tags are updated before submitting the form
-    document.querySelector('form').addEventListener('submit', updateTagsInput);
+    // Event listener for checkboxes
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updateTagsDropdown);
+    });
 
     document.getElementById('add-prerequisite').addEventListener('click', function() {
         var container = document.getElementById('prerequisite-container');
@@ -198,4 +289,12 @@
         container.appendChild(newInput);
     });
 </script>
+
+<style>
+    .selected-tag {
+        background-color: lightgray;
+        color: #000;
+    }
+</style>
+
 {% endblock %}

@@ -193,7 +193,6 @@ def course_unenroll(request, pk):
 
     return redirect('course:course_list')
 
-
 def course_list(request):
     if request.user.is_superuser:
         # Superuser can see all courses
@@ -214,7 +213,7 @@ def course_list(request):
     for course in courses:
         course.completion_percent = course.get_completion_percent(request.user)
 
-        # mới thêm
+    # Recommended courses logic
     recommended_courses = []
     for course in courses:
         if course.id not in enrolled_courses:
@@ -231,7 +230,15 @@ def course_list(request):
                         recommended_courses.append(course)
                         break  # No need to check other enrolled courses
 
-    # Pagination
+    # 14/10/2024 - New addition for recommended courses pagination
+    recommended_paginator = Paginator(recommended_courses, 5)  # Show 5 recommended courses per page
+    recommended_page_number = request.GET.get('recommended_page')
+    recommended_page_obj = recommended_paginator.get_page(recommended_page_number)
+
+    # 14/10/2024
+    current_recommended_page = recommended_page_obj.number if recommended_page_obj else 1
+
+    # Pagination for main courses
     paginator = Paginator(courses, 10)  # Show 10 courses per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -241,7 +248,8 @@ def course_list(request):
         'page_obj': page_obj,  # Pagination object for template
         'courses': page_obj,  # Consistent with template expectations
         'enrolled_courses': enrolled_courses,  # To show enrolled status
-        'recommended_courses': recommended_courses,
+        'recommended_courses': recommended_page_obj,
+        'current_recommended_page': current_recommended_page,  # Pass the current page number
     })
 
 def course_add(request):
@@ -358,6 +366,7 @@ def course_edit(request, pk):
         'prerequisites': prerequisites,
         'all_courses': all_courses,
         'sessions': sessions,  # Pass sessions to template
+        'tags_list': tags_list, # 14/10/2024
     })
 
 def course_delete(request, pk):

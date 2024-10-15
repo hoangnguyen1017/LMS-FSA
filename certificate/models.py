@@ -1,15 +1,12 @@
 from django.db import models
 from user.models import User
-from subject.models import Subject
-# Create your models here.
-class Certificate(models.Model):
-    certificate_id = models.IntegerField(primary_key=True)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    course_id = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    issue_date = models.DateField()
-    certificate_url = models.CharField(max_length=255)
-    
+from course.models import Course
 
+class Certificate(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    issue_date = models.DateTimeField(auto_now_add=True)
+    certificate_url  = models.CharField(max_length=255, null = True, blank = True)
 
     def __str__(self):
-        return self.certificate_url
+        return f"{self.course} - {self.user}"

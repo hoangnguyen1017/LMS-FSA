@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load form_filters %}
+{% load static %}
+
+{% block title %}Course Content{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3" style="margin-left: 2cm; margin-right: 2cm;">
+            <h2 class="text-xl font-semibold mb-4">Course Information</h2>
+            <h3>Select Session</h3>
+            <select id="session-select" name="session_id" class="form-control mb-4">
+                {% for session in sessions %}
+                    <option value="{{ session.id }}" {% if session.id == current_session.id %}selected{% endif %}>
+                        {{ session.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+
+            <ul class="list-group mb-4">
+                {% for material in materials %}
+                    <li class="list-group-item {% if material.id == current_material.id %}active{% endif %}">
+                        <a href="{% url 'course:course_content' course.pk current_session.id %}?file_id={{ material.id }}&file_type={{ material.material_type }}">
+                            {{ material.title }}
+                        </a>
+                    </li>
+                {% empty %}
+                    <p class="mb-4">No materials available for this session.</p>
+                {% endfor %}
+            </ul>
+            <a href="{% url 'course:course_list' %}" class="btn btn-secondary">Return to Course List</a>
+        </div>
+
+        <!-- Right Column (File Preview) -->
+        <div class="col-md-7">
+            <h2 class="text-2xl font-bold mb-4">File Preview</h2>
+            <div id="preview-content" class="preview-container border p-3">
+                {% if current_material %}
+                    {% if content_type == 'reading' %}
+                        <h3>{{ current_material.title }}</h3>
+                        <div class="reading-material-content">
+                            {{ preview_content|safe }}
+                        </div>
+                    {% else %}
+                        <p>No preview available for this material.</p>
+                    {% endif %}
+                {% else %}
+                    <p>No materials available for this session.</p>
+                {% endif %}
+            </div>
+            <div class="mt-3">
+                {% if current_material %}
+                    <button id="complete-btn" class="btn {% if completion_status %}btn-secondary{% else %}btn-success{% endif %}"
+                            data-course-id="{{ course.pk }}"
+                            data-file-id="{{ current_material.id }}">
+                        {% if completion_status %}
+                            Completed
+                        {% else %}
+                            Mark as Complete
+                        {% endif %}
+                    </button>
+                    {% if next_material %}
+                        <a id="next-btn" href="{% url 'course:course_content' course.pk next_material.session.id %}?file_id={{ next_material.id }}&file_type={{ next_material.material_type }}" class="btn btn-primary ml-2">
+                            Next Item
+                        </a>
+                    {% elif next_session %}
+                        <a id="next-btn" href="{% url 'course:course_content' course.pk next_session.id %}" class="btn btn-primary ml-2">
+                            Next Session
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificate Section -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h3>Course Completion Progress</h3>
+            <p>{{ completion_percent|floatformat:0 }}% completed</p>
+            {% if certificate_url %}
+                <div class="mt-3">
+                    <button id="view-certificate" class="btn btn-primary">View Certificate</button>
+                    <a href="{{ certificate_url }}" class="btn btn-success" download>Download Certificate</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+$(document).ready(function() {
+    $('#complete-btn').click(function() {
+        var button = $(this);
+        var courseId = button.data('course-id');
+        var fileId = button.data('file-id');
+
+        $.ajax({
+            url: "{% url 'course:toggle_completion' course.pk %}",
+            method: 'POST',
+            data: {
+                'file_id': fileId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.completed) {
+                    button.text('Completed');
+                    button.removeClass('btn-success').addClass('btn-secondary');
+                } else {
+                    button.text('Mark as Complete');
+                    button.removeClass('btn-secondary').addClass('btn-success');
+                }
+
+                if (response.next_item_id) {
+                    var nextUrl = "{% url 'course:course_content' course.pk 0 %}".replace('/0', '/' + (response.next_session_id || "{{ current_session.id }}"));
+                    nextUrl += "?file_id=" + response.next_item_id + "&file_type=" + response.next_item_type;
+                    $('#next-btn').attr('href', nextUrl);
+
+                    if (response.next_session_id) {
+                        $('#next-btn').text('Next Session');
+                    } else {
+                        $('#next-btn').text('Next Item');
+                    }
+                } else {
+                    $('#next-btn').hide();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+
+    $('#next-btn').click(function() {
+        var nextItemType = $(this).attr('data-next-item-type');
+        var nextItemId = $(this).attr('data-next-item-id');
+        var currentSessionId = "{{ current_session.id }}";
+        var courseId = "{{ course.pk }}";  // Ensure course ID is pulled from context
+
+        if (nextItemType && nextItemId) {
+            // Construct the new URL with path variables instead of query parameters
+            var newUrl = `{% url 'course:course_content' course.pk current_session.id %}`.replace(courseId, courseId).replace(currentSessionId, currentSessionId);
+            newUrl += `?file_id=${nextItemId}&file_type=${nextItemType}`;
+
+            // Redirect to the constructed URL
+            window.location.href = newUrl;
+        }
+    });
+
+    // Certificate functionality
+    $('#view-certificate').click(function() {
+        var certificateUrl = "{{ certificate_url }}";
+        if (certificateUrl) {
+            window.open(certificateUrl, '_blank');
+        }
+    });
+
+    // Add this new code for handling session changes
+    $('#session-select').change(function() {
+        var selectedSessionId = $(this).val();
+        var courseId = "{{ course.pk }}"; // Get course ID from Django template context
+        var baseUrl = "{% url 'course:course_content' course.pk 0 %}".replace('/0/', '/'); // Construct base URL
+
+        // Construct new URL with the selected session ID as part of the path
+        var newUrl = baseUrl.replace(courseId + '/content/', courseId + '/content/' + selectedSessionId + '/');
+
+        // Redirect to the new URL
+        window.location.href = newUrl;
+    });
+});
+</script>
+{% endblock %}

@@ -1,12 +1,15 @@
 # views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Module, ModuleGroup
-from .forms import ModuleForm, ModuleGroupForm
-
+from .forms import ModuleForm, ModuleGroupForm, ExcelImportForm
+import pandas as pd
+from django.contrib import messages
 # ModuleGroup views
 def module_group_list(request):
     module_groups = ModuleGroup.objects.all()
-    return render(request, 'module_group_list.html', {'module_groups': module_groups})
+    form = ExcelImportForm()
+
+    return render(request, 'module_group_list.html', {'module_groups': module_groups, 'form': form})
 
 def module_group_detail(request, pk):
     module_group = get_object_or_404(ModuleGroup, pk=pk)
@@ -43,12 +46,153 @@ def module_group_delete(request, pk):
         module_group.delete()
         return redirect('module_group:module_group_list')
     return render(request, 'module_group_confirm_delete.html', {'module_group': module_group})
+# export excel
+from django.http import HttpResponse
+import openpyxl
+def export_module_groups(request):
+    # Create a workbook and add a worksheet
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=lms_module_groups.xlsx'
+    
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = 'Module_Group'
+    
+    # Define the columns
+    columns = ['group_name']
+    worksheet.append(columns)
+    
+    # Fetch all users and write to the Excel file
+    for module_group in ModuleGroup.objects.all():
+        worksheet.append([module_group.group_name])
+    
+    workbook.save(response)
+    return response
+
+def import_module_groups(request):
+    if request.method == 'POST':
+        
+        form = ExcelImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file = request.FILES['excel_file']
+            try:
+                df = pd.read_excel(uploaded_file)
+                module_group_imported = 0  # Counter for imported roles
+            
+                for index, row in df.iterrows():
+        
+                    group_name = row.get("group_name") 
+
+                    print(f"Processing row: {group_name}")  # Debugging
+
+                    # Check if the role already exists
+                    if not ModuleGroup.objects.filter(group_name=group_name).exists():
+                        # Create and save the new module_group
+                        ModuleGroup.objects.create(
+                            group_name=group_name
+                        )
+                        module_group_imported += 1
+                        print(f"Role '{group_name}' created")  # Debugging
+                    else:
+                        messages.warning(request, f"Module Group '{group_name}' already exists. Skipping.")
+                        print(f"Module Group '{group_name}' already exists")  # Debugging
+
+                if module_group_imported > 0:
+                    messages.success(request, f"{module_group_imported} roles imported successfully!")
+                else:
+                    messages.warning(request, "No module groups were imported.")
+
+            except Exception as e:
+                messages.error(request, f"An error occurred during import: {e}")
+                print(f"Error during import: {e}")  # Debugging
+
+            return redirect('module_group:module_group_list')
+    else:
+        form = ExcelImportForm()
+
+    return render(request, 'module_group_list.html', {'form': form})
 
 # MODULE
+def import_modules(request):
+    if request.method == 'POST':
+        form = ExcelImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file = request.FILES['excel_file']
+            try:
+                df = pd.read_excel(uploaded_file)
+                module_imported = 0  # Counter for imported modules
+
+                for index, row in df.iterrows():
+                    module_name = row['module_name']  # Access via column name
+                    module_url = row['module_url']
+                    icon = row['icon']
+                    module_group_id = row['module_group_id']
+
+                    print(f"Processing row: {module_name}")  # Debugging
+
+                    # Check if the module already exists
+                    if not Module.objects.filter(module_name=module_name).exists():
+                        try:
+                            # Retrieve the ModuleGroup object
+                            module_group = ModuleGroup.objects.get(id=module_group_id)
+
+                            # Create and save the new module
+                            Module.objects.create(
+                                module_name=module_name,
+                                module_url=module_url,
+                                icon=icon,
+                                module_group=module_group  # Use the foreign key object
+                            )
+                            module_imported += 1
+                            print(f"Module '{module_name}' created")  # Debugging
+                        except ModuleGroup.DoesNotExist:
+                            messages.warning(request, f"ModuleGroup with ID '{module_group_id}' does not exist. Skipping module '{module_name}'.")
+                    else:
+                        messages.warning(request, f"Module '{module_name}' already exists. Skipping.")
+                        print(f"Module '{module_name}' already exists")  # Debugging
+
+                if module_imported > 0:
+                    messages.success(request, f"{module_imported} modules imported successfully!")
+                else:
+                    messages.warning(request, "No modules were imported.")
+
+            except Exception as e:
+                messages.error(request, f"An error occurred during import: {e}")
+                print(f"Error during import: {e}")  # Debugging
+
+            return redirect('module_group:module_list')
+    else:
+        form = ExcelImportForm()
+
+    return render(request, 'module_list.html', {'form': form})
+
+
+def export_modules(request):
+    # Create a workbook and add a worksheet
+    print('come here modules')
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=lms_modules.xlsx'
+    
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = 'Modules'
+    
+    # Define the columns
+    columns = ['module_name', 'module_url', 'icon', 'module_group_id', 'module_group_name']
+    worksheet.append(columns)
+    
+    # Fetch all users and write to the Excel file
+    for module in Module.objects.all():
+        worksheet.append([module.module_name, module.module_url, module.icon, module.module_group.id, module.module_group.group_name])
+    
+    workbook.save(response)
+    return response
+
 def module_list(request):
     module_groups = ModuleGroup.objects.all()
     modules = Module.objects.all()
-    return render(request, 'module_list.html', {'module_groups': module_groups,'modules': modules})
+    form = ExcelImportForm()
+    return render(request, 'module_list.html', {'module_groups': module_groups,'modules': modules, 'form': form})
 
 def module_detail(request, pk):
     module = get_object_or_404(Module, pk=pk)

@@ -1,17 +1,14 @@
 from django import forms
-from .models import User, Role
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm 
+from .models import User
+ 
 
-# Form for creating and editing users
-class UserForm(forms.ModelForm):
-    class Meta:
+class CustomUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
         model = User
-        fields = ['username', 'password', 'email', 'full_name', 'role']
-        widgets = {
-            'password': forms.PasswordInput(),
-        }
+        fields = ('username', 'email', 'first_name', 'last_name') 
 
-# Form for creating and editing roles
-class RoleForm(forms.ModelForm):
-    class Meta:
-        model = Role
-        fields = ['role_name']
+class CustomUserChangeForm(UserChangeForm):
+    class Meta(UserChangeForm.Meta):
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active')  

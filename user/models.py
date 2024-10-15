@@ -1,12 +1,32 @@
 from django.db import models
-from role.models import Role
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser, Group, Permission 
+from training_program.models import TrainingProgram
+from module_group.models import Module
 
-class User(models.Model):
-    username = models.CharField(max_length=255, unique=True)
-    password = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
-    full_name = models.CharField(max_length=255, blank=True, null=True)
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+# User model
+class User(AbstractUser):
+    date_joined = models.DateTimeField(auto_now_add=True)
+    training_programs = models.ManyToManyField(TrainingProgram)  # Correct usage here
 
-    def __str__(self):
-        return self.username
+    # Add many-to-many relationship for assigned modules
+    modules = models.ManyToManyField(Module, related_name='assigned_users', blank=True)
+
+
+    groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        help_text='The groups this user belongs to.',
+        verbose_name='groups',
+        related_name='custom_user_groups',
+    )
+
+    user_permissions = models.ManyToManyField(
+        Permission,
+        blank=True,
+        help_text='Specific permissions for this user.',
+        verbose_name='user permissions',
+        related_name='custom_user_permissions',
+    )
+
+

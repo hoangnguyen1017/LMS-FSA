@@ -1,0 +1,50 @@
+<!-- course/lesson_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ lesson.title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ lesson.title }}</h1>
+    <p>{{ lesson.description }}</p>
+    <div>{{ lesson.content|safe }}</div>  <!-- Render the rich text content -->
+    
+    <h3>Materials</h3>
+    <div class="col-md-8">
+        <h3>Lesson Content</h3>
+        <div id="lesson-1" class="lesson-content" style="display: block;">
+            <h4>Lesson 1</h4>
+            <p>Mô tả lesson 1</p>
+            <div>
+                <p>Here is assignment</p>
+                <p>alfje;e</p>
+            </div>  <!-- Render the rich text content -->
+            <h3>Materials</h3>
+            <ul>
+                <li>
+                    assignment: 
+                    <a href="/media/materials/2.Flow-Control-Statements.pdf" target="_blank">materials/2.Flow-Control-Statements.pdf</a>
+                    <br>
+                    <iframe src="/media/materials/2.Flow-Control-Statements.pdf" width="100%" height="500px" style="border: none;" allow="autoplay; encrypted-media"></iframe>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <ul>
+        {% for material in materials %}
+            <li>
+                {{ material.material_type }}: material.file.name.endswith('.pdf')
+                {% if material.file.name.endswith('.pdf') %}
+                    <a href="{{ material.file.url }}" target="_blank">{{ material.file.name }}</a>
+                    <br>
+                    
+                {% else %}
+                    <a href="{{ material.file.url }}">{{ material.file.name }}</a>
+                {% endif %}
+                <iframe src="{{ material.file.url }}" width="100%" height="500px" style="border: none;" allow="autoplay; encrypted-media"></iframe>
+            </li>
+        {% empty %}
+            <li>No materials available for this lesson.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,35 +1,30 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import User, Role
-from .forms import UserForm, RoleForm
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
 
-# User views
+User = get_user_model()
+
+@login_required
+def profile_view(request):
+    user = request.user  # Get the logged-in user
+    return render(request, 'profile.html', {'user': user})
+
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Optionally assign a role (e.g., Student) here
+            login(request, user)
+            return redirect('home')
+    else:
+        form = UserCreationForm()
+    return render(request, 'user/register.html', {'form': form})
+
+
+@login_required
 def user_list(request):
-    users = User.objects.all()
-    return render(request, 'user_list.html', {'users': users})
-
-def user_detail(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    return render(request, 'user_detail.html', {'user': user})
-
-def user_add(request):
-    if request.method == 'POST':
-        form = UserForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('user:user_list')
-    else:
-        form = UserForm()
-    return render(request, 'user_form.html', {'form': form})
-
-def user_edit(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    if request.method == 'POST':
-        form = UserForm(request.POST, instance=user)
-        if form.is_valid():
-            form.save()
-            return redirect('user:user_list')
-    else:
-        form = UserForm(instance=user)
-    return render(request, 'user_form.html', {'form': form})
-
-
+    users = User.objects.all()  # Fetch all users
+    return render(request, 'user/user_list.html', {'users': users})

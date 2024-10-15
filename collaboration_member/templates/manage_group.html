@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Manage Members of {{ group.group_name }}
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1>Manage Members of {{ group.group_name }}</h1>
+
+        <h2>Current Members:</h2>
+        <ul class="list-group mb-4">
+            {% for member in members %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ member.user.username }} (Joined on: {{ member.joined_at }})
+                    <a href="{% url 'collaboration_group:remove_member' group.id member.id %}" class="btn btn-danger btn-sm">Remove</a>
+                </li>
+            {% empty %}
+                <li class="list-group-item">No members in this group yet.</li>
+            {% endfor %}
+        </ul>
+
+        <h2>Add New Member:</h2>
+        <form method="post" class="form-inline mb-4">
+            {% csrf_token %}
+            <div class="form-group mb-2">
+                <select name="user_id" class="form-control">
+                    {% for user in all_users %}
+                        <option value="{{ user.id }}">{{ user.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" name="add_member" class="btn btn-primary mb-2 ml-2">Add Member</button>
+        </form>
+
+        <a href="{% url 'collaboration_group:collaboration_group_list' %}" class="btn btn-secondary">Back to Group List</a>
+    </div>
+{% endblock %}

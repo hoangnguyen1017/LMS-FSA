@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load form_filters %}
+
+{% block title %}Edit {{ subject.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Edit {{ subject.name }}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-group">
+            {{ subject_form.name.label_tag }}
+            {{ subject_form.name|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            {{ subject_form.subject_code.label_tag }}
+            {{ subject_form.subject_code|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            {{ subject_form.description.label_tag }}
+            {{ subject_form.description|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            {{ subject_form.instructor.label_tag }}
+            {{ subject_form.instructor|add_class:"form-control" }}
+        </div>
+
+        <div class="form-group">
+            <h3>Existing Prerequisite Subjects</h3>
+            {% if prerequisites %}
+                <ul>
+                    {% for prereq in prerequisites %}
+                    <li>
+                        {{ prereq.prerequisite_subject.name }}
+                        <input type="checkbox" name="delete_prerequisite_{{ prereq.id }}" id="delete_prerequisite_{{ prereq.id }}">
+                        <label for="delete_prerequisite_{{ prereq.id }}">Delete</label>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No prerequisites added.</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group" id="prerequisite-container">
+            <h3>Add New Prerequisite Subjects</h3>
+            <div class="prerequisite-dropdown">
+                <select name="prerequisite_subjects" class="form-control">
+                    <option value="">Select a prerequisite subject</option>
+                    {% for subject in all_subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-secondary" id="add-prerequisite">Add Another Prerequisite Subject</button>
+
+        <div class="mb-4 mt-3">
+            <a href="{% url 'subject:subject_content_edit' subject.pk %}" class="btn btn-primary">Edit Subject Content</a>
+            <a href="{% url 'subject:reorder_subject_materials' subject.pk %}" class="btn btn-primary">Edit Subject Order</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{% url 'subject:subject_list' %}" class="btn btn-secondary">Return to Subject List</a>
+    </form>
+</div>
+
+<script>
+    document.getElementById('add-prerequisite').addEventListener('click', function() {
+        var container = document.getElementById('prerequisite-container');
+        var newDropdown = document.createElement('div');
+        newDropdown.classList.add('prerequisite-dropdown');
+        newDropdown.innerHTML = `
+            <select name="prerequisite_subjects" class="form-control">
+                <option value="">Select a prerequisite subject</option>
+                {% for subject in all_subjects %}
+                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                {% endfor %}
+            </select>
+        `;
+        container.appendChild(newDropdown);
+    });
+</script>
+{% endblock %}

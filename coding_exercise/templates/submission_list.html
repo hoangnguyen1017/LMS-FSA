@@ -1,0 +1,6 @@
+<h1>Your Submissions</h1>
+<ul>
+    {% for submission in submissions %}
+    <li>{{ submission.exercise.title }} - Submitted on {{ submission.created_at }}</li>
+    {% endfor %}
+</ul>

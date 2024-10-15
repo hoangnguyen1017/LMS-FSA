@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Thread Form{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <link rel="stylesheet" href="{% static 'css/thread_form.css' %}">
+    <h2 class="text-center mb-4">Create/Edit Thread</h2>
+    <form method="POST" action="" class="bg-light p-4 rounded shadow-sm">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="text-center mt-4">
+            <input type="submit" class="btn btn-primary" value="Submit">
+        </div>
+    </form>
+</div>
+{% endblock %}

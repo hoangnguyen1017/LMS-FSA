@@ -1,0 +1,14 @@
+django-admin startproject myproject
+
+
+python manage.py startapp assessments
+
+python manage.py makemigrations
+
+python manage.py migrate
+
+python3 manage.py createsuperuser
+
+python3 manage.py collectstatic
+
+python manage.py runserver

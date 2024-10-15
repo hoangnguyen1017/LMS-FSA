@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block extra_js %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant</title>
+
+    <!-- Loading Static Files -->
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'chatapp/style.css' %}">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+
+    <style>
+        body, html {
+          height: 100%;
+          margin: 0;
+          font-family: Arial, sans-serif;
+        }
+
+        .chat-container {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 10px;
+        }
+
+        .messages-box {
+          flex: 1;
+          overflow-y: auto;
+          padding-right: 10px;
+        }
+
+        .messages-list {
+          padding-left: 0;
+          margin-bottom: 0;
+        }
+
+        .message {
+          margin-bottom: 15px;
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .message-text {
+          padding: 10px;
+          border-radius: 5px;
+        }
+
+        .sent {
+          background-color: #dcf8c6;
+          align-self: flex-end;
+        }
+
+        .received {
+          background-color: #f1f0f0;
+          align-self: flex-start;
+        }
+
+        .message-timestamp {
+          font-size: 0.75rem;
+          color: gray;
+          margin-top: 5px;
+          text-align: right;
+        }
+
+        .typing-indicator {
+          font-style: italic;
+          color: gray;
+          margin-bottom: 15px;
+        }
+
+        .message-form {
+          display: flex;
+          padding: 10px;
+          background-color: #f8f9fa;
+          border-top: 1px solid #e0e0e0;
+        }
+
+        .message-input {
+          flex: 1;
+          border-radius: 0;
+          border-right: none;
+          padding: 10px;
+        }
+
+        .btn-send {
+          border-radius: 0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          .chat-container {
+            padding: 5px;
+          }
+
+          .message-input {
+            padding: 5px;
+          }
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatbot App for Study Website</h1>
+
+    <div class="chat-container">
+        <div class="messages-box">
+            <ul class="list-unstyled messages-list">
+                <!-- Example Initial AI Chatbot Message -->
+                <li class="message received">
+                    <div class="message-text">
+                        <b>AI Chatbot</b>
+                        <div class="message-content">Hi there! How can I help with your studies today?</div>
+                        <div class="message-timestamp">{{ now|date:"H:i:s" }}</div>
+                    </div>
+                </li>
+
+                <!-- Rendering messages dynamically -->
+                {% for chat in chats %}
+                {% if chat.user == request.user %}
+                <li class="message sent">
+                    <div class="message-text">
+                        <b>You</b>
+                        <div class="message-content">{{ chat.message }}</div>
+                        <div class="message-timestamp">{{ chat.timestamp|date:"H:i:s" }}</div>
+                    </div>
+                </li>
+                <li class="message received">
+                    <div class="message-text">
+                        <b>AI Chatbot</b>
+                        <div class="message-content">{{ chat.response }}</div>
+                        <div class="message-timestamp">{{ chat.response_timestamp|date:"H:i:s" }}</div>
+                    </div>
+                </li>
+                {% endif %}
+                {% endfor %}
+                <li class="typing-indicator" style="display: none;">AI Chatbot is typing...</li>
+            </ul>
+        </div>
+
+        <form class="message-form" id="userInput">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="text" class="form-control message-input" id="textInput" placeholder="Type your message...">
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary btn-send" id="buttonInput">Send</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- JavaScript for sending and receiving messages -->
+    <script>
+        const messagesList = document.querySelector('.messages-list');
+        const messageForm = document.querySelector('.message-form');
+        const messageInput = document.querySelector('.message-input');
+        const typingIndicator = document.querySelector('.typing-indicator');
+
+        // Scrolls to the bottom of the chat when a new message is added
+        function scrollToBottom() {
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        // Handling the form submit event
+        messageForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            getUserResponse();
+        });
+
+        // Function to get CSRF token from the cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Function to send and display the user message
+        function getUserResponse() {
+            const message = messageInput.value.trim();
+            if (message.length === 0) return;
+
+            const userMessageItem = document.createElement('li');
+            userMessageItem.classList.add('message', 'sent');
+            userMessageItem.innerHTML = `<div class="message-text">
+                                            <b>You</b>
+                                            <div class="message-content">${message}</div>
+                                            <div class="message-timestamp">${new Date().toLocaleTimeString()}</div>
+                                         </div>`;
+            messagesList.appendChild(userMessageItem);
+            messageInput.value = '';
+
+            scrollToBottom();
+
+            typingIndicator.style.display = 'block';  // Show typing indicator
+
+            // Send the message to the server using AJAX POST request
+            $.ajax({
+                url: '/chatapp/getUserResponse',
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')  // Attach CSRF token
+                },
+                data: {
+                    message: message
+                },
+                success: function (data) {
+                    typingIndicator.style.display = 'none';  // Hide typing indicator
+
+                    const chatbotMessageItem = document.createElement('li');
+                    chatbotMessageItem.classList.add('message', 'received');
+                    chatbotMessageItem.innerHTML = `<div class="message-text">
+                                                        <b>AI Chatbot</b>
+                                                        <div class="message-content">${data.response}</div>
+                                                        <div class="message-timestamp">${new Date().toLocaleTimeString()}</div>
+                                                    </div>`;
+                    messagesList.appendChild(chatbotMessageItem);
+
+                    scrollToBottom();
+                }
+            });
+        }
+    </script>
+{% endblock %}
+</body>
+</html>
+

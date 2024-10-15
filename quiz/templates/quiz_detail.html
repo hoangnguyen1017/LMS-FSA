@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}  
+{% block title %}Quiz Detail{% endblock %}
+
+{% block content %}
+<head>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
+</head>
+
+
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="{% url 'quiz:quiz_list' %}" class="btn btn-secondary" title="Back to Quiz List">
+                <i class="fas fa-arrow-left"></i> Back </a>
+            <a href="{% url 'quiz:question_add' quiz.pk %}" class="btn btn-primary" title="Add New Question">
+                <i class="fas fa-plus"></i> Add Question </a>
+        </div>
+
+        <!-- Search bar with button, aligned to the right -->
+        <div class="ml-auto">
+            <div class="form-inline">
+                <input type="text" class="form-control mr-2" placeholder="Search Question..." id="searchInput" onkeyup="searchQuizzes()">
+                <button class="btn btn-outline-primary" onclick="searchQuizzes()">
+                    <i class="fas fa-search"></i> 
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Centered Title and Description -->
+    <div class="text-center">
+        <h5 class="card-title">
+            <span class="description-question">{{ quiz.quiz_title }}</span>
+        </h5>
+        <p class="description-question">{{ quiz.quiz_description }}</p>
+    </div>
+
+    <h3 class="small-heading">All Questions:</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Question</th>
+                <th>Type</th>
+                <th>Points</th>
+                <th style="width: 17%;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for question in questions %}
+            <tr>
+                <td>
+                    <strong>Question {{ forloop.counter }}:</strong><br>
+                    {{ question.question_text|linebreaksbr }}
+                </td> 
+                <td>{{ question.question_type }}</td>
+                <td>{{ question.points }}</td>
+                <td>
+                    <a href="{% url 'quiz:question_detail' question.pk %}" class="btn btn-info btn-sm">
+                        <i class="fas fa-plus-circle" title="Add New Answers"></i></a>
+                    <a href="{% url 'quiz:question_edit' question.pk %}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-edit" title="Edit Question"></i></a>
+                    <a href="{% url 'quiz:question_delete' question.pk %}" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash" title="Delete Question"></i></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>   
+        
+    </table>
+</div>
+
+<script>
+    function searchQuizzes() {
+        var input, filter, cards, card, i, txtValue;
+        input = document.getElementById("searchInput");
+        filter = input.value.toUpperCase();
+        cards = document.getElementsByClassName("quiz-card");
+    
+        for (i = 0; i < cards.length; i++) {
+            card = cards[i];
+            txtValue = card.textContent || card.innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                card.style.display = "";
+            } else {
+                card.style.display = "none";
+            }
+        }
+    }
+
+    $(document).ready(function() {
+    $('.dropdown-toggle').click(function(event) {
+        event.stopPropagation(); // Ngăn chặn sự kiện click lan truyền
+        // Ẩn tất cả các dropdown khác
+        $('.dropdown-menu').not($(this).next('.dropdown-menu')).hide();
+        // Bật tắt dropdown hiện tại
+        $(this).next('.dropdown-menu').toggle();
+    });
+
+    // Ẩn dropdown khi nhấp ra ngoài
+    $(document).click(function() {
+        $('.dropdown-menu').hide();
+    });
+});
+
+</script>
+
+{% endblock %}

@@ -345,6 +345,11 @@ def course_add(request):
 def course_edit(request, pk):
     course = get_object_or_404(Course, pk=pk)
     all_courses = Course.objects.exclude(id=course.id)
+    prerequisites = course.prerequisites.all()
+    sessions = course.sessions.all()
+    current_tags = course.tags.all() if course.tags else []
+    topic = Topic.objects.all()
+    all_tags = Tag.objects.all()
 
     if request.method == 'POST':
         course_form = CourseForm(request.POST, instance=course)
@@ -352,13 +357,17 @@ def course_edit(request, pk):
         if course_form.is_valid():
             course = course_form.save(commit=False)
             course.creator = request.user
-
-            # Save topic and tags
-            current_tags = course_form.cleaned_data.get('tags')
-            course.tags.set(current_tags)  # Ensure tags are saved correctly
-
             # Save the course
             course.save()
+
+            # Save topic and tags
+            current_tags = list(course.tags.all())
+
+            tag_ids = request.POST.getlist('tag_lists')
+            for tag_id in tag_ids:
+                if tag_id:
+                    tag = Course.objects.get(id=tag_id)
+                    course.tag.add(tag)
 
             # Handle prerequisite deletion
             current_prerequisites = list(course.prerequisites.all())
@@ -399,11 +408,6 @@ def course_edit(request, pk):
 
     else:
         course_form = CourseForm(instance=course)
-        prerequisites = course.prerequisites.all()
-        sessions = course.sessions.all()
-        current_tags = course.tags.all() if course.tags else []
-        topic = Topic.objects.all()
-        all_tags = Tag.objects.all()
 
     return render(request, 'edit_form.html', {
         'course_form': course_form,

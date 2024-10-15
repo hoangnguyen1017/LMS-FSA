@@ -28,45 +28,43 @@
             {{ course_form.instructor|add_class:"form-control" }}
         </div>
 
-        <!-- Select Topics -->
+
+        <!-- Topic Selection Dropdown -->
         <div class="form-group">
-            <h3>Select Topics</h3>
-            <div>
-                {% for topic in topic %}
-                    <label>
-                        <input type="checkbox" value="{{ topic.name }}" onchange="updateTagsDropdown()"> {{ topic.name }}
-                    </label>
-                    <br>
+            <label for="topic-select">Select Topics</label>
+            <select id="topic-select" class="form-control" onchange="updateTagsDropdown()">
+                <option value="">Select a topic</option>
+                {% for t in topic %}
+                    <option value="{{ t.name|lower }}">{{ t.name }}</option>
                 {% endfor %}
+            </select>
+        </div>
+
+        <!-- Tags Section -->
+        <div id="tags-container" class="form-group" style="display: none;">
+            <h4>Tags</h4>
+            <div id="tags-list" class="tags"></div>
+        </div>
+
+        <!-- Existing Tags List -->
+        <div class="form-group">
+            <h3>Existing Tags</h3>
+            <div id="existing-tags-list" class="mt-2">
+                {% if current_tags|length == 0 %}
+                    <p>This course does not have any tags.</p>
+                {% else %}
+                    {% for tag in current_tags %}
+                        <span class="badge badge-info mr-1 selected-tag">
+                            {{ tag.name }}
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeTag('{{ forloop.counter0 }}')">X</button>
+                        </span>
+                    {% endfor %}
+                {% endif %}
             </div>
         </div>
 
-        <!-- Tags Sections -->
-        <div id="tags-container" class="form-group" style="display: none;">
-            {% for topic in topic %}
-                <div id="{{ topic.name|lower }}-tags" class="tag-group" style="display: none;">
-                    <h4>{{ topic.name }}</h4>
-                    <div class="tags"></div>
-                </div>
-            {% endfor %}
-        </div>
-
-        <div class="form-group">
-        <h3>Existing Tags</h3>
-        <div id="tags-list" class="mt-2">
-            {% if tags|length == 0 %}
-                <p>This course does not have any tags.</p>
-            {% else %}
-                {% for tag in tags %}
-                    <span class="badge badge-info mr-1">
-                        {{ tag.name }}  <!-- Assuming 'tag' is a Tag object with a 'name' field -->
-                        <button type="button" class="btn btn-danger btn-sm" onclick="removeTag('{{ forloop.counter0 }}')">X</button>
-                    </span>
-                {% endfor %}
-            {% endif %}
-        </div>
-    </div>
-
+        <!-- Hidden Input for Selected Tags -->
+        <input type="hidden" id="tags-input" name="tag_lists" value="{{ current_tags|join:',' }}">
 
         <div class="form-group">
             <h3>Existing Prerequisite Courses</h3>
@@ -140,17 +138,14 @@
 </div>
 
 <script>
+    // Initialize tags array with existing tags from the backend
     const tags = [];
-
-    // Populate tags array with existing tags from the HTML
-    document.querySelectorAll('#tags-list .badge').forEach(tagElement => {
+    document.querySelectorAll('#existing-tags-list .badge').forEach(tagElement => {
         const tagText = tagElement.childNodes[0].nodeValue.trim();
         tags.push(tagText.toUpperCase());
     });
 
-    const tagsContainer = document.getElementById('tags-container');
-
-    // Create an object to hold tags by topic
+    // Set up tags by topic
     const tagsByTopic = {
         {% for t in topic %}
         '{{ t.name|lower }}': [
@@ -164,79 +159,69 @@
     };
 
     function updateTagsDropdown() {
-        const selectedTopics = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
-        tagsContainer.style.display = selectedTopics.length > 0 ? 'block' : 'none'; // Show or hide the tags container
-        Object.keys(tagsByTopic).forEach(topic => {
-            const tagGroup = document.getElementById(`${topic}-tags`);
-            const tagsDiv = tagGroup.querySelector('.tags');
-            tagsDiv.innerHTML = ''; // Clear existing tags
-            tagGroup.style.display = selectedTopics.includes(topic) ? 'block' : 'none'; // Show or hide the topic group
+        const selectedTopic = document.getElementById('topic-select').value;
+        const tagsContainer = document.getElementById('tags-container');
+        tagsContainer.style.display = selectedTopic ? 'block' : 'none';
 
-            if (selectedTopics.includes(topic)) {
-                tagsByTopic[topic].forEach(tag => {
-                    const tagElement = document.createElement('span');
-                    tagElement.className = 'badge badge-info mr-1';
-                    tagElement.textContent = tag;
-                    tagElement.onclick = () => addTag(tag); // Add tag on click
+        const tagsList = document.getElementById('tags-list');
+        tagsList.innerHTML = '';
 
-                    // Check if the tag is already selected
-                    if (tags.includes(tag.toUpperCase())) {
-                        tagElement.classList.add('selected-tag');
-                    }
+        if (selectedTopic && tagsByTopic[selectedTopic]) {
+            tagsByTopic[selectedTopic].forEach(tag => {
+                const tagElement = document.createElement('span');
+                tagElement.className = 'badge badge-info mr-1';
+                tagElement.textContent = tag;
+                tagElement.onclick = () => transferTag(tagElement);
 
-                    tagsDiv.appendChild(tagElement); // Append the tag to the topic group
-                });
-            }
-        });
+                // Mark tag as selected if it's in the tags array
+                if (tags.includes(tag.toUpperCase())) {
+                    tagElement.classList.add('selected-tag');
+                }
+
+                tagsList.appendChild(tagElement);
+            });
+        }
     }
 
-    function addTag(tag) {
+    function transferTag(tagElement) {
+        const tag = tagElement.textContent;
         const tagUpper = tag.toUpperCase();
-        if (!tags.includes(tagUpper)) { // Prevent duplicates
+
+        if (!tags.includes(tagUpper)) {
             tags.push(tagUpper);
-            updateTagsList(); // Update the displayed list of tags
+            tagElement.classList.add('selected-tag');
+            updateTagsList();
         }
-        updateTagsDropdown(); // Refresh tags dropdown to apply the selected-tag class
     }
 
     function removeTag(index) {
-        // Remove the tag from the tags array
         tags.splice(index, 1);
-        updateTagsList(); // Update the displayed list of tags
-        updateTagsDropdown(); // Refresh tags dropdown to remove the selected-tag class
+        updateTagsList();
     }
 
-
     function updateTagsList() {
-        const tagsList = document.getElementById('tags-list');
-        tagsList.innerHTML = ''; // Clear existing tags
+        const tagsList = document.getElementById('existing-tags-list');
+        tagsList.innerHTML = '';
         tags.forEach((tag, index) => {
             const tagElement = document.createElement('span');
-            tagElement.className = 'badge badge-info mr-1';
+            tagElement.className = 'badge badge-info mr-1 selected-tag';
             tagElement.textContent = tag;
 
-            // Create a remove button for each tag
             const removeButton = document.createElement('button');
             removeButton.type = 'button';
             removeButton.className = 'btn btn-danger btn-sm ml-1';
             removeButton.textContent = 'X';
-            removeButton.onclick = () => removeTag(index); // Pass the index to removeTag
+            removeButton.onclick = () => removeTag(index);
 
-            tagElement.appendChild(removeButton); // Append the button to the tag
-            tagsList.appendChild(tagElement); // Append the tag to the list
+            tagElement.appendChild(removeButton);
+            tagsList.appendChild(tagElement);
         });
-        updateTagsInput(); // Update the hidden input with the current tags
+        updateTagsInput();
     }
 
     function updateTagsInput() {
-        // Update the hidden input with the current tags
         document.getElementById('tags-input').value = tags.join(',');
     }
-
-    // Event listener for checkboxes
-    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-        checkbox.addEventListener('change', updateTagsDropdown);
-    });
 
     document.getElementById('add-prerequisite').addEventListener('click', function() {
         var container = document.getElementById('prerequisite-container');

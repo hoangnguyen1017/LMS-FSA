@@ -1,17 +1,25 @@
-# views.py
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import Quiz, Question, AnswerOption, StudentQuizAttempt, StudentAnswer
-from .forms import QuizForm, QuestionFormSet, QuestionForm
+from .forms import QuizForm, QuestionForm, AnswerOptionForm, QuizAnswerForm
 from module_group.models import ModuleGroup
-from datetime import datetime
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 import pandas as pd
 from django.http import HttpResponse
-from subject.models import Subject
+from openpyxl import Workbook
 from course.models import Course
+from subject.models import Subject
+import json
+import csv
+from django.utils import timezone
+
+
 
 def quiz_list(request):
-    quizzes = Quiz.objects.select_related('course').all()
     module_groups = ModuleGroup.objects.all()
+    quizzes = Quiz.objects.select_related('course').all()
     subjects = Subject.objects.all()
     # Lọc quiz dựa trên subject được chọn
     selected_subject = request.GET.get('subject')
@@ -26,406 +34,426 @@ def quiz_list(request):
     }
     return render(request, 'quiz_list.html', context)
 
-def quiz_create(request):
+def quiz_add(request):
     if request.method == 'POST':
         form = QuizForm(request.POST)
         if form.is_valid():
-            quiz = form.save(commit=False) 
-            quiz.created_by = request.user  
+            quiz = form.save(commit=False)  # Không lưu ngay lập tức
+            quiz.start_datetime = request.POST.get('start_datetime')  
+            quiz.end_datetime = request.POST.get('end_datetime')  
+            quiz.attempts_allowed = request.POST.get('attempts_allowed')  
+            quiz.save()  
+            return redirect('quiz:quiz_list')
+        else:
+            print(form.errors)  # Có thể dùng logging thay vì print
+    else:
+        form = QuizForm()
+    return render(request, 'quiz_form.html', {'form': form})
+
+
+def quiz_edit(request, pk):
+    quiz = get_object_or_404(Quiz, pk=pk)
+    if request.method == 'POST':
+        form = QuizForm(request.POST, instance=quiz)
+        if form.is_valid():
+            quiz = form.save(commit=False)
             quiz.start_datetime = request.POST.get('start_datetime')  
             quiz.end_datetime = request.POST.get('end_datetime')  
             quiz.attempts_allowed = request.POST.get('attempts_allowed')  
             quiz.save()  
             return redirect('quiz:quiz_list')
     else:
-        form = QuizForm()
-    return render(request, 'quiz_create.html', {'form': form})
+        form = QuizForm(instance=quiz)
+    return render(request, 'quiz_form.html', {'form': form})
 
-def quiz_delete(request, quiz_id):
-    # Get the quiz object or return a 404 if not found
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    
-    if request.method == "POST":
-        # Delete the quiz
-        quiz.delete()
-        
-        # Redirect back to the quiz list after deletion
-        return redirect('quiz:quiz_list')
-
-    # Render a confirmation page if needed
-    return render(request, 'quiz_delete.html', {'quiz': quiz})
-
-def quiz_edit(request, quiz_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    
+def quiz_delete(request, pk):
+    quiz = get_object_or_404(Quiz, pk=pk)
     if request.method == 'POST':
-        form = QuizForm(request.POST, instance=quiz)
+        quiz.delete()
+        return redirect('quiz:quiz_list')
+    return render(request, 'quiz_confirm_delete.html', {'quiz': quiz})
+
+def quiz_detail(request, pk):
+    quiz = get_object_or_404(Quiz, pk=pk)
+    module_groups = ModuleGroup.objects.all()
+    questions = Question.objects.filter(quiz=quiz)
+    return render(request, 'quiz_detail.html', {'quiz': quiz, 'questions': questions, 'module_groups': module_groups})
+
+def question_add(request, quiz_id):
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    if request.method == 'POST':
+        form = QuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.quiz = quiz
+            question.save()
+            return redirect('quiz:quiz_detail', pk=quiz.id)
+    else:
+        form = QuestionForm()
+    return render(request, 'question_form.html', {'quiz': quiz, 'form': form})
+
+def question_edit(request, question_id):
+    question = get_object_or_404(Question, id=question_id)
+    quiz = get_object_or_404(Quiz, id=question.quiz.id)  # Lấy quiz từ question
+
+    if request.method == 'POST':
+        form = QuestionForm(request.POST, instance=question)
         if form.is_valid():
             form.save()
-            return redirect('quiz:quiz_list')
+            return redirect('quiz:quiz_detail', pk=quiz.id)  # Sử dụng quiz.id
     else:
-        form = QuizForm(instance=quiz)
-    
-    return render(request, 'quiz_edit.html', {'form': form, 'quiz': quiz})
+        form = QuestionForm(instance=question)
+
+    return render(request, 'question_form.html', {'quiz': quiz, 'form': form})
+
+def question_delete(request, pk):
+    question = get_object_or_404(Question, pk=pk)
+    quiz_id = question.quiz.id
+    if request.method == 'POST':
+        question.delete()   
+        return redirect('quiz:quiz_detail', pk=question.quiz.id)
+    return render(request, 'question_confirm_delete.html', {'question': question})
 
 
 
-def quiz_question_list(request, quiz_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    questions = Question.objects.filter(quiz=quiz)
-    
-    return render(request, 'quiz_question_list.html', {'quiz': quiz, 'questions': questions})
-
-def add_question(request, quiz_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    question_types = ["Multiple Choice", "True/False"]  # Example types
-
-    if request.method == "POST":
-        question_id = request.POST.get('question_id')
-        question_text = request.POST.get('question_text')
-        question_type = request.POST.get('question_type')
-        points = request.POST.get('points')
-
-        # Validate that the Question ID is unique for this quiz
-        if Question.objects.filter(quiz=quiz, id=question_id).exists():
-            return render(request, 'quiz/add_question.html', {
-                'quiz': quiz,
-                'question_id': question_id,
-                'question_types': question_types,
-                'error': "Question ID must be unique."
-            })
-
-        # Create a new question instance
-        Question.objects.create(
-            quiz=quiz,
-            id=question_id,  
-            question_text=question_text,
-            question_type=question_type,
-            points=points
-        )
-
-        return redirect('quiz:quiz_question_list', quiz_id=quiz.id)
-
+def question_detail(request, pk):
+    question = get_object_or_404(Question, pk=pk)
+    answer_options = AnswerOption.objects.filter(question=question)
     context = {
-        'quiz': quiz,
-        'question_id': '',  # Start empty for user input
-        'question_types': question_types,
-    }
-
-    return render(request, 'add_question.html', context)
-
-
-def question_edit(request, quiz_id, question_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    question = get_object_or_404(Question, id=question_id)
-    question_types = ["Multiple Choice", "True/False"]  # Replace with your actual question types
-
-    if request.method == 'POST':
-        new_question_id = request.POST.get('question_id')
-        question_text = request.POST.get('question_text')
-        question_type = request.POST.get('question_type')
-        points = request.POST.get('points')
-
-        # Validate that the Question ID is unique for this quiz
-        if new_question_id != str(question.id) and Question.objects.filter(quiz=quiz, id=new_question_id).exists():
-            return render(request, 'question_edit.html', {
-                'quiz': quiz,
-                'question': question,
-                'question_types': question_types,
-                'error': "Question ID must be unique."
-            })
-
-        # Update the question instance
-        question.id = new_question_id  # Update ID if necessary
-        question.question_text = question_text
-        question.question_type = question_type
-        question.points = points
-        question.save()
-
-        return redirect('quiz:quiz_question_list', quiz_id=quiz.id)
-
-    # Pass the current question ID to the context for pre-filling
-    context = {
-        'quiz': quiz,
         'question': question,
-        'question_types': question_types,
-        'question_id': question.id,  # Pre-fill with existing ID
+        'answer_options': answer_options
     }
-
-    return render(request, 'question_edit.html', context)
-
-
-def question_delete(request, question_id):
-    question = get_object_or_404(Question, id=question_id)
-    
-    if request.method == 'POST':
-        question.delete()
-        return redirect('quiz:quiz_question_list', quiz_id=question.quiz.id)
-
-    return render(request, 'question_delete.html', {'question': question})
+    return render(request, 'question_detail.html', context)
 
 
-def answer_list(request, question_id):
-    question = get_object_or_404(Question, id=question_id)
-    answers = AnswerOption.objects.filter(question=question)
-
-    return render(request, 'answer_list.html', {
-        'question': question,
-        'answers': answers,
-    })
-
-def add_answer(request, question_id):
-    question = get_object_or_404(Question, id=question_id)
-    question_type = question.question_type  # Assuming you have a field for question type
+def answer_option_add(request, question_pk):
+    question = get_object_or_404(Question, pk=question_pk)
 
     if request.method == 'POST':
-        answer_texts = request.POST.getlist('answer_text[]')
-        is_corrects = request.POST.getlist('is_correct[]')  # Ensure you collect all checked values
+        for i in range(4):
+            option_text = request.POST.get(f'option_text_{i}')
+            is_correct = request.POST.get(f'is_correct_{i}', False) == 'on'
+            if option_text:  # Kiểm tra xem option_text có giá trị không
+                AnswerOption.objects.create(question=question, option_text=option_text, is_correct=is_correct)
 
-        for index, answer_text in enumerate(answer_texts):
-            is_correct = str(index) in is_corrects  # Check if the answer is marked as correct
+         # Lưu câu trả lời True/False
+        true_text = request.POST.get('option_true')
+        is_correct_true = request.POST.get('is_correct_true', False) == 'on'
+        if true_text:
+            AnswerOption.objects.create(question=question, option_text=true_text, is_correct=is_correct_true)
 
-            AnswerOption.objects.create(
-                question=question,
-                option_text=answer_text,
-                is_correct=is_correct
-            )
+        false_text = request.POST.get('option_false')
+        is_correct_false = request.POST.get('is_correct_false', False) == 'on'
+        if false_text:
+            AnswerOption.objects.create(question=question, option_text=false_text, is_correct=is_correct_false)
+            
+        return redirect('quiz:question_detail', pk=question.pk)
 
-        return redirect('quiz:answer_list', question.id)
-
-    return render(request, 'add_answer.html', {'question': question, 'question_type': question_type})
-
-def answer_delete(request, answer_id):
-    answer = get_object_or_404(AnswerOption, id=answer_id)
-    question_id = answer.question.id  # Get the question ID for redirection
-    answer.delete()  
-    return redirect('quiz:answer_list', question_id=question_id)
+    return render(request, 'answer_option_form.html', {'question': question, 'options_range': range(4)})
 
 
-def answer_edit(request, answer_id):
-    answer = get_object_or_404(AnswerOption, id=answer_id)
-    question_id = answer.question.id  # Get the question ID for redirection
-
+def answer_option_edit(request, pk):
+    option = get_object_or_404(AnswerOption, pk=pk)
     if request.method == 'POST':
-        # Get data from the form
-        option_text = request.POST.get('option_text')
-        is_correct = request.POST.get('is_correct') == 'on'  # Checkbox value
+        form = AnswerOptionForm(request.POST, instance=option)
+        if form.is_valid():
+            form.save()
+            return redirect('quiz:question_detail', pk=option.question.id)
+    else:
+        form = AnswerOptionForm(instance=option)
+    return render(request, 'answer_option_form.html', {'form': form})
 
-        # Update the answer
-        answer.option_text = option_text
-        answer.is_correct = is_correct
-        answer.save()
-
-        # Redirect to the list of answers for the question
-        return redirect('quiz:answer_list', question_id=question_id)
-
-    # Return the template with the answer's data
-    return render(request, 'answer_edit.html', {'answer': answer})
+def answer_option_delete(request, pk):
+    option = get_object_or_404(AnswerOption, pk=pk)
+    if request.method == 'POST':
+        question_id = option.question.id
+        option.delete()
+        return redirect('quiz:question_detail', pk=question_id)
+    return render(request, 'answer_option_confirm_delete.html', {'option': option})
 
 
+@login_required
 def take_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    questions = quiz.question_set.all()
+    questions = quiz.questions.all()  # Lấy tất cả các câu hỏi trong quiz
 
-    # Track the start time of the quiz
-    start_time = request.session.get(f'quiz_{quiz_id}_start_time')
-    if not start_time:
-        request.session[f'quiz_{quiz_id}_start_time'] = str(datetime.now())
+    if request.method == 'POST':
+        # Khi người dùng gửi form (submit quiz)
+        with transaction.atomic():
+            # Tạo một lần thử quiz mới cho học sinh
+            attempt = StudentQuizAttempt.objects.create(user=request.user, quiz=quiz, score=0.0)
 
-    if request.method == "POST":
-        # Calculate the time taken by the student
-        start_time = datetime.fromisoformat(request.session.get(f'quiz_{quiz_id}_start_time'))
-        time_taken = (datetime.now() - start_time).seconds // 60  # Time in minutes
-        del request.session[f'quiz_{quiz_id}_start_time']  # Clear start time after submission
+            total_score = 0
+            for question in questions:
+                selected_option_id = request.POST.get(f'question_{question.id}')  # Lấy lựa chọn được chọn cho câu hỏi
+                text_response = request.POST.get(f'text_response_{question.id}')  # Thay đổi tên ở đây
+                # Nếu câu hỏi là một câu hỏi dạng text, không cần truy xuất selected_option
+                selected_option = None
+                if selected_option_id and selected_option_id.isdigit():
+                    selected_option = AnswerOption.objects.get(id=int(selected_option_id))
+                # Lưu câu trả lời của học sinh
+                StudentAnswer.objects.create(
+                    attempt=attempt,
+                    question=question,
+                    selected_option=selected_option,
+                    text_response=text_response 
+                )
 
-        # Create a new attempt
-        attempt = StudentQuizAttempt.objects.create(
-            user=request.user, 
-            quiz=quiz, 
-            score=0,  # Initial score
-            time_taken=time_taken
-        )
+                # Kiểm tra nếu lựa chọn đúng, cộng điểm
+                if selected_option and selected_option.is_correct:
+                    total_score += question.points
 
-        # Loop through each question and save the answers
-        for question in questions:
-            selected_option_id = request.POST.get(f"question_{question.id}")
-            selected_option = get_object_or_404(AnswerOption, id=selected_option_id)
-            answer = StudentAnswer.objects.create(
-                attempt=attempt,
-                question=question,
-                selected_option=selected_option
-            )
+            # Cập nhật điểm tổng của lần thử
+            attempt.score = total_score
+            attempt.save()
 
-        # Call the AI grading function (see below)
-        score = grade_quiz(attempt)
+            return redirect('quiz:quiz_result', quiz_id=quiz.id, attempt_id=attempt.id)  # Chuyển tới trang kết quả sau khi nộp bài
 
-        # Update the score for the attempt
-        attempt.score = score
-        attempt.save()
-
-        # Redirect after completing the quiz
-        return redirect('quiz:quiz_result', quiz_id=quiz.id, attempt_id=attempt.id)
-
-    return render(request, 'take_quiz.html', {'quiz': quiz, 'questions': questions, 'time_limit': quiz.time_limit})
+    # Render trang quiz với câu hỏi và lựa chọn
+    return render(request, 'take_quiz.html', {'quiz': quiz, 'questions': questions})
 
 
-def grade_quiz(attempt):
-    correct_answers = 0
-    total_questions = attempt.studentanswer_set.count()
-
-    for answer in attempt.studentanswer_set.all():
-        if answer.selected_option.is_correct:
-            correct_answers += 1
-
-    # Calculate score (e.g., 1 point for each correct answer)
-    return (correct_answers / total_questions) * 100 if total_questions > 0 else 0
-
-
+@login_required
 def quiz_result(request, quiz_id, attempt_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    attempt = get_object_or_404(StudentQuizAttempt, id=attempt_id)
+    attempt = get_object_or_404(StudentQuizAttempt, id=attempt_id, user=request.user)
     student_answers = StudentAnswer.objects.filter(attempt=attempt)
 
-    # Can add AI grading feedback if needed
     return render(request, 'quiz_result.html', {
-        'quiz': quiz,
-        'student_answers': student_answers,
+        'quiz' : quiz,
         'attempt': attempt,
+        'student_answers': student_answers,
     })
 
-
-
-def import_quiz(request, quiz_id):
+def import_questions(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
+    if request.method == 'POST':
+        excel_file = request.FILES['file']
+        
+        # Đọc file Excel với tất cả các cột dưới dạng chuỗi
+        df = pd.read_excel(excel_file, dtype=str)  # Đảm bảo tất cả đều là chuỗi
+        
+        # Duyệt qua từng dòng trong DataFrame và lưu vào cơ sở dữ liệu
+        for index, row in df.iterrows():
+            question_text = row['Question']
+            correct_answer = row['Correct Answer']
+            question_type = row['Question Type']
+            
+            # Xác định các lựa chọn đáp án dựa trên loại câu hỏi
+            if question_type == 'MCQ':
+                answers = {
+                    'A': row['A'],
+                    'B': row['B'],
+                    'C': row['C'],
+                    'D': row['D'],
+                }
+            elif question_type == 'TF':
+                answers = {
+                    'A': row['A'],
+                    'B': row['B']
+                }
+            elif question_type == 'TEXT':
+                answers = {}  # Không cần đáp án cho câu hỏi văn bản
+            else:
+                answers = {}  # Xử lý các loại khác nếu cần
 
-    if request.method == "POST":
-        file = request.FILES['file']
-        if file.name.endswith('.xlsx'):
-            # Đọc file Excel
-            df = pd.read_excel(file)
+            # Tạo đối tượng Question
+            question = Question.objects.create(
+                quiz=quiz,  
+                question_text=question_text,
+                question_type=question_type,  # Đặt loại từ file Excel
+                points=1  # Đặt giá trị điểm mặc định hoặc tùy chỉnh nếu cần
+            )
+            
+            # Tạo đối tượng AnswerOption cho MCQ và TF
+            if question_type in ['MCQ', 'TF']:
+                for option, answer_text in answers.items():
+                    answer_text = str(answer_text).strip()  # Loại bỏ khoảng trắng
+                    is_correct = (option == correct_answer)  # Xác định nếu đáp án này đúng
 
-            # Duyệt từng dòng trong DataFrame
-            for index, row in df.iterrows():
-                question_text = row['Question']
-                question_type = row['Question Type'].strip()  # Lấy loại câu hỏi từ cột Question Type
-                correct_answer = row['Correct Answer'].strip().upper()  # Lấy giá trị đúng và chuẩn hóa
-
-                # Kiểm tra loại câu hỏi
-                if question_type == "True/False":
-                    # Xử lý câu hỏi dạng True/False
-                    question = Question.objects.create(
-                        quiz=quiz,
-                        question_text=question_text,
-                        question_type="True/False",
-                        points=10
-                    )
-
-                    # Tạo đáp án True và False
-                    true_option = AnswerOption.objects.create(
-                        question=question,
-                        option_text='True',
-                        is_correct=(correct_answer == 'A')  # A là đúng nếu đáp án đúng là 'TRUE'
-                    )
-                    false_option = AnswerOption.objects.create(
-                        question=question,
-                        option_text='False',
-                        is_correct=(correct_answer == 'B')  # B là đúng nếu đáp án đúng là 'FALSE'
-                    )
-
-                elif question_type == "Multiple Choice":
-                    # Xử lý câu hỏi dạng Multiple Choice
-
-                    answer_options = [
-                        str(row['Answer A']).strip().replace('.0', ''),  # Chuyển đổi thành chuỗi và loại bỏ .0
-                        str(row['Answer B']).strip().replace('.0', ''),
-                        str(row['Answer C']).strip().replace('.0', ''),
-                        str(row['Answer D']).strip().replace('.0', '')
-                    ]
-
-                    # Tạo câu hỏi mới
-                    question = Question.objects.create(
-                        quiz=quiz,
-                        question_text=question_text,
-                        question_type="Multiple Choice",
-                        points=10
-                    )
-
-                    # Tạo các đáp án tương ứng cho Multiple Choice
-                    for i, answer_text in enumerate(answer_options):
-                        option_label = chr(65 + i)  # A, B, C, D tương ứng với 65, 66, 67, 68 trong mã ASCII
-                        is_correct = (option_label == correct_answer)
-
+                    # Tạo AnswerOption chỉ khi answer_text không rỗng
+                    if answer_text:
                         AnswerOption.objects.create(
-                            question=question,
-                            option_text=answer_text,
+                            question=question, 
+                            option_text=answer_text, 
                             is_correct=is_correct
                         )
-                else:
-                    # Nếu loại câu hỏi không hợp lệ, bạn có thể xử lý lỗi tại đây
-                    continue  # Bỏ qua câu hỏi này hoặc ghi log
 
-            return redirect('quiz:quiz_question_list', quiz_id=quiz.id)
+        return redirect('quiz:quiz_list')  # Chuyển hướng về danh sách quiz sau khi nhập thành công
 
-    return render(request, 'import_quiz.html', {'quiz': quiz})
+    return render(request, 'import_questions.html')
 
 
 
 
-def export_quiz(request, quiz_id):
+def export_questions(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
+    questions = Question.objects.filter(quiz=quiz).distinct()  # Sử dụng distinct để tránh lặp câu hỏi
 
-    # Tạo danh sách chứa các câu hỏi và đáp án để xuất ra file Excel
-    data = []
-    
-    questions = Question.objects.filter(quiz=quiz)
+    # Tạo một workbook mới
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = quiz.quiz_title
+
+    # Viết tiêu đề cột
+    sheet.append(['Question', 'Answer A', 'Answer B', 'Answer C', 'Answer D', 'Correct Answer', 'Question Type', ])
+
     for question in questions:
-        answer_options = AnswerOption.objects.filter(question=question)
+        # Lấy danh sách các đáp án
+        answers = AnswerOption.objects.filter(question=question)  
+        correct_answer = answers.filter(is_correct=True).first()  
+        answer_list = [answer.option_text for answer in answers]
 
-        if question.question_type == "True/False":
-            # Nếu là câu hỏi dạng True/False, coi như Multiple Choice với 2 đáp án
-            row = {
-                "Question": question.question_text,
-                "Answer A": answer_options[0].option_text if len(answer_options) > 0 else "",
-                "Answer B": answer_options[1].option_text if len(answer_options) > 1 else "",
-                "Answer C": "",
-                "Answer D": "",
-                "Correct Answer": ""
-            }
+        
+        if question.question_type == 'MCQ' and len(answer_list) >= 4:
+            sheet.append([
+                question.question_text,
+                answer_list[0],  
+                answer_list[1],  
+                answer_list[2],  
+                answer_list[3],  
+                correct_answer.option_text if correct_answer else '',  
+                question.question_type 
+            ])
+        elif question.question_type == 'TF':  
+            sheet.append([
+                question.question_text,
+                'TRUE',  
+                'FALSE',  
+                '',  
+                '',  
+                correct_answer.option_text if correct_answer else '', 
+                question.question_type  
+            ])
+        elif question.question_type == 'TEXT':  
+            sheet.append([
+                question.question_text,
+                '', 
+                '',  
+                '',  
+                '', 
+                '',  
+                question.question_type 
+            ])
 
-            # Xác định đáp án đúng
-            for i, option in enumerate(answer_options):
-                if option.is_correct:
-                    row["Correct Answer"] = chr(65 + i)  # 65 là mã ASCII cho 'A'
-            
-            row["Question Type"] = "True/False"
-        else:
-            # Nếu là câu hỏi dạng Multiple Choice
-            row = {
-                "Question": question.question_text,
-                "Answer A": answer_options[0].option_text if len(answer_options) > 0 else "",
-                "Answer B": answer_options[1].option_text if len(answer_options) > 1 else "",
-                "Answer C": answer_options[2].option_text if len(answer_options) > 2 else "",
-                "Answer D": answer_options[3].option_text if len(answer_options) > 3 else "",
-                "Correct Answer": ""
-            }
-
-            # Xác định đáp án đúng
-            for i, option in enumerate(answer_options):
-                if option.is_correct:
-                    row["Correct Answer"] = chr(65 + i)  # 65 là mã ASCII cho 'A'
-
-            row["Question Type"] = "Multiple Choice"
-
-        data.append(row)
-
-    # Chuyển đổi dữ liệu thành DataFrame
-    df = pd.DataFrame(data)
-
-    # Tạo response dưới dạng file Excel
+    # Tạo phản hồi HTTP với tệp Excel
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename=quiz_{quiz_id}.xlsx'
-
-    # Xuất file Excel
-    df.to_excel(response, index=False, engine='openpyxl')
+    response['Content-Disposition'] = f'attachment; filename="{quiz.quiz_title}_questions.xlsx"'
+    workbook.save(response)
 
     return response
+
+
+
+def export_quizzes(request, format):
+    quizzes = Quiz.objects.all()
+    
+    if format == 'json':
+        # Export quizzes as JSON
+        quizzes_data = []
+        for quiz in quizzes:
+            quizzes_data.append({
+                "title": quiz.quiz_title,
+                "description": quiz.quiz_description,
+                "course": quiz.course.course_name if quiz.course else None,
+                "total_marks": quiz.total_marks,
+                "time_limit": quiz.time_limit,
+                'start_datetime': quiz.start_datetime.isoformat() if quiz.start_datetime else None,
+                'end_datetime': quiz.end_datetime.isoformat() if quiz.end_datetime else None,
+                "attempts_allowed": quiz.attempts_allowed,
+                "created_by": quiz.created_by.username if quiz.created_by else None,
+                'created_at': quiz.created_at.isoformat(),  # Chuyển đổi sang chuỗi
+                'updated_at': quiz.updated_at.isoformat(),  # Chuyển đổi sang chuỗi
+            })
+        
+        response = HttpResponse(json.dumps(quizzes_data, indent=4), content_type="application/json")
+        response['Content-Disposition'] = f'attachment; filename="quizzes_{timezone.now().strftime("%Y%m%d")}.json"'
+        return response
+    
+    elif format == 'excel':
+        # Export quizzes as CSV (Excel-readable format)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="quizzes_{timezone.now().strftime("%Y%m%d")}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Title', 'Description', 'Course', 'Total Marks', 'Time Limit', 'Start Date', 'End Date', 'Attempts Allowed', 'Created By'])
+
+        for quiz in quizzes:
+            writer.writerow([
+                quiz.quiz_title,
+                quiz.quiz_description,
+                quiz.course.course_name if quiz.course else '',
+                quiz.total_marks,
+                quiz.time_limit,
+                quiz.start_datetime,
+                quiz.end_datetime,
+                quiz.attempts_allowed,
+                quiz.created_by.username if quiz.created_by else ''
+            ])
+
+        return response
+
+    else:
+        return HttpResponse(status=400)  # Bad request if format is not supported
+
+
+def import_quizzes(request):
+    if request.method == 'POST':
+        # Kiểm tra xem người dùng có tải file lên hay không
+        if request.FILES.get('file'):
+            file = request.FILES['file']
+            if file.name.endswith('.json'):
+                # Nhập từ file JSON
+                data = json.load(file)
+                for item in data:
+                    course, created = Course.objects.get_or_create(course_name=item['course'])
+                    Quiz.objects.create(
+                        course=course,
+                        quiz_title=item['title'],
+                        quiz_description=item['description'],
+                        total_marks=item['total_marks'],
+                        time_limit=item['time_limit'],
+                        start_datetime=item.get('start_datetime'),
+                        end_datetime=item.get('end_datetime'),
+                        attempts_allowed=item['attempts_allowed'],
+                        created_by=request.user,
+                    )
+            elif file.name.endswith('.csv'):
+                # Nhập từ file CSV
+                reader = csv.DictReader(file.read().decode('utf-8').splitlines())
+                for row in reader:
+                    course, created = Course.objects.get_or_create(course_name=row['Course'])
+                    Quiz.objects.create(
+                        course=course,
+                        quiz_title=row['Title'],
+                        quiz_description=row['Description'],
+                        total_marks=row['Total Marks'],
+                        time_limit=row['Time Limit'],
+                        start_datetime=row['Start Date'],
+                        end_datetime=row['End Date'],
+                        attempts_allowed=row['Attempts Allowed'],
+                        created_by=request.user,
+                    )
+            return redirect('quiz:quiz_list')
+
+        # Thêm việc xử lý file từ static nếu cần
+        elif 'static_file' in request.POST:
+            file_path = os.path.join(settings.STATIC_ROOT, 'excel', 'import_quiz.csv')
+            with open(file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    course, created = Course.objects.get_or_create(course_name=row['Course'])
+                    Quiz.objects.create(
+                        course=course,
+                        quiz_title=row['Title'],
+                        quiz_description=row['Description'],
+                        total_marks=row['Total Marks'],
+                        time_limit=row['Time Limit'],
+                        start_datetime=row['Start Date'],
+                        end_datetime=row['End Date'],
+                        attempts_allowed=row['Attempts Allowed'],
+                        created_by=request.user,
+                    )
+            return redirect('quiz:quiz_list')
+
+    return render(request, 'import_quizzes.html')

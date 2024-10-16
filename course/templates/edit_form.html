@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load form_filters %}
+
+{% block title %}Edit {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Edit {{ course.name }}</h1>
+    <form method="post" enctype="multipart/form-data" onsubmit="updateTagsInput()">
+        {% csrf_token %}
+
+        <input type="hidden" name="tags" id="tags-input" value="{{ course.tags|default:'' }}" /> <!-- Ensure tags are passed -->
+
+        <div class="form-group">
+            {{ course_form.name.label_tag }}
+            {{ course_form.name|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            {{ course_form.course_code.label_tag }}
+            {{ course_form.course_code|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            {{ course_form.description.label_tag }}
+            {{ course_form.description|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            {{ course_form.instructor.label_tag }}
+            {{ course_form.instructor|add_class:"form-control" }}
+        </div>
+
+        <!-- Tags Input -->
+        <div class="form-group">
+            <h3>Tags</h3>
+            <div id="tags-container">
+                <input type="text" id="tag-input" class="form-control" placeholder="Enter a tag and press Enter" />
+            </div>
+            <div id="tags-list" class="mt-2">
+                {% for tag in tags_list %}
+                    <span class="badge badge-info mr-1">
+                        {{ tag }}
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeTag('{{ forloop.counter0 }}')">X</button>
+                    </span>
+                {% endfor %}
+            </div>
+
+        </div>
+
+        <div class="form-group">
+            <h3>Existing Prerequisite Courses</h3>
+            {% if prerequisites %}
+                <ul>
+                    {% for prereq in prerequisites %}
+                    <li>
+                        {{ prereq.name }}
+                        <input type="checkbox" name="delete_prerequisite_{{ prereq.id }}" id="delete_prerequisite_{{ prereq.id }}">
+                        <label for="delete_prerequisite_{{ prereq.id }}">Delete</label>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No prerequisites added.</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group" id="prerequisite-container">
+            <h3>Add New Prerequisite Courses</h3>
+            <div class="prerequisite-dropdown">
+                <select name="prerequisite_courses" class="form-control">
+                    <option value="">Select a prerequisite course</option>
+                    {% for course in all_courses %}
+                        <option value="{{ course.id }}">{{ course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-secondary" id="add-prerequisite">Add Another Prerequisite Course</button>
+
+        <div class="form-group">
+            <h3>Manage Sessions</h3>
+            {% for session in sessions %}
+                <div class="session-group">
+                    <label>Session Name:</label>
+                    <input type="hidden" name="session_ids" value="{{ session.id }}">
+                    <input type="text" name="session_names" class="form-control" value="{{ session.name }}">
+                    <input type="checkbox" name="delete_session_ids" value="{{ session.id }}">
+                    <label for="delete_session_ids">Delete Session</label>
+                </div>
+            {% empty %}
+                <p>No sessions added yet.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Add New Sessions -->
+        <div class="form-group">
+            <h3>Add New Sessions</h3>
+            <div id="new-session-container">
+                <div class="session-group">
+                    <input type="text" name="new_session_names" class="form-control" placeholder="New Session Name">
+                </div>
+            </div>
+            <button type="button" class="btn btn-secondary" id="add-new-session">Add Another Session</button>
+        </div>
+
+        <div class="mb-4 mt-3">
+            {% if sessions %}
+                <a href="{% url 'course:course_content_edit' course.pk sessions.0.id %}" class="btn btn-primary">Edit Course Content</a>
+                <a href="{% url 'course:reorder_course_materials' course.pk sessions.0.id %}" class="btn btn-primary">Edit Course Order</a>
+            {% else %}
+                <span>No sessions available.</span>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{% url 'course:course_list' %}" class="btn btn-secondary">Return to Course List</a>
+    </form>
+</div>
+
+<script>
+    const tags = [];
+
+    // Initialize the tags array with existing tags (excluding the delete button text)
+    document.querySelectorAll('#tags-list .badge').forEach(tagElement => {
+        const tagText = tagElement.childNodes[0].nodeValue.trim(); // Get only the text part (ignoring the button)
+        tags.push(tagText.toUpperCase());
+    });
+
+    document.getElementById('tag-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const tagValue = this.value.trim().toUpperCase();
+            if (tagValue && !tags.includes(tagValue)) {
+                tags.push(tagValue);
+                updateTagsList();
+                this.value = ''; // Clear the input
+            } else if (tagValue) {
+                alert('This tag already exists.'); // Alert if the tag is a duplicate
+            }
+        }
+    });
+
+    function updateTagsList() {
+        const tagsList = document.getElementById('tags-list');
+        tagsList.innerHTML = ''; // Clear existing tags
+        tags.forEach((tag, index) => {
+            const tagElement = document.createElement('span');
+            tagElement.className = 'badge badge-info mr-1';
+            tagElement.textContent = tag;
+
+            // Create a remove button for each tag
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'btn btn-danger btn-sm ml-1';
+            removeButton.textContent = 'X';
+            removeButton.onclick = () => removeTag(index); // Pass the index to removeTag
+
+            tagElement.appendChild(removeButton); // Append the button to the tag
+            tagsList.appendChild(tagElement); // Append the tag to the list
+        });
+        updateTagsInput(); // Update the hidden input with the current tags
+    }
+
+    function removeTag(index) {
+        tags.splice(index, 1); // Remove the tag from the array
+        updateTagsList(); // Update the displayed list of tags
+    }
+
+    function updateTagsInput() {
+        // Update the hidden input with the current tags
+        document.getElementById('tags-input').value = tags.join(',');
+    }
+
+    // Ensure tags are updated before submitting the form
+    document.querySelector('form').addEventListener('submit', updateTagsInput);
+
+    document.getElementById('add-prerequisite').addEventListener('click', function() {
+        var container = document.getElementById('prerequisite-container');
+        var newDropdown = document.createElement('div');
+        newDropdown.classList.add('prerequisite-dropdown');
+        newDropdown.innerHTML = `
+            <select name="prerequisite_courses" class="form-control">
+                <option value="">Select a prerequisite course</option>
+                {% for course in all_courses %}
+                    <option value="{{ course.id }}">{{ course.name }}</option>
+                {% endfor %}
+            </select>
+        `;
+        container.appendChild(newDropdown);
+    });
+
+    document.getElementById('add-new-session').addEventListener('click', function() {
+        var container = document.getElementById('new-session-container');
+        var newInput = document.createElement('div');
+        newInput.classList.add('session-group');
+        newInput.innerHTML = `
+            <input type="text" name="new_session_names" class="form-control" placeholder="New Session Name">
+        `;
+        container.appendChild(newInput);
+    });
+</script>
+{% endblock %}

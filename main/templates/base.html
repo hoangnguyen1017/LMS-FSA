@@ -7,12 +7,14 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     {% block extra_css %}{% endblock %}
+ 
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="{% url 'main:home' %}">FSA</a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
+                {% if user.is_authenticated %}
                 {% for group in module_groups %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="{{ group.id }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -20,16 +22,26 @@
                         </a>
                         <div class="dropdown-menu" aria-labelledby="{{ group.id }}">
                             {% for module in group.modules.all %}
-                           <a class="dropdown-item" href="{% url module.module_url %}"> <i class="{{ module.icon }}"></i> &nbsp;{{ module.module_name }}</a>
+                                 
+                                    <a class="dropdown-item" href="{{ module.module_url }}"> <!-- Use {{ module.module_url }} if it's an actual URL field -->
+                                        <i class="{{ module.icon }}"></i> &nbsp;{{ module.module_name }}
+                                    </a>
+                               <!-- Uncommented this condition {%if module in user.modules.all %} --> 
+                             <!-- {% endif %} -->
+
                             {% endfor %}
                         </div>
                     </li>
                 {% endfor %}
+            {% endif %}
+            
+            
             </ul>
             <ul class="navbar-nav ml-auto">
+                
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:logout' %}">Logout</a>
+                        <a class="nav-link" href="{% url 'main:logout' %}">Welcome, {{ user.username }}! (Logout)</a>
                     </li>
                 {% else %}
                     <li class="nav-item">
@@ -40,7 +52,7 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container-fluid">
         {% block content %}
         {% endblock %}
     </div>

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Exercise{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Title and Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'coding_exercise:exercise_list' %}">Exercises</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ exercise.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Exercise Title -->
+        <div class="col-12">
+            <h1 class="display-4">{{ exercise.title }}</h1>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Exercise Details -->
+        <div class="col-md-8">
+            <h5>Description</h5>
+            <p>{{ exercise.description }}</p>
+
+            <h5>Created At</h5>
+            <p>{{ exercise.created_at }}</p>
+
+            <h5>Difficulty</h5>
+            <p>{{ exercise.difficulty }}</p>
+
+            <h5>Category</h5>
+            <p>{{ exercise.category.name }}</p>
+
+            <h5>Subject</h5>
+            <p>{{ exercise.subject.name }}</p>
+        </div>
+
+        <!-- Related Info (e.g., Submissions) -->
+        <div class="col-md-4">
+            <h5>Recent Submissions</h5>
+            <ul class="list-group">
+                {% for submission in exercise.submissions.all %}
+                    <li class="list-group-item">
+                        <strong>{{ submission.student.first_name }} {{ submission.student.last_name }}</strong> - {{ submission.created_at }}
+                        <span class="badge bg-success">{{ submission.score }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No submissions yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Buttons for Actions -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <a href="{% url 'coding_exercise:exercise_edit' exercise.id %}" class="btn btn-primary">Edit Exercise</a>
+            <a href="{% url 'coding_exercise:exercise_delete' exercise.id %}" class="btn btn-danger">Delete Exercise</a>
+            <a href="{% url 'coding_exercise:exercise_list'%}" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

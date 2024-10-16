@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <h3 class="card-title">Add New Exercise</h3>
+    </div>
+    <div class="card-body">
+        <!-- Form to Add Exercise -->
+        <form method="POST" class="needs-validation" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success mt-3">Save Exercise</button>
+            <a href="{% url 'coding_exercise:exercise_list' %}" class="btn btn-secondary mt-3">Back </a>
+        </form>
+        
+    </div>
+</div>
+{% endblock %}

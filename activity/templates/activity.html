@@ -1,0 +1,32 @@
+<!-- activity/templates/activity.html -->
+{% extends "base.html" %}
+
+{% block title %}Student Activity{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Student Activity Log</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Activity Type</th>
+                <th>Details</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in activity_logs %}
+                <tr>
+                    <td>{{ log.get_activity_type_display }}</td>
+                    <td>{{ log.activity_details }}</td>
+                    <td>{{ log.activity_timestamp }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">No activity records found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

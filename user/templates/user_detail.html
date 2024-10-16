@@ -1,14 +1,247 @@
 {% extends 'base.html' %}
-
-{% block title %}{{ user.username }} Details{% endblock %}
+{% block title %}{{ user.username }} - Profile{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>User Details</h2>
-    <p><strong>Username:</strong> {{ user.username }}</p>
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <p><strong>Full Name:</strong> {{ user.full_name }}</p>
-    <p><strong>Role:</strong> {{ user.role }}</p>
-    <a href="{% url 'user:user_list' %}" class="btn btn-primary">Back to User List</a>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="bg-dark text-white p-3 rounded text-center">
+                <p><strong>Profile Picture</strong></p>
+                <div class="avatar-wrapper position-relative mb-3">
+                    {% if user.profile.profile_picture_url %}
+                        <img src="{{ user.profile.profile_picture_url }}" alt="{{ user.username }}'s Profile Picture" class="img-fluid rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                    {% else %}
+                        <span class="text-muted">No Image</span>
+                    {% endif %}
+                </div>
+                <h4 class="mb-4">{{ user.username }}</h4>
+                <ul class="list-group">
+                    <li class="list-group-item bg-dark"><a href="#" class="text-white" onclick="scrollToSection('userIdCard'); return false;">User ID</a></li>
+                    <li class="list-group-item bg-dark"><a href="#" class="text-white" onclick="scrollToSection('profileCard'); return false;">Profile Information</a></li>
+                    <li class="list-group-item bg-dark"><a href="#" class="text-white" onclick="scrollToSection('CourseCard'); return false;">Courses</a></li>
+                    {% if is_student %}
+                    <li class="list-group-item bg-dark"><a href="#" class="text-white" onclick="scrollToSection('quizResultsCard'); return false;">Quiz Results</a></li>
+                    {% endif %}
+                    <li class="list-group-item bg-dark"><a href="#" class="text-white" onclick="scrollToSection('activityLogCard'); return false;">Activity Log</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <!-- Thêm thẻ chứa cho nội dung cuộn -->
+            <div class="content-scrollable">
+                <div class="card mb-4" id="userIdCard">
+                    <div class="card-header bg-dark text-white">User ID</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>ID:</strong> {{ user.id }}
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Full Name:</strong> <span class="text-dark">{{ user.first_name }} {{ user.last_name }}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4" id="profileCard">
+                    <div class="card-header bg-dark text-white">Profile Information</div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-6"><strong>Bio:</strong> {{ user.profile.bio|default:"N/A" }}</div>
+                            <div class="col-6"><strong>Role:</strong> {{ user.profile.role.role_name|default:"N/A" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6"><strong>Interests:</strong> {{ user.profile.interests|default:"N/A" }}</div>
+                            <div class="col-6"><strong>Learning Style:</strong> {{ user.profile.learning_style|default:"N/A" }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4" id="CourseCard">
+                    <div class="card-header bg-dark text-white">Courses Enrolled</div>
+                    <div class="card-body">
+                        {% if enrollments %}
+                            <ul class="list-group">
+                                {% for enrollment in enrollments %}
+                                    <li class="list-group-item">
+                                        <strong>{{ enrollment.course.name }}</strong> - 
+                                        Enrollment Date: {{ enrollment.date_enrolled|date:"H:i d-m-Y" }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">No courses enrolled.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if is_student %}
+                    <div class="card mb-4" id="quizResultsCard">
+                        <div class="card-header bg-dark text-white">Quiz Results</div>
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Quiz Title</th>
+                                        <th>Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attempt in quiz_results %}
+                                    <tr>
+                                        <td>{{ attempt.quiz.quiz_title }}</td>
+                                        <td>{{ attempt.score }} / {{ attempt.quiz.total_marks }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2" class="text-center">No quiz attempts found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="card mb-4" id="activityLogCard">
+                    <div class="card-header bg-dark text-white">User Activity Log</div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Activity Type</th>
+                                    <th>Details</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in activity_logs %}
+                                    <tr>
+                                        <td>{{ log.get_activity_type_display }}</td>
+                                        <td>{{ log.activity_details }}</td>
+                                        <td>{{ log.activity_timestamp }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3">No activity records found.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="pagination">
+                            <span class="step-links">
+                                {% if page_obj.has_previous %}
+                                    <a href="?page=1">&laquo; first</a>
+                                    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                                {% endif %}
+                
+                                <span class="current">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                                </span>
+                
+                                {% if page_obj.has_next %}
+                                    <a href="?page={{ page_obj.next_page_number }}">next</a>
+                                    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- Kết thúc thẻ chứa -->
+        </div>
+    </div>
+    <!-- Thêm nút Edit Password vào nội dung cuộn -->
+    <div class="text-start mt-4">
+        <a href="#" class="btn btn-warning btn-lg" title="Edit User" onclick="togglePasswordForm(event)">
+            <i class="fas fa-edit"></i> Edit Password
+        </a>
+    </div>
+
+    <div class="row mb-4" id="password-form" style="display: none;">
+        <div class="col-md-12">
+            <form method="POST" action="{% url 'user:user_edit_password' user.pk %}" class="d-flex align-items-center">
+                {% csrf_token %}
+                <input type="password" class="form-control me-2" id="old_password" name="old_password" placeholder="Old Password" required>
+                <button type="submit" class="btn btn-warning">Submit</button>
+            </form>
+        </div>
+    </div>
+    <!-- Đặt hai nút bên ngoài phần cuộn -->
+    <div class="text-center mt-4">
+        <a href="{% url 'main:home' %}" class="btn btn-outline-primary rounded-pill">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+    </div>
 </div>
+
+<script>
+    let lastScrollTime = 0; // Biến theo dõi thời điểm cuộn cuối cùng
+
+    function scrollToSection(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            const currentTime = Date.now();
+            if (currentTime - lastScrollTime > 500) { // Ngăn chặn cuộn nhanh
+                lastScrollTime = currentTime; // Cập nhật thời điểm cuộn cuối cùng
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                highlightCard(id);
+            }
+        }
+    }
+
+    function togglePasswordForm(event) {
+        event.preventDefault();
+        var form = document.getElementById('password-form');
+        form.style.display = (form.style.display === "none" || form.style.display === "") ? "block" : "none";
+    }
+
+    function highlightCard(cardId) {
+        var cards = document.querySelectorAll('.card');
+        cards.forEach(function(card) {
+            card.classList.remove('highlight');
+        });
+
+        var selectedCard = document.getElementById(cardId);
+        selectedCard.classList.add('highlight');
+    }
+</script>
+
+<style>
+    .content-scrollable {
+        max-height: 600px; /* Chiều cao tối đa bạn muốn cho phần nội dung */
+        overflow-y: auto; /* Thêm thanh cuộn theo chiều dọc */
+        margin-left: 15px; /* Điều chỉnh lề nếu cần */
+        margin-right: 15px; /* Điều chỉnh lề nếu cần */
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+    }
+
+    .bg-dark {
+        background-color: #343a40 !important;
+    }
+
+    .btn-outline-primary {
+        color: #007bff;
+        border: 2px solid #007bff;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+    /* Lớp hiệu ứng nâng lên */
+    .highlight {
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 15px rgba(255, 204, 0, 0.5); /* Hiệu ứng bóng */
+    }
+</style>
+
 {% endblock %}

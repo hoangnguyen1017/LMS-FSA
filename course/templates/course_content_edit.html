@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Content for {{ course.name }}{% endblock %}
+
+{% block content %}
+<h1>Edit Content for {{ course.name }}</h1>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h3>Select Session</h3>
+    <select name="session_id" id="session-select" onchange="this.form.submit()">
+        <option value="" disabled selected>Select a session</option>
+        {% for session in sessions %}
+            <option value="{{ session.id }}" {% if session.id == selected_session.id %}selected{% endif %}>{{ session.name }}</option>
+        {% endfor %}
+    </select>
+
+    <!-- Hidden input to store selected session ID -->
+    <input type="hidden" name="session_id_hidden" value="{{ selected_session.id }}">
+
+    <h2>Material</h2>
+    <ul>
+        {% for reading_material in reading_materials %}
+            <li>
+                <a href="{% url 'course:reading_material_detail' reading_material.id %}" target="_blank" style="font-size: 1em;">{{ reading_material.title }}</a>
+                <input type="checkbox" name="delete_reading_material_{{ reading_material.id }}" style="margin-left: 10px;"> Delete
+            </li>
+        {% empty %}
+            <li>No materials available.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Add New Content</h3>
+
+    <div id="reading-materials">
+        <div class="reading-material-entry">
+            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
+            <textarea name="reading_material_content[]" class="form-control ckeditor"></textarea>
+            <button type="button" class="btn btn-danger delete-reading-material" style="margin-left: 10px;">Delete</button>
+        </div>
+    </div>
+    <button type="button" id="add-reading-material" class="btn btn-secondary">Add Another Reading Material</button>
+
+    <!-- Moved buttons below the add-reading-material button -->
+    <button type="submit" class="btn btn-primary mt-3">Save</button>
+    <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm mt-3">Back to Course Edit</a>
+</form>
+{% load static %}
+<script src="{% static 'ckeditor/ckeditor-init.js' %}"></script>
+<script>
+    let readingMaterialCounter = 1; // Start with 1 since we already have one entry
+
+    function addRMEntry() {
+        const container = document.getElementById('reading-materials');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'reading-material-entry';
+        newEntry.innerHTML = `
+            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
+            <textarea name="reading_material_content[]" class="form-control ckeditor"></textarea>
+            <button type="button" class="btn btn-danger delete-reading-material" style="margin-left: 10px;">Delete</button>
+        `;
+        container.appendChild(newEntry);
+
+        // Initialize CKEditor for the newly added textarea
+        const newTextarea = newEntry.querySelector('textarea');
+        initializeCKEditor(newTextarea);
+
+        attachDeleteButton(newEntry.querySelector('.delete-reading-material'));
+        readingMaterialCounter++;
+    }
+
+    function initializeCKEditor(textarea) {
+        CKEDITOR.replace(textarea, {
+            height: 300,
+        });
+    }
+
+    // Initialize CKEditor for the initial textarea
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCKEditor(document.querySelector('.ckeditor'));
+
+        // Add event listener to the "Add Another Reading Material" button
+        document.getElementById('add-reading-material').addEventListener('click', addRMEntry);
+
+        // Attach delete buttons for existing delete buttons
+        document.querySelectorAll('.delete-reading-material').forEach(button => {
+            attachDeleteButton(button);
+        });
+    });
+
+    function attachDeleteButton(button) {
+        button.addEventListener('click', function() {
+            const entry = this.parentNode;
+            entry.parentNode.removeChild(entry);
+        });
+    }
+</script>
+{% endblock %}

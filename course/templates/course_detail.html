@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load form_filters %}
+
+{% block title %}{{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h1 class="text-2xl font-bold mb-4">{{ course.name }} - Details</h1>
+
+    <!-- Information Table -->
+    <table class="table table-bordered mb-4">
+        <thead class="thead-light">
+            <tr>
+                <th colspan="2">Information</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>Course ID</th>
+                <td>{{ course.id }}</td>
+            </tr>
+            <tr>
+                <th>Course Code</th>
+                <td>{{ course.course_code }}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{ course.description }}</td>
+            </tr>
+            <tr>
+                <th>Instructor</th>
+                <td>{{ course.instructor.get_full_name }} ({{ course.instructor.username }})</td>
+            </tr>
+            <tr>
+                <th>Average Rating</th>
+                <td>
+                    {% if course_average_rating %}
+                        {{ course_average_rating|floatformat:1 }} / 5
+                    {% else %}
+                        No ratings yet.
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Prerequisite Courses</th>
+                <td>
+                    {% if course.prerequisites.exists %}
+                        <ul class="list-unstyled">
+                            {% for prerequisite in course.prerequisites.all %}
+                                <li>{{ prerequisite.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        No prerequisites for this course.
+                    {% endif %}
+                </td>
+            </tr>
+        <!-- mới thêm -->
+            <tr>
+                <th>Tags</th>
+                <td>
+                    {% if tags %}
+                        <ul class="list-unstyled">
+                            {% for tag in tags %}
+                                <li>{{ tag }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        No tags available.
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Student Feedback Table -->
+    <table class="table table-bordered mb-4">
+        <thead class="thead-light">
+            <tr>
+                <th colspan="4">Latest Student Feedback</th>
+            </tr>
+            <tr>
+                <th>Student</th>
+                <th>Rating</th>
+                <th>Comment</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if latest_feedbacks %}
+                {% for feedback in latest_feedbacks %}
+                    <tr>
+                        <td>{{ feedback.student.get_full_name }} ({{ feedback.student.username }})</td>
+                        <td>{{ feedback.average_rating|floatformat:1 }} / 5</td>
+                        <td>{{ feedback.comments|truncatewords:20 }}</td>
+                        <td>{{ feedback.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4">No feedback has been provided for this course yet.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- View All Feedback button -->
+    <div class="text-center mb-4">
+        <a href="{% url 'feedback:course_all_feedback' course.pk %}" class="btn btn-primary">View All Feedback</a>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="text-center mb-4">
+        <div class="d-flex justify-content-between flex-wrap">
+            <a href="{% url 'course:users_enrolled' course.pk %}" class="btn btn-info mb-2">
+                Users Enrolled ({{ users_enrolled_count }})
+            </a>
+
+            {% if is_enrolled %}
+                <a href="{% url 'course:course_content' course.pk sessions.0.id %}" class="btn btn-success mb-1">Go to Content</a>
+                <a href="{% url 'course:course_unenroll' course.pk %}" class="btn btn-danger mb-1">Unenroll</a>
+            {% else %}
+                <a href="{% url 'course:course_enroll' course.pk %}" class="btn btn-primary mb-1">Enroll</a>
+            {% endif %}
+
+            <!-- New button for Feedback -->
+            <a href="{% url 'feedback:give_course_feedback' course.pk %}" class="btn btn-warning mb-1">Give Feedback</a>
+
+            <a href="{% url 'course:course_list' %}" class="btn btn-secondary mb-1">Return to Course List</a>
+
+            {% if user == course.instructor or user.is_superuser %}
+                <form id="publishForm" method="post" action="{% url 'course:toggle_publish' course.pk %}" class="d-inline-block mb-1">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning">
+                        {% if course.published %}
+                            Unpublish
+                        {% else %}
+                            Publish
+                        {% endif %}
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function(){
+    $('#feedback-form').on('submit', function(event){
+        event.preventDefault();
+        $ajax({
+            url: "{% url 'feedback:give_course_feedback' course.id %}", // URL xử lý form
+            type: "POST",
+            data: $(this).serialize(),
+            success: function(data) {
+                // Xóa nội dung form và hiển thị thông báo
+                $('#feedback-form')[0].reset();
+
+                // Cập nhật danh sách feedback
+                $('#feedback-list').html(data.feedbacks_html);  // Cập nhật bảng feedback
+
+                alert('Thank you for your feedback!');
+            },
+            error: function(xhr, errmsg, err) {
+                alert('There was an error submitting your feedback.');
+            }
+        });
+    });
+});
+
+</script>

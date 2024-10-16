@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Quiz{% endblock %}
+
+{% block content %}
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
+</head>
+
+<div class="container mt-4">
+    <h1 class="mb-4">Take Quiz</h1>
+    <div class="container">
+        <div class="row">
+            <!-- Column for Form to select Subject -->
+            <div class="col-md-6">
+                <form method="GET" action="{% url 'std_quiz:quiz_list' %}">
+                    <div class="form-group">
+                        <label for="courseSelect">Select Course:</label>
+                        <select class="form-control" id="courseSelect" name="course" onchange="this.form.submit()">
+                            <option value="">All Courses</option>
+                            {% for course in courses %}
+                                <option value="{{ course.id }}" {% if course.id|stringformat:"s" == selected_course %}selected{% endif %}>
+                                    {{ course.course_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+    
+            <!-- Column for Search Bar -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="searchInput">Search Quizzes:</label>
+                    <input type="text" class="form-control" placeholder="Search Quizzes..." id="searchInput" onkeyup="searchQuizzes()">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <div class="row" id="quizCards" style="max-height: 600px; overflow-y: auto;">
+        {% for quiz in quizzes %}
+            <div class="col-md-6 mb-4 quiz-card">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ quiz.quiz_title }}
+                            <small class="text-muted">{{ quiz.quiz_description }}</small>
+                        </h5>
+                        <p class="card-text"><strong>Course:</strong> {{ quiz.course }}</p>
+                        <p class="card-text"><strong>Total Marks:</strong> {{ quiz.total_marks }}</p>
+                        <p class="card-text"><strong>Time Limit:</strong> {{ quiz.time_limit }} minutes</p>
+                        <p class="card-text"><strong>Available Quiz:</strong></p>
+                        <p class="card-text ml-3"><strong>From:</strong> {{ quiz.start_datetime|date:"d M Y H:i" }}</p>
+                        <p class="card-text ml-3"><strong>Until:</strong> {{ quiz.end_datetime|date:"d M Y H:i" }}</p>
+                        <p class="card-text"><strong>Attempts Allowed:</strong> {{ quiz.attempts_allowed }}</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <!-- Take Quiz -->
+                        <a href="{% url 'std_quiz:take_quiz' quiz.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-play"></i> Take Quiz
+                        </a>
+                        
+                        <!-- Quiz Result -->
+                        <div>
+                            {% if quiz.studentquizattempt_set.count > 0 %}
+                                {% with last_attempt=quiz.studentquizattempt_set.last %}
+                                    <a href="{% url 'std_quiz:quiz_result' quiz.id last_attempt.id %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-chart-line"></i> Result
+                                    </a>
+                                {% endwith %}
+                            {% else %}
+                                <span class="text-muted">No Attempts</span>
+                            {% endif %}
+                        </div>
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center">
+                <p>No quizzes available.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // Search quizzes by title or description
+    function searchQuizzes() {
+        const input = document.getElementById("searchInput");
+        const filter = input.value.toUpperCase();
+        const cards = document.getElementsByClassName("quiz-card");
+
+        for (let card of cards) {
+            const text = card.textContent || card.innerText;
+            card.style.display = text.toUpperCase().includes(filter) ? "" : "none";
+        }
+    }
+
+    // Dropdown handling
+    $(document).ready(function() {
+        $('.dropdown-toggle').click(function(event) {
+            event.stopPropagation();
+            $('.dropdown-menu').not($(this).next('.dropdown-menu')).hide();
+            $(this).next('.dropdown-menu').toggle();
+        });
+
+        $(document).click(function() {
+            $('.dropdown-menu').hide();
+        });
+    });
+</script>
+
+{% endblock %}

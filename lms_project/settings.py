@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,7 +36,7 @@ LOGIN_REDIRECT_URL = '/home/'
 # Cấu hình để chuyển hướng sau khi đăng xuất thành công
 LOGOUT_REDIRECT_URL = '/'
 
-
+AUTH_USER_MODEL = 'user.User'
 
 # SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
@@ -72,11 +71,15 @@ INSTALLED_APPS = [
     'subject',
     'training_program_subjects',
     'category',
-    'question',
-    # 'quiz',
+    # 'question',
+    'quiz',
     'user_module',
     'course',
-    'import_export'
+    'import_export',
+    'activity',
+    'feedback',
+    'widget_tweaks',
+    # 'std_quiz'
 ]
 
 MIDDLEWARE = [
@@ -110,6 +113,9 @@ TEMPLATES = [
 WSGI_APPLICATION = 'lms_project.wsgi.application'
 
 
+
+
+
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -140,15 +146,22 @@ WSGI_APPLICATION = 'lms_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'hoang',
+        'NAME': 'new',
         'USER': 'root',
-        'PASSWORD': '24635789asd',
+        'PASSWORD': '123456',
         'HOST': 'localhost',
-        'PORT': '3306',
+        'PORT': '3307',
     },
 }
 
-
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'nguyenvinhkhang26042003@gmail.com'  # Thay bằng email của bạn
+EMAIL_HOST_PASSWORD = 'bnti zhff goch tkzc'  # Thay bằng mật khẩu email của bạn
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
 
 # //Driver={ODBC Driver 18 for SQL Server};Server=tcp:hcmuafserver.database.windows.net,1433;Database=hcmuafdb;Uid=ngattt;Pwd={your_password_here};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;
 

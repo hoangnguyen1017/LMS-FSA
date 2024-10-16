@@ -3,91 +3,42 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-
-<div class="container mt-5">
-    <h1 class="text-center mb-5 animate__animated animate__fadeInDown">Welcome to the Learning Management System</h1>
-
-    <div class="row">
-        <!-- Loop through each module group -->
-        {% for group in module_groups %}
-        <div class="col-md-3 mb-4">  <!-- 4 cột cho màn hình lớn -->
-            <div class="bg-light rounded shadow-sm p-3">  <!-- Thêm nền cho nhóm module -->
-                <h2 class="text-secondary mb-3 font-weight-bold text-center animate__animated animate__fadeInUp" 
-                    onclick="toggleModules('modules-{{ forloop.counter }}')">{{ group.group_name }}</h2>  <!-- Display the Module Group name -->
-                
-                <div class="row modules" id="modules-{{ forloop.counter }}" style="display: none;">  <!-- Khởi tạo ẩn -->
-                    <!-- Loop through each module within the current group -->
-                    {% for module in modules %}
-                        {% if module.module_group == group %}  <!-- Kiểm tra nếu module thuộc nhóm này -->
-                            <div class="col-12 mb-3">  <!-- Chiếm toàn bộ chiều rộng cột -->
-                                <div class="card shadow border-0 rounded-lg overflow-hidden h-100 animate__animated animate__fadeInUp">
-                                    <div class="card-body text-center p-4 d-flex flex-column justify-content-between">
-                                        <!-- Module Icon -->
-                                        <div class="icon mb-2">
-                                            <i class="{{ module.icon }} fa-3x text-primary"></i>  <!-- Kích thước biểu tượng lớn hơn -->
-                                        </div>
-
-                                        <!-- Module Name -->
-                                        <h5 class="card-title font-weight-bold text-dark">{{ module.module_name }}</h5>
-
-                                        <!-- Module Button --> 
-                                        <a href="{% url module.module_url %}" class="btn btn-primary mt-3">Explore {{ module.module_name }}</a>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-<!-- JavaScript để chuyển đổi hiển thị các module -->
-<script>
-    function toggleModules(moduleId) {
-        var modules = document.getElementById(moduleId);
-        if (modules.style.display === "none") {
-            modules.style.display = "block";
-            modules.classList.add('animate__animated', 'animate__fadeIn');
-        } else {
-            modules.style.display = "none";
-        }
-    }
-</script>
-
-<!-- Thêm một chút CSS để tạo hiệu ứng 3D và làm đẹp -->
-<style>
-    body {
-        background: linear-gradient(to right, #f0f4f8, #d9e2ec);  /* Nền gradient nhẹ nhàng */
-        font-family: 'Arial', sans-serif;  /* Phông chữ cho toàn bộ trang */
-    }
-
-    h1, h2 {
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);  /* Hiệu ứng bóng cho tiêu đề */
-    }
-
-    .card {
-        transition: transform 0.3s, box-shadow 0.3s;  /* Hiệu ứng khi hover */
-        height: 100%;  /* Đảm bảo tất cả thẻ card có chiều cao bằng nhau */
-    }
+<div class="container mt-4">
     
-    .card:hover {
-        transform: translateY(-10px);  /* Nâng cao thẻ khi hover */
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);  /* Hiệu ứng bóng mạnh hơn */
-    }
+    <h1 class="mb-4">Learning Management System</h1>
+    {% for group in module_groups %}
+    <div class="mb-5">
+        <h2 class="text-primary mb-3">{{ group.name }}</h2>  
 
-    .btn-primary {
-        background-color: #007bff;  /* Màu nền nút chính */
-        border: none;
-        transition: background-color 0.3s, color 0.3s;  /* Hiệu ứng chuyển màu */
-    }
+        <div class="row">
+            {% for module in modules %}
+                {% if module.module_group == group %}
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <!-- Module Icon -->
+                            <div class="icon mb-3">
+                                <i class="{{ module.icon }} fa-3x text-info"></i>
+                            </div>
 
-    .btn-primary:hover {
-        background-color: #0056b3;  /* Màu nền khi hover */
-        color: #fff;  /* Màu chữ khi hover */
-    }
-</style>
+                            <!-- Module Name -->
+                            <h5 class="card-title">{{ module.module_name }}</h5>
 
+                            <!-- Module Button -->
+                            {% if user.is_authenticated %}
+                                <a href="{% url module.module_url %}" class="btn btn-primary mt-3"> 
+                                    Explore {{ module.module_name }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Please <a href="{% url 'main:login' %}">log in</a> to access this module.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}

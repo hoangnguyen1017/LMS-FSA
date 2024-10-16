@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% load form_filters %}
-{% block title %}{{ form.instance.pk|yesno:"Edit User,Add New User" }}{% endblock %}
+{% block title %}{{ form.instance.pk|yesno:"Edit User, Add New User" }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>{{ form.instance.pk|yesno:"Edit User,Add New User" }}</h2>
+    <h2>{{ form.instance.pk|yesno:"Edit User, Add New User" }}</h2>
     
     {% if form.non_field_errors %}
         <div class="alert alert-danger">
@@ -31,6 +31,7 @@
                 </ul>
             {% endif %}
         </div>
+        
         <div class="form-group">
             {{ form.first_name.label_tag }}
             {{ form.first_name|add_class:"form-control" }}
@@ -90,29 +91,41 @@
                 </ul>
             {% endif %}
         </div>
-
-        <div class="form-group">
-            {{ form.role.label_tag }}
-            {{ form.role|add_class:"form-control" }}
-            {% if form.role.errors %}
-                <ul class="errorlist">
-                    {% for error in form.role.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
-
-        <!-- Hidden input for role field if it is disabled -->
-        {% if form.role.field.widget.attrs.disabled %}
-            <input type="hidden" name="role" value="{{ form.role.value }}">
+        {% if request.user.is_authenticated %}
+            {% comment %} {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %} {% endcomment %}
+                <div class="form-group">
+                    {{ form.role.label_tag }}
+                    {{ form.role|add_class:"form-control" }}
+                    {% if form.role.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.role.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% comment %} {% endif %} {% endcomment %}
         {% endif %}
-
+        {% if request.user.is_authenticated %}
+            {% comment %} {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %} {% endcomment %}
+                <div class="form-group">
+                    {{ form.student_code.label_tag }}
+                    {{ form.student_code|add_class:"form-control" }}
+                    {% if form.student_code.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.student_code.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% comment %} {% endif %} {% endcomment %}
+        {% endif %}      
         <div class="form-group">
             <label for="id_profile_picture_url">Profile Picture URL:</label>
-            <input type="url" name="profile_picture_url" id="id_profile_picture_url" class="form-control" placeholder="Enter profile picture URL" value="{{ form.fields.profile_picture_url.initial }}">
-            {% if form.fields.profile_picture_url.initial %}
-                <small class="form-text text-muted">Current: <a href="{{ form.fields.profile_picture_url.initial }}" target="_blank">{{ form.fields.profile_picture_url.initial }}</a></small>
+            <input type="url" name="profile_picture_url" id="id_profile_picture_url" class="form-control" placeholder="Enter profile picture URL" value="{{ form.profile_picture_url.value }}">
+            {% if form.profile_picture_url.value %}
+                <small class="form-text text-muted">Current: <a href="{{ form.profile_picture_url.value }}" target="_blank">{{ form.profile_picture_url.value }}</a></small>
             {% endif %}
             {% if form.profile_picture_url.errors %}
                 <ul class="errorlist">
@@ -171,7 +184,7 @@
             {% endif %}
         </div>
 
-        <button type="submit" class="btn btn-primary">{{ form.instance.pk|yesno:"Update,Create" }}</button>
+        <button type="submit" class="btn btn-primary">{{ form.instance.pk|yesno:"Update, Create" }}</button>
     </form>
     
     <div class="text-center mt-3">

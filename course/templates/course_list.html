@@ -1,115 +1,188 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
-
+{% load static %}
 {% block title %}Course List{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Course List</h2>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="btn-group mt-3">
-            <a href="{% url 'course:course_add' %}" class="btn btn-primary mb-3">Add New Course</a>
+    <h2 class="mb-4">Courses</h2>
+    <div class="row mb-4">
+        <!-- Export and Import Buttons -->
+        <div class="col-md-8 d-flex align-items-center">
+            <a href="{% url 'course:export_course' %}" class="btn btn-success mr-2">Export to Excel</a>
+            <button class="btn btn-secondary mr-2" data-toggle="modal" data-target="#importModal">Import from Excel</button>
+            <a href="{% url 'course:course_add' %}" class="btn btn-primary mr-2">Add New Course</a>
         </div>
 
-        <!-- Search form -->
-        <form method="GET" action="{% url 'course:course_list' %}" class="form-inline">
-            <div class="input-group">
-                <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control" placeholder="Search course..." aria-label="Search course">
-                <select name="created_by" class="form-control ms-2">
-                    <option value="">Select Created by</option>
-                    {% for user in users %}
-                        <option value="{{ user.id }}" {% if user.id|stringformat:"s" == created_by_filter %}selected{% endif %}>
-                            {{ user.username }}
-                        </option>
-                    {% endfor %}
-                </select>
-
-                <button type="submit" class="btn btn-outline-success ms-2">Search</button>
-            </div>
-        </form>
+        <!-- Form tìm kiếm (Search Form) -->
+        <div class="col-md-4">
+            <form method="GET" action="{% url 'course:course_search' %}" class="form-inline">
+                <input type="text" name="query" class="form-control mr-2" placeholder="Search by name, description, or code...">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
     </div>
-    <table class="table table-bordered">
+
+    <table class="table table-striped">
         <thead>
             <tr>
-
-                <th>#</th>
+                <th>Course Id</th>
+                <th>Course Code</th>
                 <th>Course Name</th>
                 <th>Description</th>
-                <th class="text-center">Course Picture</th>
-
-                <th>Created By</th>
-                <th>Created At</th>
-                <th>Updated At</th>
                 <th>Actions</th>
+                <th>Completion Progress</th>
             </tr>
         </thead>
         <tbody>
             {% for course in courses %}
-
-            <tr ondblclick="window.location.href='{% url 'course:course_detail' course.pk %}'" style="cursor: pointer;">
-                <td>{{ courses.number|add:'-1'|multiply:5|add:forloop.counter }}</td>
-                <td>{{ course.course_name }}</td>
-                <td>{{ course.course_description }}</td>
-                <td class="text-center">
-                    {% if course.course_picture_url %}
-                    <img src="{{ course.course_picture_url }}" alt="Course Picture" width="170" height="170" class="img-fluid">
-                    {% else %}
-                        No image
-                    {% endif %}
-                </td>
-                <td>{{ course.created_by.username }}</td>
-                <td>{{ course.created_at|date:"Y-m-d H:i" }}</td>
-                <td>{{ course.updated_at|date:"Y-m-d H:i" }}</td>
+            <tr>
+                <td>{{ course.id }}</td>
+                <td>{{ course.course_code }}</td>
+                <td>{{ course.name }}</td>
+                <td>{{ course.description }}</td>
                 <td>
-                    <div class="btn-group" role="group">
-                        <a href="{% url 'course:course_edit' course.pk %}" class="btn btn-warning btn-sm" title="Edit Course" data-bs-toggle="tooltip">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        <a href="{% url 'course:course_delete' course.pk %}" class="btn btn-danger btn-sm" title="Delete Course" data-bs-toggle="tooltip">
-                            <i class="fas fa-trash"></i>
-                        </a>
+                    <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'course:course_delete' course.id %}" class="btn btn-danger btn-sm">Delete</a>
+                    {% if course.id in enrolled_courses %}
+                        <span class="text-success">Enrolled</span>
+                        <a href="{% url 'course:course_unenroll' course.id %}" class="btn btn-danger btn-sm">Unenroll</a>
+                    {% else %}
+                        <span class="text-danger">Unenrolled</span>
+                        <a href="{% url 'course:course_enroll' course.id %}" class="btn btn-primary btn-sm">Enroll</a>
+                    {% endif %}
+                    <a href="{% url 'course:course_detail' course.id %}" class="btn btn-info btn-sm">View Details</a>
+                </td>
+                <td>
+                    <div class="progress" role="progressbar" aria-valuenow="{{ course.completion_percent }}" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width: {{ course.completion_percent }}%">
+                            {{ course.completion_percent }}%
+                        </div>
                     </div>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="text-center">No courses found.</td>
-
+                <td colspan="6">No courses found.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    
-    <!-- Pagination -->
-    <div class="d-flex justify-content-center mt-4">
-        <nav aria-label="Page navigation">
-            <ul class="pagination">
-                {% if courses.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if created_by_filter %}&created_by={{ created_by_filter }}{% endif %}">First</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ courses.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if created_by_filter %}&created_by={{ created_by_filter }}{% endif %}">&laquo; Previous</a>
-                    </li>
+
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link">{{ num }}</a></li>
+                {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
                 {% endif %}
-                {% for num in courses.paginator.page_range %}
-                    {% if courses.number == num %}
-                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                    {% elif num > courses.number|add:'-3' and num < courses.number|add:'3' %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if created_by_filter %}&created_by={{ created_by_filter }}{% endif %}">{{ num }}</a></li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    <!-- nguyên đống dưới này mới thêm -->
+    <h3 class="mt-5">Recommended Courses</h3>
+    <div id="recommendedCarousel" class="carousel slide" data-ride="carousel" data-interval="3000">
+        <div class="carousel-inner">
+            {% if recommended_courses %}
+                <!-- Tạo slide groups cho 3 courses mỗi slide -->
+                {% for course in recommended_courses %}
+                    {% if forloop.counter0|divisibleby:3 %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <div class="row">
+                    {% endif %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ course.name }}</h5>
+                                            <h6 class="card-subtitle mb-2 text-muted">Code: {{ course.course_code }}</h6>
+                                            <p class="card-text">{{ course.description|truncatewords:20 }}</p>
+                                            <a href="{% url 'course:course_detail' course.id %}" class="btn btn-primary">View Details</a>
+                                        </div>
+                                    </div>
+                                </div>
+                    {% if forloop.counter0|add:1|divisibleby:3 or forloop.last %}
+                            </div>
+                        </div>
                     {% endif %}
                 {% endfor %}
-                {% if courses.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ courses.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if created_by_filter %}&created_by={{ created_by_filter }}{% endif %}">Next &raquo;</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ courses.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if created_by_filter %}&created_by={{ created_by_filter }}{% endif %}">Last</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    </div>
+            {% else %}
+                <div class="carousel-item active">
+                    <div class="row">
+                        <div class="col-12">
+                            <p>No recommendations available at this time.</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
 
+        <!-- Controls -->
+        <a class="carousel-control-prev" href="#recommendedCarousel" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#recommendedCarousel" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+        </a>
+    </div>
 </div>
+
+<!-- Modal for Importing Excel -->
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import Courses from Excel</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" enctype="multipart/form-data" action="{% url 'course:import_course' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="excel_file">Choose Excel file:</label>
+                        <input type="file" class="form-control-file" name="excel_file" id="excel_file" accept=".xlsx">
+                    </div>
+                    <div class="mt-3">
+                        <span>Or download and use the <a href="{% static 'course/excel/import_course.xlsx' %}" target="_blank">Excel template</a>
+                            for custom importing.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

@@ -31,7 +31,7 @@ urlpatterns = [
     path('user/', include('user.urls')),             # For user-related views
     path('user_module/', include('user_module.urls')), # For user-module assignments
     path('category/', include('category.urls')),  
-    path('question/', include('question.urls')),  
+    # path('question/', include('question.urls')),  
     # path('quiz/', include('quiz.urls')),  
     path('role/', include('role.urls')),  
     path('subject/', include('subject.urls')),  
@@ -40,6 +40,8 @@ urlpatterns = [
     path('user/', include('user.urls')),  
     path('user_module/', include('user_module.urls')),
     path('courses/', include('course.urls')),
+    path('quiz/', include('quiz.urls')),
+    path('activity/', include('activity.urls')),
     # Add more paths for other new apps here
 
 ]

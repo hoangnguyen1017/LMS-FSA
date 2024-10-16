@@ -187,52 +187,53 @@ def import_courses(request):
 
     return render(request, 'course_list.html', {'form': form})
 
+
 @login_required
 def course_enroll(request, pk):
     course = get_object_or_404(Course, pk=pk)
 
-    if request.method == 'POST':
-        form = EnrollmentForm(request.POST)
+    # Automatically enroll and redirect to the course detail page
+    form = EnrollmentForm(request.POST)
 
-        if form.is_valid():
-            enrollment = form.save(commit=False)
+    if form.is_valid():
+        enrollment = form.save(commit=False)
 
-            # Fetch prerequisite courses from the Course model
-            prerequisite_courses = course.prerequisites.all()
+        # Fetch prerequisite courses from the Course model
+        prerequisite_courses = course.prerequisites.all()
 
-            # Check if the user is enrolled in all prerequisite courses
-            if prerequisite_courses.exists():
-                enrolled_courses = Enrollment.objects.filter(
-                    student=request.user,
-                    course__in=prerequisite_courses
-                ).values_list('course', flat=True)
+        # Check if the user is enrolled in all prerequisite courses
+        enrolled_courses = Enrollment.objects.filter(
+            student=request.user,
+            course__in=prerequisite_courses
+        ).values_list('course', flat=True)
 
-                # Ensure all prerequisites are met
-                if not all(prereq.id in enrolled_courses for prereq in prerequisite_courses):
-                    form.add_error(None, 'You do not meet the prerequisites for this course.')
-                    return render(request, 'course_enroll.html', {'form': form, 'course': course})
-
-            # If prerequisites are met, save the enrollment
+        if all(prereq.id in enrolled_courses for prereq in prerequisite_courses):
             enrollment.student = request.user
             enrollment.course = course
             enrollment.save()
-            return redirect('course:course_list')
-    else:
-        form = EnrollmentForm()
+            messages.success(request, f'You have been enrolled in {course.course_name}.')
+        else:
+            messages.error(request, 'You do not meet the prerequisites for this course.')
+            return redirect('course:course_list')  # Redirect to course list or another page
 
-    return render(request, 'course_enroll.html', {'form': form, 'course': course})
+    return redirect('course:course_detail', pk=course.pk)
+
 
 
 @login_required
 def course_unenroll(request, pk):
     course = get_object_or_404(Course, pk=pk)
-    try:
-        enrollment = Enrollment.objects.get(student=request.user, course=course)
-        enrollment.delete()
-    except Enrollment.DoesNotExist:
-        pass  # Có thể thêm thông báo lỗi nếu cần
+    enrollment = Enrollment.objects.filter(student=request.user, course=course).first()
 
-    return redirect('course:course_list')
+    if request.method == 'POST':
+        # Unenroll the user and redirect to course list with a message
+        if enrollment:
+            enrollment.delete()
+            messages.success(request, f'You have been unenrolled from {course.course_name}.')
+        return redirect('course:course_list')
+
+    # Render confirmation page
+    return render(request, 'course_unenroll.html', {'course': course})
 
 def course_list(request):
     if request.user.is_superuser:
@@ -701,30 +702,31 @@ def course_content_edit(request, pk, session_id):
                 reading_material.delete()
 
         # Handle uploaded PDF
-        if 'uploaded_material_file' in request.FILES:
-            uploaded_file = request.FILES['uploaded_material_file']
-            title = request.POST.get('uploaded_material_title')
+        if 'uploaded_material_file[]' in request.FILES:
+            uploaded_files = request.FILES.getlist('uploaded_material_file[]')
 
+            for uploaded_file in uploaded_files:
+                file_name = os.path.splitext(uploaded_file.name)[0]
             # Read the PDF and extract text
-            extracted_content = ""
-            with pdfplumber.open(uploaded_file) as pdf:
-                for page in pdf.pages:
-                    extracted_content += page.extract_text() + "<br>"  # Append content with HTML line breaks
+                extracted_content = ""
+                with pdfplumber.open(uploaded_file) as pdf:
+                    for page in pdf.pages:
+                        extracted_content += page.extract_text() + "<br>"  # Append content with HTML line breaks
 
-            if title and extracted_content.strip():
-                reading_material = ReadingMaterial.objects.create(
-                    title=title,
-                    content=extracted_content
-                )
-                course_material = CourseMaterial.objects.create(
-                    session=session,
-                    material_id=reading_material.id,
-                    material_type='reading',
-                    title=reading_material.title,
-                    order=CourseMaterial.objects.count() + 1  # increment order automatically
-                )
-                reading_material.material = course_material
-                reading_material.save()
+                if extracted_content.strip():
+                    reading_material = ReadingMaterial.objects.create(
+                        title=file_name,  # Use the uploaded file name as the title
+                        content=extracted_content,
+                    )
+                    course_material = CourseMaterial.objects.create(
+                        session=session,
+                        material_id=reading_material.id,
+                        material_type='reading',
+                        title=reading_material.title,
+                        order=CourseMaterial.objects.count() + 1  # increment order automatically
+                    )
+                    reading_material.material = course_material
+                    reading_material.save()
 
         # Handle manual reading materials
         reading_material_titles = request.POST.getlist('reading_material_title[]')

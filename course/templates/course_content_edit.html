@@ -16,6 +16,9 @@
         {% endfor %}
     </select>
 
+    <!-- Hidden input to store selected session ID -->
+    <input type="hidden" name="session_id_hidden" value="{{ selected_session.id }}">
+
     <h2>Material</h2>
     <ul>
         {% for reading_material in reading_materials %}
@@ -41,17 +44,16 @@
 
     <h3>Upload PDF Content</h3>
     <div id="pdf-upload">
-        <input type="text" name="uploaded_material_title" class="form-control" placeholder="Material Title">
-        <input type="file" name="uploaded_material_file" class="form-control" accept="application/pdf">
+        <input type="file" name="uploaded_material_file[]" class="form-control" accept="application/pdf" multiple>
     </div>
 
     <!-- Moved buttons below the add-reading-material button -->
     <button type="submit" class="btn btn-primary mt-3">Save</button>
     <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm mt-3">Back to Course Edit</a>
 </form>
-
 {% load static %}
 <script src="{% static 'ckeditor/ckeditor-init.js' %}"></script>
+<script src="https://cdn.ckeditor.com/4.16.0/full/ckeditor.js"></script>
 <script>
     let readingMaterialCounter = 1; // Start with 1 since we already have one entry
 

@@ -22,19 +22,15 @@
                         </a>
                         <div class="dropdown-menu" aria-labelledby="{{ group.id }}">
                             {% for module in group.modules.all %}
-                                 
-                                    <a class="dropdown-item" href="{{ module.module_url }}"> <!-- Use {{ module.module_url }} if it's an actual URL field -->
-                                        <i class="{{ module.icon }}"></i> &nbsp;{{ module.module_name }}
-                                    </a>
-                               <!-- Uncommented this condition {%if module in user.modules.all %} --> 
-                             <!-- {% endif %} -->
-
+                                
+                                    <a class="dropdown-item" href="{% url module.module_url %}"> <i class="{{ module.icon }}"></i> &nbsp;{{ module.module_name }}</a>
+                                    <!-- {% if module in user.modules.all %}
+                                    {% endif %} -->
                             {% endfor %}
                         </div>
                     </li>
                 {% endfor %}
             {% endif %}
-            
             
             </ul>
             <ul class="navbar-nav ml-auto">

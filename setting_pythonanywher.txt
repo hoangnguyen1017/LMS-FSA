@@ -20,11 +20,6 @@ LOGIN_URL = 'login'  # Default URL to redirect if not logged in
 # settings.py
 LOGIN_REDIRECT_URL = '/home'
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # This is where collectstatic will gather files
-
 # Add or update media settings for handling uploaded files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -47,6 +42,16 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+# CKEditor configuration
+CKEDITOR_UPLOAD_PATH = "uploads/"  # Path where uploaded images will be stored
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 300,
+        'width': 'auto',
+    },
+}
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -56,24 +61,24 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'import_export',
+    'ckeditor',
+    'ckeditor_uploader',  # Optional: if you want to allow image uploads
+    'widget_tweaks',
     'user',
     'module_group',
-    # 'category',
     'training_program',
-    'subject',
-    'student_materials',
-    'quiz',
-    # 'question',
+    'subject', 'student_materials', #for FSA subject
+    'quiz', 'std_quiz', #group03
     'main',
     # 'exercises',
     'crispy_forms',
     'debug_toolbar',
-    'coding_exercise',
-    'assessments',
-    'import_export',
-    'course',
-    'widget_tweaks',
-    'std_quiz'
+    'coding_exercise', #Binh_Thang
+    # 'assessments',
+
+    'course', 'feedback', 'forum', #group02
+    'activity', #group05
 ]
 
 MIDDLEWARE = [
@@ -85,6 +90,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'activity.activity_tracking_middleware.ActivityTrackingMiddleware'
+
 ]
 
 ROOT_URLCONF = 'LMS_SYSTEM.urls'
@@ -165,8 +172,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Define the directory where static files will be collected (if you run `collectstatic`)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # used for production
+
+# Define additional directories to look for static files
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # Adjust the path as necessary based on your project structure
+    os.path.join(BASE_DIR, 'static'),  # Custom static files directory
 ]
 
 # Default primary key field type

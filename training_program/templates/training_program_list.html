@@ -9,6 +9,7 @@
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>#</th>
                 <th>Name</th>
                 <th>Code</th>
                 <th>Description</th>
@@ -19,6 +20,7 @@
         <tbody>
             {% for program in programs %}
             <tr>
+                <td>{{ forloop.counter }}</td>
                 <td>{{ program.program_name }}</td>
                 <td>{{ program.program_code }}</td>
                 <td>{{ program.description }}</td>

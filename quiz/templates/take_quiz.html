@@ -18,7 +18,10 @@
         {% for question in questions %}
         <div class="card mb-4">
             <div class="card-body">
-                <h5 class="card-title">{{ question.question_text }}</h5>
+                <h5 class="card-title" style="white-space: pre-line;">
+                    <strong>Question {{ forloop.counter }}:</strong><br>
+                    {{ question.question_text|linebreaksbr }}
+                </h5>
 
                 {% if question.question_type == "TEXT" %}  <!-- Kiểm tra loại câu hỏi -->
                     <textarea name="question_{{ question.id }}" rows="4" class="form-control" required placeholder="Nhập câu trả lời của bạn ở đây..."></textarea>

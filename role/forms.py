@@ -11,3 +11,6 @@ class RoleForm(forms.ModelForm):
                 'placeholder': 'Enter role name'
             }),
         }
+
+class ExcelImportForm(forms.Form):
+    excel_file = forms.FileField(label="Upload Excel File")

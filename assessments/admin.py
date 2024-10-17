@@ -5,9 +5,35 @@ from .models import Assessment
 from import_export.admin import ImportExportModelAdmin
 
 
-# Registering Assessment model with Import/Export functionality
+class AssessmentResource(resources.ModelResource):
+    class Meta:
+        model = Assessment
+        fields = (
+            'id',
+            'title',
+            'quiz__quiz_title',  # Assuming quiz has a title field
+            'assignment__assignment_name',  # Assuming assignment has an assignment_name field
+            'total_score',
+            'created_at',
+            'due_date',
+            'created_by__username',  # Assuming the user model has a username field
+        )
+        export_order = (
+            'id',
+            'title',
+            'quiz__quiz_title',
+            'assignment__assignment_name',
+            'total_score',
+            'created_at',
+            'due_date',
+            'created_by__username',
+        )
+
+
 @admin.register(Assessment)
 class AssessmentAdmin(ImportExportModelAdmin):
-    list_display = ('title', 'due_date', 'created_at', 'created_by')
-    search_fields = ('title', 'created_by__username')  # Add search functionality for created_by
+    resource_class = AssessmentResource
+    list_display = ('title', 'quiz', 'assignment', 'total_score', 'created_by', 'due_date')
+    search_fields = ('title', 'quiz__quiz_title', 'assignment__assignment_name', 'created_by__username')
+    list_filter = ('due_date', 'created_at')
 

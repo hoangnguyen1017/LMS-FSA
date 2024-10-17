@@ -3,7 +3,7 @@ from .forms import InstructorFeedbackForm, CourseFeedbackForm, TrainingProgramFe
 from .models import InstructorFeedback, CourseFeedback, TrainingProgramFeedback
 from course.models import Course
 from training_program.models import TrainingProgram
-from django.contrib.auth.models import User
+from user.models import User
 from module_group.models import ModuleGroup, Module
 from django.contrib import messages
 from django.core.paginator import Paginator

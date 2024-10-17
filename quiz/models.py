@@ -1,5 +1,5 @@
 from django.db import models
-from user.models import User  # Assuming you use the default User model for instructors and students
+from django.contrib.auth.models import User  # Assuming you use the default User model for instructors and students
 from course.models import Course
 from django.conf import settings
 

@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+
+{% block title %}Feedback List{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Existing styles remain unchanged */
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        /* padding: 20px; */
+        background-color: #f0f0f0;
+    }
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+        color: #333;
+    }
+    .tabs {
+        display: flex;
+        margin-bottom: 20px;
+    }
+    .tab {
+        padding: 10px 20px;
+        background-color: #e0e0e0;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .tab:hover {
+        background-color: #d0d0d0;
+    }
+    .tab.active {
+        background-color: #4CAF50;
+        color: white;
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    .card {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .badge {
+        display: inline-block;
+        padding: 3px 7px;
+        background-color: #2196F3;
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    
+    /* New styles for progress bar */
+    .progress-container {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 5px;
+        margin: 10px 0;
+        height: 25px;
+    }
+    .progress-bar {
+        height: 100%;
+        background-color: #4CAF50;
+        width: 0%; /* Initial width; will be set dynamically */
+        border-radius: 5px;
+        transition: width 0.4s ease;
+    }
+
+    /* Existing "My Courses" styles */
+    .course-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+    }
+    .course-info {
+        display: flex;
+        align-items: center;
+    }
+    .course-icon {
+        width: 50px;
+        height: 50px;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        margin-right: 15px;
+    }
+    .course-details {
+        margin-left: 10px;
+    }
+    .course-title {
+        font-size: 18px;
+        color: #0056b3;
+    }
+    .course-title:hover {
+        text-decoration: underline;
+    }
+    .institution {
+        font-size: 14px;
+        color: #888;
+    }
+    .grade {
+        font-size: 14px;
+        color: #000;
+    }
+    .add-linkedin {
+        background-color: #0077b5;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .add-linkedin:hover {
+        background-color: #005a87;
+    }
+
+    /* New styles for pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+    .pagination button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        margin: 0 4px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+    }
+    .pagination button:hover {
+        background-color: #45a049;
+    }
+    .pagination button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+    .pagination-info {
+        margin: 0 10px;
+    }
+    .hidden {
+        display: none;
+    }
+    .collapsible-content, .pagination {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.5s ease, opacity 0.5s ease;
+    }
+
+    .collapsible-content.show, .pagination.show {
+        max-height: 1000px; /* Adjust this value based on your content */
+        opacity: 1;
+    }
+
+    .toggle-section {
+        color: #0056b3;
+        cursor: pointer; /* Thay đổi con trỏ thành hình bàn tay khi hover */
+    }
+
+    /* Hiệu ứng gạch chân khi di chuột */
+    .toggle-section:hover {
+        text-decoration: underline;
+    }
+
+</style>
+<body>
+    <div class="container">
+        <h1>User Dashboard</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="openTab(event, 'progress')">User Progress</button>
+            <button class="tab" onclick="openTab(event, 'performance')">Performance</button>
+            <button class="tab" onclick="openTab(event, 'insights')">AI Insights</button>
+            <button class="tab" onclick="openTab(event, 'certificates')">Certificates</button>
+        </div>
+
+        <div id="progress" class="tab-content active">
+            <div class="card">
+                <h2>User Progress</h2>
+                <p><strong>Name:</strong> John Doe</p>
+                <p><strong>Email:</strong> john.doe@example.com</p>
+                <p><strong>Total Courses:</strong> 5</p>
+                <p><strong>Completed Courses:</strong> 3</p>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: 60%;"></div> <!-- Set the width dynamically -->
+                </div>
+            </div>
+
+            <!-- Toggle for "My Courses" -->
+            <div class="toggle-section" onclick="toggleMyCourses()">My Courses &#9660;</div>
+            
+            <div id="myCoursesContent" class="collapsible-content show">
+                <!-- Course list will be dynamically populated here -->
+            </div>
+
+            <!-- Pagination controls -->
+            <div class="pagination show">
+                <button onclick="changePage(-1)" id="prevButton">Previous</button>
+                <span class="pagination-info">Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+                <button onclick="changePage(1)" id="nextButton">Next</button>
+            </div>
+        </div>
+
+        <div id="performance" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>Introduction to React</h3>
+                    <p><strong>Progress:</strong> 20%</p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 20%;"></div> <!-- Set the width dynamically -->
+                    </div>
+                    <p><strong>Average Score:</strong> 85%</p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 85%;"></div> <!-- Set the width dynamically -->
+                    </div>
+                </div>
+                <!-- Additional performance cards -->
+            </div>
+        </div>
+    
+        <div id="insights" class="tab-content">
+            <div class="card">
+                <h3><span class="badge">performance trend</span></h3>
+                <p>Your performance is consistently improving across all courses.</p>
+            </div>
+            <div class="card">
+                <h3><span class="badge">at-risk</span></h3>
+                <p>You might need additional support in the Database Design course.</p>
+            </div>
+        </div>
+    
+        <div id="certificates" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>React Developer</h3>
+                    <p><strong>Issue Date:</strong> 2023-05-15</p>
+                </div>
+                <!-- Additional certificates -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Existing tab switching function
+        function openTab(evt, tabName) {
+            var i, tabContent, tabLinks;
+            tabContent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].style.display = "none";
+            }
+            tabLinks = document.getElementsByClassName("tab");
+            for (i = 0; i < tabLinks.length; i++) {
+                tabLinks[i].className = tabLinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // Toggle My Courses section
+        function toggleMyCourses() {
+            var content = document.getElementById("myCoursesContent");
+            var pagination = document.querySelector(".pagination");
+            if (content.classList.contains("show")) {
+                content.classList.remove("show");
+                pagination.classList.remove("show");
+            } else {
+                content.classList.add("show");
+                pagination.classList.add("show");
+            }
+        }
+
+        // Mock data for courses
+        const courses = [
+            { title: "Big Data - Capstone Project", institution: "University of California San Diego", grade: "99.44%" },
+            { title: "Improving Deep Neural Networks", institution: "DeepLearning.AI", grade: "97.33%" },
+            { title: "Machine Learning", institution: "Stanford University", grade: "95.67%" },
+            { title: "Data Structures and Algorithms", institution: "University of California San Diego", grade: "98.21%" },
+            { title: "Web Development Bootcamp", institution: "Udemy", grade: "96.89%" },
+            { title: "iOS App Development", institution: "Apple Developer Academy", grade: "94.75%" },
+            { title: "Cloud Computing Specialization", institution: "University of Illinois", grade: "93.92%" },
+            { title: "Artificial Intelligence", institution: "MIT", grade: "96.33%" },
+            { title: "Cybersecurity Fundamentals", institution: "IBM", grade: "97.88%" },
+            { title: "Blockchain Basics", institution: "INSEAD", grade: "92.45%" }
+        ];
+
+        const itemsPerPage = 5;
+        let currentPage = 1;
+
+        function displayCourses() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageItems = courses.slice(startIndex, endIndex);
+
+            const courseContent = document.getElementById("myCoursesContent");
+            courseContent.innerHTML = "";
+
+            pageItems.forEach(course => {
+                const courseElement = document.createElement("div");
+                courseElement.className = "course-container";
+                courseElement.innerHTML = `
+                    <div class="course-info">
+                        <div class="course-icon"></div>
+                        <div class="course-details">
+                            <p class="course-title">${course.title}</p>
+                            <p class="institution">${course.institution}</p>
+                            <p class="grade">Grade Achieved: ${course.grade}</p>
+                        </div>
+                    </div>
+                    <button class="add-linkedin">Add to LinkedIn</button>
+                `;
+                courseContent.appendChild(courseElement);
+            });
+
+            updatePaginationInfo();
+        }
+
+        function updatePaginationInfo() {
+            document.getElementById("currentPage").textContent = currentPage;
+            document.getElementById("totalPages").textContent = Math.ceil(courses.length / itemsPerPage);
+            
+            document.getElementById("prevButton").disabled = (currentPage === 1);
+            document.getElementById("nextButton").disabled = (currentPage === Math.ceil(courses.length / itemsPerPage));
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            displayCourses();
+        }
+
+        // Initial display
+        displayCourses();
+    </script>
+</body>
+</html>
+
+{% endblock %}

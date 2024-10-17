@@ -1,0 +1,262 @@
+<!-- quiz_question.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ quiz.quiz_title }}</h2>
+    <p>{{ quiz.quiz_description }}</p>
+
+
+    <div class="row">
+        <div class="col-md-5">  <!-- Questions Section -->
+            <div class="card">
+                <div class="card-header">
+                    Questions
+                    <button type="button" class="btn btn-primary btn-sm float-right" onclick="toggleAddQuestionForm()">
+                        Add Question
+                    </button>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for question in questions %}
+                            <li class="list-group-item question-item" data-question-id="{{ question.id }}">
+                                <span class="question-text" id="question-text-{{ question.id }}">
+                                    <a href="javascript:void(0);" onclick="toggleAnswers({{ question.id }})">{{ question.question_text }}</a>
+                                </span>
+                                <button type="submit" class="btn btn-link text-danger p-0t" 
+                                      onclick="return confirm('Are you sure you want to delete this question?')">
+                                      X
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm float-right ml-2" onclick="editQuestion({{ question.id }})">Edit</button>
+
+                                <form method="post" action="{% url 'quiz:question_delete' question.id %}" style="display: inline;">
+                                    {% csrf_token %}
+
+                                    
+                                </form>
+                    
+                                <!-- Edit Question Form (Initially Hidden) -->
+                                <div class="edit-question-form" id="edit-question-form-{{ question.id }}" style="display: none;">
+                                    <form method="POST" action="{% url 'quiz:question_edit' question.id %}">
+                                        {% csrf_token %}
+                                        <input type="text" class="form-control mb-2" name="question_text" value="{{ question.question_text }}" required>
+                                        <button type="submit" class="btn btn-success btn-sm">Save</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEditQuestion({{ question.id }})">Cancel</button>
+                                    </form>
+                                </div>
+                    
+                                
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                    <!-- Add Question Form -->
+                    <div id="addQuestionFormContainer" style="display: none;">
+                        <form method="POST" id="addQuestionForm">
+                            {% csrf_token %}
+                            {{ question_form.as_p }}
+                            <input type="hidden" name="add_question" value="true"> <!-- To identify question submission -->
+                            <button type="submit" class="btn btn-success">Submit Question</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-7">  <!-- Answer Section -->
+            <div class="card">
+                <div class="card-header">
+                    Add/Edit Answers
+                </div>
+                <div class="card-body" id="answerFormContainer" style="display: none;">
+                    <div id="answerDisplay" ></div>  <!-- Display answers here -->
+                    <button type="button" class="btn btn-primary btn-sm" id="editButton">Edit</button>
+                    <form method="POST" id="addAnswerForm" style="display:none;">  <!-- Initially hidden -->
+                        {% csrf_token %}
+                        <input type="hidden" name="question_id" id="selectedQuestionId" value="">
+                        <div id="answerOptionsContainer"></div>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="addNewAnswerField()">Add New Answer</button>
+
+                        <div id="newAnswerField" style="display: none;">
+                        <label for="new_option_text">New Answer:</label>
+                            <input type="text" class="form-control" name="new_option_text" id="new_option_text" >
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="new_is_correct" id="new_is_correct">
+                                <label class="form-check-label" for="new_is_correct">Is Correct</label>
+                            </div>
+                        </div>
+                        <input type="hidden" name="removed_answers" id="removedAnswers" value="">
+                        
+                        <input type="hidden" name="edit_answers" value="true">  <!-- Changed name to 'edit_answers' -->
+
+                        <button type="submit" class="btn btn-success">Save Answers</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // JavaScript to handle question/answer display and form toggle
+
+    const questionItems = document.querySelectorAll('.question-item');
+    const answerFormContainer = document.getElementById('answerFormContainer');
+    const answerDisplay = document.getElementById('answerDisplay');
+    const addAnswerForm = document.getElementById('addAnswerForm');
+    const answerOptionsContainer = document.getElementById('answerOptionsContainer');
+    const selectedQuestionIdInput = document.getElementById('selectedQuestionId');
+    const editButton = document.getElementById('editButton');
+
+    function toggleAddQuestionForm() {
+        const addQuestionFormContainer = document.getElementById('addQuestionFormContainer');
+        addQuestionFormContainer.style.display = addQuestionFormContainer.style.display === 'none' ? 'block' : 'none';
+    }
+
+    questionItems.forEach(item => {
+        let isAnswerVisible = false; // Track visibility for each question
+
+        item.addEventListener('click', () => {
+            const questionId = item.dataset.questionId;
+            selectedQuestionIdInput.value = questionId;
+
+            if (!isAnswerVisible) { // Show answers and Edit button
+                answerFormContainer.style.display = 'block';
+                addAnswerForm.style.display = 'none';
+                editButton.style.display = 'block';
+                loadAnswers(questionId);
+            } else { // Hide answers and Edit button
+                answerFormContainer.style.display = 'none'; // Hide the entire container
+                answerDisplay.innerHTML = ''; // Clear answers
+            }
+
+            isAnswerVisible = !isAnswerVisible; // Toggle visibility
+        });
+    });
+
+    editButton.addEventListener('click', () => {
+        const questionId = selectedQuestionIdInput.value;
+        loadAnswersForEditing(questionId); // Load answers into edit form
+        addAnswerForm.style.display = 'block';  // Show edit form
+        editButton.style.display = 'none';    // Hide edit button
+        answerDisplay.innerHTML = '';         // Clear displayed answers
+    });
+
+    function loadAnswers(questionId) {
+    fetch(`/quiz/get_answers/${questionId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.answers.length === 0) { // Check if there are no answers
+                loadAnswersForEditing(questionId); // Load the edit form directly
+                addAnswerForm.style.display = 'block';
+                editButton.style.display = 'none';  // Hide the edit button
+                answerDisplay.innerHTML = ''; // Clear the display area
+            } else {
+                answerDisplay.innerHTML = data.answers.map(answer => `<p>${answer.option_text} ${answer.is_correct ? '(Correct)' : ''}</p>`).join('');
+            }
+        });
+}
+    function loadAnswersForEditing(questionId) {
+        fetch(`/quiz/get_answers/${questionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                answerOptionsContainer.innerHTML = ''; // Clear previous answers
+                data.answers.forEach(answer => {
+                    addAnswerField(answer); 
+                });
+            });
+    }
+
+
+    function addAnswerField(answerData = null) {
+        const newAnswerDiv = document.createElement('div');
+        newAnswerDiv.className = 'form-group mb-2 answer-field'; 
+
+        let answerText = "";
+        let isChecked = "";
+        let answerId = "";
+
+        if (answerData) {
+            answerText = answerData.option_text;
+            isChecked = answerData.is_correct ? "checked" : "";
+            answerId = answerData.id; // Include answer ID if available
+        }
+
+        newAnswerDiv.innerHTML = `
+            <label>Answer:</label>
+            <input type="hidden" name="answer_id[]" value="${answerId}">
+            <input type="text" class="form-control" name="option_text[]" value="${answerText}" required>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="is_correct[]" value="${answerId}" ${isChecked}>  <label class="form-check-label">Is Correct</label>
+                <button type="button" class="btn btn-danger btn-sm float-right remove-answer" data-answer-id="${answerId}">Remove</button> 
+            </div>
+        `;
+        answerOptionsContainer.appendChild(newAnswerDiv);
+
+
+        // Add remove button:
+        const removeButton = newAnswerDiv.querySelector('.remove-answer');  // Select the existing button
+        removeButton.dataset.answerId = answerData ? answerData.id : ''; // Set data attribute, handle new answers
+        removeButton.addEventListener('click', () => { // Use arrow function
+            removeAnswerField(answerId); // Pass answerId directly
+            newAnswerDiv.remove(); // Immediately remove from DOM
+        });
+
+    }
+
+        
+    function addNewAnswerField() {
+        const newAnswerDiv = document.createElement('div');
+        newAnswerDiv.className = 'form-group mb-2 answer-field';
+        
+
+        newAnswerDiv.innerHTML = `
+            <label>New Answer:</label>
+            <input type="text" class="form-control" name="new_option_text[]" required>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="new_is_correct[]" value="new_${optionCount}"> 
+                <label class="form-check-label">Is Correct</label>
+            </div>
+        `;
+        answerOptionsContainer.appendChild(newAnswerDiv);
+        optionCount++; // Increment index for each new answer
+    }
+
+    let optionCount = 0; // Declare and initialize index
+    
+    function removeAnswerField(answerId) {  // Takes answerId as argument
+        if (answerId) {  // Only for existing answers
+            const removedAnswersInput = document.getElementById('removedAnswers');
+            removedAnswersInput.value = (removedAnswersInput.value ? removedAnswersInput.value + "," : "") + answerId;
+        }
+    }
+    function editQuestion(questionId) {
+    // Hide the question text and show the edit form
+    const questionTextElement = document.getElementById(`question-text-${questionId}`);
+    const editFormElement = document.getElementById(`edit-question-form-${questionId}`);
+
+    questionTextElement.style.display = 'none';
+    editFormElement.style.display = 'block';
+}
+
+// Function to cancel the editing of a question
+function cancelEditQuestion(questionId) {
+    // Hide the edit form and show the question text again
+    const questionTextElement = document.getElementById(`question-text-${questionId}`);
+    const editFormElement = document.getElementById(`edit-question-form-${questionId}`);
+
+    questionTextElement.style.display = 'block';
+    editFormElement.style.display = 'none';
+}
+
+// Function to toggle the display of answers for a question
+function toggleAnswers(questionId) {
+    const answerOptions = document.getElementById(`answer-options-${questionId}`);
+    answerOptions.style.display = answerOptions.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+{% endblock %}

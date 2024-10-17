@@ -1,19 +1,19 @@
 {% extends 'base.html' %}
 {% load form_filters %}
 
-{% block title %}Edit {{ course.name }}{% endblock %}
+{% block title %}Edit {{ course.course_name }}{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1>Edit {{ course.name }}</h1>
+    <h1>Edit {{ course.course_name }}</h1>
     <form method="post" enctype="multipart/form-data" onsubmit="updateTagsInput()">
         {% csrf_token %}
 
         <input type="hidden" name="tags" id="tags-input" value="{{ course.tags|default:'' }}" /> <!-- Ensure tags are passed -->
 
         <div class="form-group">
-            {{ course_form.name.label_tag }}
-            {{ course_form.name|add_class:"form-control" }}
+            {{ course_form.course_name.label_tag }}
+            {{ course_form.course_name|add_class:"form-control" }}
         </div>
         <div class="form-group">
             {{ course_form.course_code.label_tag }}
@@ -51,7 +51,7 @@
                 <ul>
                     {% for prereq in prerequisites %}
                     <li>
-                        {{ prereq.name }}
+                        {{ prereq.course_name }}
                         <input type="checkbox" name="delete_prerequisite_{{ prereq.id }}" id="delete_prerequisite_{{ prereq.id }}">
                         <label for="delete_prerequisite_{{ prereq.id }}">Delete</label>
                     </li>
@@ -68,7 +68,7 @@
                 <select name="prerequisite_courses" class="form-control">
                     <option value="">Select a prerequisite course</option>
                     {% for course in all_courses %}
-                        <option value="{{ course.id }}">{{ course.name }}</option>
+                        <option value="{{ course.id }}">{{ course.course_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -181,7 +181,7 @@
             <select name="prerequisite_courses" class="form-control">
                 <option value="">Select a prerequisite course</option>
                 {% for course in all_courses %}
-                    <option value="{{ course.id }}">{{ course.name }}</option>
+                    <option value="{{ course.id }}">{{ course.course_name }}</option>
                 {% endfor %}
             </select>
         `;

@@ -1,126 +1,168 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: "Lato", sans-serif;
+            background-color: #1a1a1a; /* Dark background for body */
+            color: #f1f1f1; /* Light text color */
+        }
 
-{% block title %}{{ course.title }}{% endblock %}
+        .sidebar {
+            height: 100vh; /* Full height for sidebar */
+            background-color: #111; /* Sidebar background color */
+            padding-top: 16px; /* Padding for the top */
+            position: fixed; /* Fixed position */
+            z-index: 1; /* Stay on top */
+            overflow-y: auto; /* Scrollable if content exceeds height */
+            width: 20%; /* Set sidebar width */
+        }
 
-{% block content %}
-<style>
-    .active a {
-        color: white; /* Change text color to white for active lesson */
-        background-color: #007bff; /* Optional: Set a background color for the active item */
-    }
-    .scrollable {
-        height: 80vh; /* Set your desired height */
-        overflow-y: auto; /* Enable vertical scrolling */
-        overflow-x: hidden; /* Disable horizontal scrolling (optional) */
-        border: 1px solid #ccc; /* Optional: add a border for better visibility */
-        padding: 10px; /* Optional: add some padding */
-    }
+        .sidebar a {
+            padding: 10px 16px; /* Adjusted padding for links */
+            text-decoration: none; /* No underline */
+            font-size: 18px; /* Font size */
+            color: #818181; /* Link color */
+            display: block; /* Block display */
+        }
 
-    .fixed-bottom-right {
-    position: fixed; /* Fixed positioning */
-    bottom: 20px;    /* Distance from the bottom of the viewport */
-    right: 20px;     /* Distance from the right side of the viewport */
-    z-index: 1000;   /* Ensure it's above other content */
-}
+        .sidebar a:hover {
+            color: #f1f1f1; /* Hover color */
+        }
 
-</style>
-    <h1>{{ course.title }}</h1>
-    <p>{{ course.description }}</p>
+        .main {
+            margin-left: 20%; /* Adjust margin for sidebar width */
+            padding: 20px; /* Padding for main content */
+            background-color: #2a2a2a; /* Dark background for main content */
+            min-height: 100vh; /* Full height */
+        }
 
-   
-        <div class="row">
-            <div class="col-md-3 scrollable">
-                <h3>Lessons</h3>
-                <ul class="list-group">
-                    {% for lesson in lessons %}
-                        <li class="list-group-item">
-                            <a href="#" data-lesson-id="{{ lesson.id }}">{{ lesson.title }}</a>
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item">No lessons available for this subject.</li>
-                    {% endfor %}
-                </ul>
-                <div class="fixed-bottom-right">
-                    <a href="{% url 'student_materials:subject_list' %}" class="btn btn-primary mt-3">Back to list</a>
-                </div>
+        .active a {
+            color: white; /* Active link color */
+            background-color: #007bff; /* Active background color */
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: relative; /* Make it relative on smaller screens */
+                height: auto; /* Auto height */
+                margin: 0; /* Remove margin */
+                width: 100%; /* Full width */
+            }
+            .main {
+                margin-left: 0; /* Reset margin */
+                padding: 10px; /* Padding for mobile view */
+            }
+        }
+
+        
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 sidebar">
+            <h2 class="text-light">
+                <a href="{% url 'student_materials:subject_list' %}" class="text-light">Home</a>
+            </h2> 
+            <ul class="list-group">
                 
-            </div>
-            
-            <div class="col-md-9 scrollable">
-                <h3>Lesson Content</h3>
-                {% if lessons %}
-                    {% for lesson in lessons %}
-                        <div id="lesson-{{ lesson.id }}" class="lesson-content scrollable" style="display:none;">
-                            <h4>{{ lesson.title }}</h4>
-                            <p>{{ lesson.description }}</p>
-                            <div>{{ lesson.content|safe }}</div>  <!-- Render the rich text content -->
-                            <h3>Materials</h3>
-                            <ul>
-                                {% for material in lesson.materials.all %}
-                                <li>
-                                    {% if material.file %}
-                                        <a href="{{ material.file.url }}" target="_blank">{{ material.file.name }}</a>
-                                    {% elif material.google_drive_link %}
-                                        <a href="{{ material.google_drive_link }}" target="_blank">{{ material.material_type}} - Google Drive Link</a>
-                                    {% else %}
-                                        No material available.
-                                    {% endif %}
-                                </li>
-                                {% empty %}
-                                    <li>No materials available for this lesson.</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endfor %}
-                {% endif %}
+                {% for lesson in lessons %}
+                    <li class="list-group-item bg-dark">
+                        <a href="#" data-lesson-id="{{ lesson.id }}" class="text-light lesson-link">{{ lesson.title }}</a>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item bg-dark text-light">No lessons available for this subject.</li>
+                {% endfor %}
                 
-                <p>Click here to download: 
-                    <a class="btn btn-primary mt-3" href="https://drive.google.com/drive/folders/1L4ybieL2WNUnW-SIiEHV6ZvkTODqK7Xi?usp=sharing" target="_blank">Labs</a>&nbsp;
-                    <a class="btn btn-primary mt-3" href="https://drive.google.com/drive/folders/1FRzAJBmlVZ0OAxcATsiW650wZF1gkj6h?usp=sharing" target="_blank">Assignments</a></li>&nbsp;
-                    <a class="btn btn-primary mt-3" href="https://drive.google.com/drive/folders/1iUQeU0dgHC7kCg_xIhoXPkpOHAwcbIAW?usp=drive_link" target="_blank">Ebooks</a>
-                </p>
-            </div>
+            </ul>
             
         </div>
 
-    
-    
-    <script>
-    // JavaScript to show/hide lesson content and activate the selected menu item
-    document.querySelectorAll('.list-group-item a').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();  // Prevent default link behavior
-    
-            // Get the lesson ID from the data attribute
-            var lessonId = this.getAttribute('data-lesson-id');
-            
-            // Hide all lesson contents
-            document.querySelectorAll('.lesson-content').forEach(function(content) {
-                content.style.display = 'none';
-            });
-            
-            // Show the selected lesson content
-            var lessonContent = document.getElementById('lesson-' + lessonId);
-            if (lessonContent) {
-                lessonContent.style.display = 'block';
-            } else {
-                console.error('Lesson content not found for ID: ' + lessonId);
-            }
+        <div class="col-md-9 main">
+            <h2>{{ course.title }}</h2>
+            <p>{{ course.description }}</p>
 
-            // Remove 'active' class from all list items
-            document.querySelectorAll('.list-group-item').forEach(function(item) {
-                item.classList.remove('active');
-            });
-            
-            // Add 'active' class to the clicked item
-            this.parentElement.classList.add('active');
-        });
-    });
+            <div class="row">
+                <div class="col-12">
+                    <h3>Lesson Content</h3>
+                    
+                    {% if lessons %}
+                        {% for lesson in lessons %}
+                            <div id="lesson-{{ lesson.id }}" class="lesson-content" style="display:none;">
+                                <h4>{{ lesson.title }}</h4>
+                                <div>{{ lesson.content|safe }}</div>  <!-- Render the rich text content -->
+                                <h3>Materials</h3>
+                                <ul>
+                                    {% for material in lesson.materials.all %}
+                                        <li>
+                                            {% if material.file %}
+                                                <a href="{{ material.file.url }}" target="_blank" class="text-primary">{{ material.file.name }}</a>
+                                            {% elif material.google_drive_link %}
+                                                <a href="{{ material.google_drive_link }}" target="_blank" class="text-primary">{{ material.material_type }} - Google Drive Link</a>
+                                            {% else %}
+                                                No material available.
+                                            {% endif %}
+                                        </li>
+                                    {% empty %}
+                                        <li>No materials available for this lesson.</li>
+                                    {% endfor %}
+                                    
+                                </ul>
+                                
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+            </div>
 
-    // Optionally, you can show the first lesson by default if needed
-    if (document.querySelector('.lesson-content')) {
-        document.querySelector('.lesson-content').style.display = 'block';
-        document.querySelector('.list-group-item').classList.add('active');  // Make the first item active by default
-    }
-    </script>
-{% endblock %}
+            <script>
+                // JavaScript to show/hide lesson content and activate the selected menu item
+                document.querySelectorAll('.lesson-link').forEach(function(link) {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();  // Prevent default link behavior for lesson links
+
+                        // Get the lesson ID from the data attribute
+                        var lessonId = this.getAttribute('data-lesson-id');
+
+                        // Hide all lesson contents
+                        document.querySelectorAll('.lesson-content').forEach(function(content) {
+                            content.style.display = 'none';
+                        });
+
+                        // Show the selected lesson content
+                        var lessonContent = document.getElementById('lesson-' + lessonId);
+                        if (lessonContent) {
+                            lessonContent.style.display = 'block';
+                        } else {
+                            console.error('Lesson content not found for ID: ' + lessonId);
+                        }
+
+                        // Remove 'active' class from all sidebar links
+                        document.querySelectorAll('.lesson-link').forEach(function(item) {
+                            item.classList.remove('active');
+                        });
+
+                        // Add 'active' class to the clicked item
+                        this.classList.add('active');
+                    });
+                });
+
+                // Optionally, show the first lesson by default if needed
+                if (document.querySelector('.lesson-content')) {
+                    document.querySelector('.lesson-content').style.display = 'block';
+                    document.querySelector('.lesson-link').classList.add('active');  // Make the first item active by default
+                }
+            </script>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

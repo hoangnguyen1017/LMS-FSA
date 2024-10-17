@@ -11,30 +11,32 @@
         <h4>Score: <strong>{{ attempt.score }}</strong> / <strong>{{ attempt.quiz.total_marks }}</strong></h4>
     </div>
 
-    <h2>Your Answers:</h2>
-    <div class="accordion" id="answersAccordion">
+    <h2></h2>
+    <div class="quiz-answers">
         {% for answer in student_answers %}
-        <div class="card mb-2">
-            <div class="card-header" id="heading{{ forloop.counter }}">
-                <h5 class="mb-0">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
-                        {{ answer.question.question_text }}
-                    </button>
-                </h5>
-            </div>
+        <div class="mb-3">
+            <h5 class="card-title" style="white-space: pre-line;">
+                <strong>Question {{ forloop.counter }}:</strong><br>
+                {{ answer.question.question_text|linebreaksbr }}
+            </h5>
 
-            <div id="collapse{{ forloop.counter }}" class="collapse" aria-labelledby="heading{{ forloop.counter }}" data-parent="#answersAccordion">
-                <div class="card-body">
-                    <strong>Your Answer: </strong>
-                    <span class="fw-bold {% if answer.selected_option.is_correct %}text-success{% else %}text-danger{% endif %}">
-                        {{ answer.selected_option.option_text }}
-                    </span><br>
-                    <strong>Correct: </strong>
-                    <span class="fw-bold {% if answer.selected_option.is_correct %}text-success{% else %}text-danger{% endif %}">
-                        {{ answer.selected_option.is_correct|yesno:"Yes,No" }}
-                    </span>
-                </div>
-            </div>
+            <ul class="list-group">
+                {% for option in answer.question.answer_options.all %}
+                <li class="list-group-item {% if option.is_correct %}list-group-item-success{% elif option == answer.selected_option %}list-group-item-danger{% endif %}">
+                    {{ option.option_text }}
+                    {% if option == answer.selected_option %}
+                        {% if option.is_correct %}
+                        <span class="badge bg-success float-end"><i class="fas fa-check"></i></span>
+                        {% else %}
+                        <span class="badge bg-danger float-end"><i class="fas fa-times"></i></span>
+                        {% endif %}
+                    {% endif %}
+                    {% if option.is_correct and option != answer.selected_option %}
+                    <span class="badge bg-success float-end"><i class="fas fa-check"></i></span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
         </div>
         {% endfor %}
     </div>

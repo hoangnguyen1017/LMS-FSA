@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Reorder Materials - {{ course.title }}{% endblock %}
+{% block title %}Reorder Materials - {{ course.course_name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <h1>Reorder Materials for Course: {{ course.title }}</h1>
+    <h1>Reorder Materials for Course: {{ course.course_name }}</h1>
 
     <form method="POST">
         {% csrf_token %}

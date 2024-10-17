@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Book Search Section -->
+<div style="text-align: center; margin-top: -30px; background-color: #598068; padding: 20px 0; width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; border-radius: 10px;">
+    <h1 style="color:#33ffca;">Book Search</h1>
+
+    <form method="GET" action="{% url 'book_search' %}" style="display: inline-block; margin-top: 1px">
+        <div style="display: inline-block; position: relative;">
+            <input type="text" name="q" placeholder="Search for books..." required style="padding: 10px 15px; width: 300px; border: 1px solid #33ffca; border-radius: 25px; font-size: 1rem;">
+            <button type="submit" style="padding: 10px 20px; position: absolute; right: -90px; top: 0; background-color: #33ffca; color: #598068; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem;">Search</button>
+        </div>
+        
+        <!-- Radio buttons for selecting book type -->
+        <div style="margin-top: 10px;">
+            <input type="radio" id="free" name="book_type" value="free" {% if request.GET.book_type == "free" or not request.GET.book_type %}checked{% endif %}>
+            <label for="free" style="color:#33ffca;">Free Books</label>
+
+            <input type="radio" id="paid" name="book_type" value="paid" {% if request.GET.book_type == "paid" %}checked{% endif %}>
+            <label for="paid" style="color:#33ffca;">Paid Books</label>
+        </div>
+    </form> 
+</div>
+
+<!-- Book Results Section -->
+<div style="margin-top: 30px;">
+    {% if query %}
+        <h2>Book Search Results for "{{ query }}"</h2>
+    {% endif %}
+
+    {% if books %}
+        <ul style="list-style-type: none; padding: 0; text-align: center;">
+        {% for book in books %}
+            <li style="display: flex; align-items: flex-start; margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: #88FFDF;">
+                {% if book.thumbnail %}
+                    <div style="flex-shrink: 0;">
+                        <img src="{{ book.thumbnail }}" alt="Book cover of {{ book.title }}" style="max-width: 150px;"/>
+                    </div>
+                {% else %}
+                    <div style="flex-shrink: 0;">
+                        <p>No image available</p>
+                    </div>
+                {% endif %}
+                
+                <div style="margin-left: 15px; flex-grow: 1; text-align: left;">
+                    <h3>{{ book.title }}</h3>
+                    <p style="font-size: 0.9em;"><strong>Author(s):</strong> {{ book.authors|join:", " }}</p>
+                    <p style="font-size: 0.8em;"><strong>Description:</strong> {{ book.description }}</p>
+                    <p style="font-size: 0.8em;"><strong>Publisher:</strong> {{ book.publisher }}</p>
+                    <p style="font-size: 0.8em;"><strong>Published Date:</strong> {{ book.publishedDate }}</p>
+                    <p>
+                        <a href="{{ book.infoLink }}" target="_blank">Read more about this book</a>
+                        {% if book.previewLink %}
+                            | <a href="{{ book.previewLink }}" target="_blank">Read Preview</a>
+                        {% endif %}
+                    </p>
+                </div>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No books found for "{{ query }}". Please try a different search term.</p>
+    {% endif %}
+</div>
+
+<!-- Pagination Controls -->
+<div style="text-align: center; margin-top: 20px;">
+    <div>
+        {% if books.has_previous %}
+            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page=1">&laquo; First</a>
+            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ books.previous_page_number }}">Previous</a>
+        {% else %}
+            <span>&laquo; First</span>
+            <span>Previous</span>
+        {% endif %}
+
+        {% comment %} Dynamic pagination range {% endcomment %}
+        {% for page_num in paginator.page_range %}
+            {% if page_num >= books.number|add:-5 and page_num <= books.number|add:5 %}
+                {% if page_num == books.number %}
+                    <strong>{{ page_num }}</strong>  <!-- Highlight current page -->
+                {% else %}
+                    <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ page_num }}">{{ page_num }}</a>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        {% if books.has_next %}
+            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ books.next_page_number }}">Next</a>
+            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ paginator.num_pages }}">Last &raquo;</a>
+        {% else %}
+            <span>Next</span>
+            <span>Last &raquo;</span>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

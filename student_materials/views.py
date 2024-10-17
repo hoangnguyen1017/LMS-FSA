@@ -11,10 +11,30 @@ import mimetypes
 from subject.models import *
 
 
-# for new sharing course
 def subject_list(request):
-    subjects = Subject.objects.all().order_by('name')  # Order by name
+    # Get the current user
+    if request.user.is_authenticated:
+        user = request.user
+    else:
+        # Default to a specific user, e.g., user with ID 1 (or handle anonymous users accordingly)
+        user = User.objects.get(pk=1)  # Assuming user with ID 1 is the default or superadmin
+
+    # Get the training programs assigned to the user
+    user_training_programs = user.training_programs.all()
+
+    if user_training_programs.exists():
+        # Do something with the training programs
+        for program in user_training_programs:
+            print(program.program_name)  # or process the training programs as needed
+    else:
+        print("No training programs assigned to this user.")
+
+    # Filter subjects based on the training programs associated with the user
+    # Use the related name 'programs' defined in TrainingProgram model
+    subjects = Subject.objects.filter(programs__in=user_training_programs)
+
     return render(request, 'subject/subject_list.html', {'subjects': subjects})
+
 
 
 def subject_detail(request, subject_id):

@@ -125,3 +125,19 @@ def import_ai_insights(request):
         form = ExcelImportForm()
 
     return render(request, 'ai_insights_list.html', {'form': form})
+
+from django.core.paginator import Paginator
+
+def ai_insights_summary(request):
+    user = request.user  
+    ai_insights = AIInsights.objects.filter(user=user.id)
+    paginator = Paginator(ai_insights, 1) 
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_ai_insights': page_obj,
+        'user': request.user,
+    }
+    return render(request, 'ai_insights_summary.html', context)

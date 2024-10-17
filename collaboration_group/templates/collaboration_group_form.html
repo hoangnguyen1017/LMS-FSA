@@ -7,7 +7,6 @@
 {% block content %}
     <div class="container mt-5">
         <h1>Collaboration Group Form</h1>
-        <p>Created by: {{ request.user.username }}</p>  <!-- Display the logged-in user -->
         <form method="post">
             {% csrf_token %}
             <div class="form-group">

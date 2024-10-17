@@ -8,6 +8,7 @@
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>#</th>
                 <th>Subject Code</th> <!-- Added code column -->
                 <th>Subject Name</th>
                 <th>Description</th>
@@ -17,6 +18,7 @@
         <tbody>
             {% for subject in subjects %}
             <tr>
+                <td>{{ forloop.counter }}</td>
                 <td>{{ subject.code }}</td> <!-- Display subject code -->
                 <td>{{ subject.name }}</td>
                 <td>{{ subject.description }}</td>

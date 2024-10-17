@@ -1,11 +1,20 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import Certificate
+from django.core.paginator import Paginator
 
-def certificate_list(request):
-    certificates = Certificate.objects.all()
+def certificate_summary(request):
+    user = request.user  
+    certificates = Certificate.objects.filter(user=user.id)
+    paginator = Paginator(certificates, 8) 
 
-    return render(request, 'certificate.html', {'certificates': certificates})
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+    }
+    return render(request, 'certificate_summary.html', context)
 
 @login_required
 def certificate_pdf(request,id):
@@ -13,4 +22,4 @@ def certificate_pdf(request,id):
     context = {
         'certificate': certificate
     }
-    return render(request, 'pdf.html', context)
+    return render(request, 'certificate_pdf.html', context)

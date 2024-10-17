@@ -1,5 +1,5 @@
 from django.db import models
-from user.models import User  # Switch to User model
+from django.contrib.auth.models import User  # Switch to User model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_in, user_logged_out

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+
+{% block title %}Certificate{% endblock %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .tab:hover {
+            background-color: #d0d0d0;
+        }
+        .tab.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            background-color: #4CAF50;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress {
+            background-color: #4CAF50;
+            height: 100%;
+            width: 0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 7px;
+            background-color: #2196F3;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+    .pagination button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        margin: 0 4px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+    }
+    .pagination button:hover {
+        background-color: #45a049;
+    }
+    .pagination button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+    .pagination-info {
+        margin: 0 10px;
+    }
+    .hidden {
+        display: none;
+    }
+    .collapsible-content, .pagination {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.5s ease, opacity 0.5s ease;
+    }
+
+    .collapsible-content.show, .pagination.show {
+        max-height: 1000px; /* Adjust this value based on your content */
+        opacity: 1;
+    }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="">
+            <h1>{{ user.username }}</h1>
+        </a>
+        <div class="tabs">
+            <a href="{% url 'user_progress:user_progress_summary' %}"><button class="tab" onclick="openTab(event, 'progress')">User Progress</button></a>
+            <a href="{% url 'performance_analytics:performance_analytics_summary' %}"><button class="tab" onclick="openTab(event, 'performance')">Performance</button></a>
+            <a href="{% url 'ai_insights:ai_insights_summary' %}"><button class="tab active" onclick="openTab(event, 'insights')">AI Insights</button></a>
+            <a href="{% url 'certificate:certificate_summary' %}"><button class="tab" onclick="openTab(event, 'certificates')">Certificates</button></a>
+        </div>
+
+        <div id="progress" class="tab-content"></div>
+        <div id="performance" class="tab-content"></div>
+
+        <div id="insights" class="tab-content active">
+            {% for ai_insight in page_ai_insights %}
+            <div class="card">
+                <h3>{{ ai_insight.course }}</h3>
+                <ul>
+                    <li>Insight Type: <span class="badge">{{ ai_insight.insight_type }}</span></li>
+                    <li>Insight Text: {{ ai_insight.insight_text }}</li>
+                    <li>Created At: {{ ai_insight.created_at }}</li>
+                </ul>
+                <a href="{% url 'course:course_detail' ai_insight.course.id %}" class="btn btn-primary">Go to course {{ ai_insight.course }}</a>
+            </div>
+            {% endfor %}
+        <!-- Insert pagination -->
+        </div>
+
+        <div id="certificates" class="tab-content"></div>
+    </div>
+</body>
+{% endblock %}

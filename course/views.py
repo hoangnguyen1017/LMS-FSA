@@ -6,8 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib import messages
 import os
-from django.http import FileResponse,Http404
-from django.utils.text import slugify
 from django.urls import reverse
 from feedback.models import CourseFeedback
 from .forms import ExcelImportForm
@@ -20,8 +18,8 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from datetime import datetime
 import base64
-from itertools import zip_longest
 import numpy as np
+from django.contrib.staticfiles.storage import staticfiles_storage
 
 
 def export_course(request):
@@ -33,13 +31,13 @@ def export_course(request):
     # Course sheet
     course_worksheet = workbook.active
     course_worksheet.title = 'Course'
-    course_columns = ['name', 'course_code', 'description', 'creator', 'instructor', 'published', 'prerequisites']
+    course_columns = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'published', 'prerequisites']
     course_worksheet.append(course_columns)
 
     for course in Course.objects.all():
-        prerequisites_list = ', '.join([prerequisite.name for prerequisite in course.prerequisites.all()]) or None
+        prerequisites_list = ', '.join([prerequisite.course_name for prerequisite in course.prerequisites.all()]) or None
         course_worksheet.append([
-            course.name,
+            course.course_name,
             course.course_code,
             course.description,
             course.creator.username if course.creator else None,
@@ -56,7 +54,7 @@ def export_course(request):
     for session in Session.objects.all():
         session_worksheet.append([
             session.id,  # Include session ID
-            session.course.name if session.course else None,
+            session.course.course_name if session.course else None,
             session.name,
             session.order
         ])
@@ -83,7 +81,7 @@ def import_courses(request):
                 course_updated = 0
 
                 for index, row in course_df.iterrows():
-                    name = row['name']
+                    course_name = row['course_name']
                     course_code = row['course_code']
                     description = row['description']
                     creator_username = to_none_if_nan(row.get('creator'))
@@ -96,7 +94,7 @@ def import_courses(request):
 
                     # Get or create the course
                     course, created = Course.objects.get_or_create(
-                        name=name,
+                        course_name=course_name,
                         defaults={
                             'course_code': course_code,
                             'description': description,
@@ -115,11 +113,11 @@ def import_courses(request):
                         prerequisite_names = [prerequisite.strip() for prerequisite in prerequisites.split(',')]
                         course.prerequisites.clear()
                         for prerequisite_name in prerequisite_names:
-                            prerequisite = Course.objects.filter(name=prerequisite_name).first()
+                            prerequisite = Course.objects.filter(course_name=prerequisite_name).first()
                             if prerequisite:
                                 course.prerequisites.add(prerequisite)
                             else:
-                                messages.warning(request, f"Prerequisite '{prerequisite_name}' does not exist for course '{name}'.")
+                                messages.warning(request, f"Prerequisite '{prerequisite_name}' does not exist for course '{course_name}'.")
 
                 # Import sessions
                 for index, row in session_df.iterrows():
@@ -127,7 +125,7 @@ def import_courses(request):
                     session_name = row['session_name']
                     session_order = row['session_order']
 
-                    course = Course.objects.filter(name=course_name).first()
+                    course = Course.objects.filter(course_name=course_name).first()
                     if course:
                         Session.objects.get_or_create(
                             course=course,
@@ -427,7 +425,7 @@ def course_search(request):
 
     if query:
         courses = courses.filter(
-            Q(name__icontains=query) |
+            Q(course_name__icontains=query) |
             Q(description__icontains=query) |
             Q(course_code__icontains=query))
 
@@ -697,7 +695,7 @@ def generate_certificate_png(request, pk):
 
     # Dynamically find the background image in the course app's static directory
     app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Root of the project
-    background_image_path = os.path.join(app_dir, 'course', 'static', 'course', 'images', 'certificate_background.jpg')
+    background_image_path = staticfiles_storage.path('course/images/certificate_background.jpg')
 
     if os.path.exists(background_image_path):
         with open(background_image_path, "rb") as image_file:
@@ -708,7 +706,7 @@ def generate_certificate_png(request, pk):
     # Generate the certificate
     context = {
         'student_name': student.get_full_name() or student.username,
-        'course_name': course.name,
+        'course_name': course.course_name,
         'completion_date': datetime.now().strftime("%B %d, %Y"),
         'background_image_base64': encoded_string,
     }

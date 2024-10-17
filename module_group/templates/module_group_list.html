@@ -15,6 +15,7 @@
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>#</th>
                 <th>Group Name</th>
                 <th>Actions</th>
             </tr>
@@ -22,6 +23,7 @@
         <tbody>
             {% for group in module_groups %}
             <tr>
+                <td>{{ forloop.counter }}</td>
                 <td>{{ group.group_name }}</td>
                 <td>
                     <a href="{% url 'module_group:module_group_detail' group.pk %}" class="btn btn-info btn-sm">Details</a>

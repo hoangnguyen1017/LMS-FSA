@@ -1,8 +1,6 @@
 from django.db import models
 from user.models import User
 
-app_name = 'chat'
-
 class Chat(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')

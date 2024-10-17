@@ -1,10 +1,12 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 
 app_name = 'assessment'
 
 urlpatterns = [
-    # path('', views.AssessmentListView.as_view(), name='assessment_list'),
+    path('', views.assessement_list, name='assessment_list'),
+    path('quiz/', include('quiz.urls')),  
+    path('exercises/', include('exercises.urls')),
     # path('add/', views.AssessmentCreateView.as_view(), name='assessment_add'),
     # path('<int:pk>/edit/', views.AssessmentUpdateView.as_view(), name='assessment_edit'),
     # path('<int:pk>/delete/', views.AssessmentDeleteView.as_view(), name='assessment_delete'),

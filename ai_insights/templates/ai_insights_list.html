@@ -24,6 +24,7 @@
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>#</th>
                 <th>Username</th>
                 <th>Course</th>
                 <th>Insight Text</th>
@@ -35,7 +36,8 @@
         <tbody>
             {% for ai_insight in ai_insights %}
             <tr>
-                <td>{{ ai_insight.username }}</td>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ ai_insight.user }}</td>
                 <td>{{ ai_insight.course }}</td>
                 <td>{{ ai_insight.insight_text }}</td>
                 <td>{{ ai_insight.insight_type }}</td>

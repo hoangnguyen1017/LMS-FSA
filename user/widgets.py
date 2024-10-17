@@ -6,4 +6,3 @@ class PasswordWidget(widgets.Widget):
         if value:
             return make_password(value)  # Mã hóa password
         return None
-

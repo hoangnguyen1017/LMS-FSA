@@ -12,7 +12,7 @@
             <option value="">All Courses</option>
             {% for course in courses %}
             <option value="{{ course.id }}" {% if course.id == selected_course_id %}selected{% endif %}>
-                {{ course.name }}
+                {{ course.course_name }}
             </option>
             {% endfor %}
         </select>

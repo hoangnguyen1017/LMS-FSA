@@ -1,10 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
 
 from quiz.models import Quiz, Question, AnswerOption, StudentQuizAttempt, StudentAnswer
 from course.models import Course
-from subject.models import Subject
 from django.db import transaction
 from django.utils import timezone
 

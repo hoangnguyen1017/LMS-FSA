@@ -1,37 +1,99 @@
 from django.db import models
 from django.utils import timezone
-from subject.models import Subject  # Assuming the subject app is named 'subject'
-from user.models import User        # Assuming the user app is named 'user'
+from course.models import Course
+from user.models import User
+
 
 class DiscussionThread(models.Model):
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL,null= True,blank= True)  # created_by
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     thread_title = models.CharField(max_length=255)
     thread_content = models.TextField(blank=True, null=True)
-    created = models.DateTimeField(auto_now_add=True)  # Ensure this field exists
+    created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    subject = models.ForeignKey(Subject,on_delete=models.CASCADE,null=True,blank= True)
-    
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
+    likes_count = models.PositiveIntegerField(default=0) 
+    loves_count = models.PositiveIntegerField(default=0)
     def save(self, *args, **kwargs):
         self.updated_at = timezone.now()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.thread_title
+
     class Meta:
         ordering = ['-updated']
-    
-    
+
+
 class ThreadComments(models.Model):
     comment_id = models.AutoField(primary_key=True)
-    thread = models.ForeignKey(DiscussionThread, on_delete=models.CASCADE, related_name='comments')  # Reference to the discussion thread
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Reference to the user who made the comment
+    thread = models.ForeignKey(DiscussionThread, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     comment_text = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)  # Automatically set on comment creation
-    updated = models.DateTimeField(auto_now=True)  # Automatically updated when the comment is updated
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Comment by {self.user.username} on {self.thread.thread_title}"
 
     class Meta:
         ordering = ['-created']
-    
+
+
+# Reaction model for Threads
+class ThreadReaction(models.Model):
+    LIKE = 'like'
+    LOVE = 'love'
+    HAHA = 'haha'
+    WOW = 'wow'
+    SAD = 'sad'
+    ANGRY = 'angry'
+
+    REACTION_CHOICES = [
+        (LIKE, 'Like'),
+        (LOVE, 'Love'),
+        (HAHA, 'Haha'),
+        (WOW, 'Wow'),
+        (SAD, 'Sad'),
+        (ANGRY, 'Angry'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    thread = models.ForeignKey(DiscussionThread, on_delete=models.CASCADE, related_name='reactions')
+    reaction_type = models.CharField(max_length=10, choices=REACTION_CHOICES)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'thread')
+
+    def __str__(self):
+        return f"{self.user.username} reacted to {self.thread.thread_title} with {self.get_reaction_type_display()}"
+
+
+# Reaction model for Comments
+class CommentReaction(models.Model):
+    LIKE = 'like'
+    LOVE = 'love'
+    HAHA = 'haha'
+    WOW = 'wow'
+    SAD = 'sad'
+    ANGRY = 'angry'
+
+    REACTION_CHOICES = [
+        (LIKE, 'Like'),
+        (LOVE, 'Love'),
+        (HAHA, 'Haha'),
+        (WOW, 'Wow'),
+        (SAD, 'Sad'),
+        (ANGRY, 'Angry'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.ForeignKey(ThreadComments, on_delete=models.CASCADE, related_name='reactions')
+    reaction_type = models.CharField(max_length=10, choices=REACTION_CHOICES)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'comment')
+
+    def __str__(self):
+        return f"{self.user.username} reacted to {self.comment.comment_text[:20]} with {self.get_reaction_type_display()}"

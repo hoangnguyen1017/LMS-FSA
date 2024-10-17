@@ -8,6 +8,7 @@ class Quiz(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     quiz_title = models.CharField(max_length=255)
     quiz_description = models.TextField(blank=True, null=True)
+    
     total_marks = models.IntegerField()
     time_limit = models.IntegerField(default=0)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)

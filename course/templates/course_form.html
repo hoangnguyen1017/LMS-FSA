@@ -13,8 +13,8 @@
         <div class="row">
             <div class="col-md-8" style="margin-left: 2cm; margin-right: 2cm;">
                 <div class="form-group">
-                    {{ course_form.name.label_tag }}
-                    {{ course_form.name|add_class:"form-control" }}
+                    {{ course_form.course_name.label_tag }}
+                    {{ course_form.course_name|add_class:"form-control" }}
                 </div>
                 <div class="form-group">
                     {{ course_form.course_code.label_tag }}
@@ -41,7 +41,7 @@
                             <select name="prerequisite_courses[]" class="form-control">
                                 <option value="">Select a prerequisite course (optional)</option>
                                 {% for course in all_courses %}
-                                    <option value="{{ course.id }}">{{ course.name }}</option>
+                                    <option value="{{ course.id }}">{{ course.course_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -114,7 +114,7 @@
                 <select name="prerequisite_courses[]" class="form-control">
                     <option value="">Select a prerequisite course (optional)</option>
                     {% for course in all_courses %}
-                        <option value="{{ course.id }}">{{ course.name }}</option>
+                        <option value="{{ course.id }}">{{ course.course_name }}</option>
                     {% endfor %}
                 </select>
                 <button type="button" class="btn btn-danger btn-sm mt-1 remove-prerequisite">Remove</button>

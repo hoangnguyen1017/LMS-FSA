@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load main_form_filters %} 
+{% load form_filters %}
 
 {% block title %}{{ form.instance.pk|yesno:"Edit Subject,Add New Subject" }}{% endblock %}
 
@@ -11,14 +11,14 @@
         
         <!-- Subject Name Field -->
         <div class="form-group">
-            {{ form.code.label_tag }}
-            {{ form.code|add_class:"form-control" }}
+            {{ form.name.label_tag }}
+            {{ form.name|add_class:"form-control" }}
         </div>
         
         <!-- Subject Code Field (Newly Added) -->
         <div class="form-group">
-            {{ form.name.label_tag }}
-            {{ form.name|add_class:"form-control" }}
+            {{ form.code.label_tag }}
+            {{ form.code|add_class:"form-control" }}
         </div>
         
         <!-- Subject Description Field -->

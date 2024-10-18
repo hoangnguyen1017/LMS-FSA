@@ -2,7 +2,7 @@ from django.contrib import admin
 from import_export import resources, fields
 from import_export.widgets import ManyToManyWidget, ForeignKeyWidget
 from import_export.admin import ImportExportModelAdmin
-from .models import Course, Session
+from .models import Course, Session, Topic, Tag
 from django.contrib.auth.models import User
 
 
@@ -22,6 +22,11 @@ class CourseResource(resources.ModelResource):
         column_name='prerequisites',
         widget=ManyToManyWidget(Course, field='course_name', separator='|')
     )
+    tags = fields.Field(
+        attribute='tags',
+        column_name='tags',
+        widget=ManyToManyWidget(Tag, field='name', separator='|')
+    )
 
     class Meta:
         model = Course
@@ -33,6 +38,7 @@ class CourseResource(resources.ModelResource):
             'instructor',
             'published',
             'prerequisites',
+            'tags',
         )
         import_id_fields = ('course_name',)
 
@@ -65,6 +71,20 @@ class SessionResource(resources.ModelResource):
         fields = ('id', 'course', 'name', 'order')
         import_id_fields = ('id',)
 
+class TopicResource(resources.ModelResource):
+    class Meta:
+        model = Topic
+        fields = ('id', 'name')  # Add any additional fields you want to include
+        import_id_fields = ('id',)
+
+class TagResource(resources.ModelResource):
+    topic = fields.Field(attribute='topic', column_name='topic__name', widget=ForeignKeyWidget(Topic, 'name'))
+
+    class Meta:
+        model = Tag
+        fields = ('id', 'name', 'topic')  # Include any other relevant fields
+        import_id_fields = ('id',)
+
 @admin.register(Course)
 class CourseAdmin(ImportExportModelAdmin):
     resource_class = CourseResource
@@ -78,3 +98,16 @@ class SessionAdmin(ImportExportModelAdmin):
     resource_class = SessionResource
     list_display = ('course', 'name', 'order')
     search_fields = ('course__course_name', 'name')
+
+@admin.register(Topic)
+class TopicAdmin(ImportExportModelAdmin):
+    resource_class = TopicResource
+    list_display = ('name',)
+    search_fields = ('name',)
+
+@admin.register(Tag)
+class TagAdmin(ImportExportModelAdmin):
+    resource_class = TagResource
+    list_display = ('name', 'topic')
+    search_fields = ('name', 'topic__name')
+

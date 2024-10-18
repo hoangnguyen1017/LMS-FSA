@@ -6,10 +6,8 @@
 {% block content %}
 <div class="container">
     <h1>Edit {{ course.course_name }}</h1>
-    <form method="post" enctype="multipart/form-data" onsubmit="updateTagsInput()">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-
-        <input type="hidden" name="tags" id="tags-input" value="{{ course.tags|default:'' }}" /> <!-- Ensure tags are passed -->
 
         <div class="form-group">
             {{ course_form.course_name.label_tag }}
@@ -28,43 +26,42 @@
             {{ course_form.instructor|add_class:"form-control" }}
         </div>
 
-
-        <!-- Topic Selection Dropdown -->
-        <div class="form-group">
-            <label for="topic-select">Select Topics</label>
-            <select id="topic-select" class="form-control" onchange="updateTagsDropdown()">
-                <option value="">Select a topic</option>
-                {% for t in topic %}
-                    <option value="{{ t.name|lower }}">{{ t.name }}</option>
+         <!-- Topic Dropdown -->
+         <div class="form-group">
+            <label for="topic">Choose a Topic:</label>
+            <select id="topic" name="topic" class="form-control">
+                <option value="">Select a Topic</option>
+                {% for topic in topics %}
+                    <option value="{{ topic.id }}">{{ topic.name }}</option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- Tags Section -->
-        <div id="tags-container" class="form-group" style="display: none;">
-            <h4>Tags</h4>
-            <div id="tags-list" class="tags"></div>
-        </div>
-
-        <!-- Existing Tags List -->
-        <div class="form-group">
-            <h3>Existing Tags</h3>
-            <div id="existing-tags-list" class="mt-2">
-                {% if current_tags|length == 0 %}
-                    <p>This course does not have any tags.</p>
-                {% else %}
-                    {% for tag in current_tags %}
-                        <span class="badge badge-info mr-1 selected-tag">
-                            {{ tag.name }}
-                            <button type="button" class="btn btn-danger btn-sm" onclick="removeTag('{{ forloop.counter0 }}')">X</button>
-                        </span>
-                    {% endfor %}
-                {% endif %}
+        <!-- Tags Checkboxes (This will be updated based on the selected topic) -->
+        <div class="form-group" id="tags-container">
+            <h3>Tags</h3>
+            <div id="tags-list">
+                <!-- Tags will be populated here based on the selected topic -->
             </div>
         </div>
 
-        <!-- Hidden Input for Selected Tags -->
-        <input type="hidden" id="tags-input" name="tag_lists" value="{{ current_tags|join:',' }}">
+        <!-- Existing Tags Section -->
+        <div class="form-group">
+            <h3>Current Existing Tags</h3>
+            {% if course.tags.all %}
+                <ul id="current-tags">
+                    {% for tag in course.tags.all %}
+                        <li>
+                            {{ tag.name }}
+                            <input type="checkbox" name="delete_tag_{{ tag.id }}" id="delete_tag_{{ tag.id }}">
+                            <label for="delete_tag_{{ tag.id }}">Delete</label>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No tags added yet.</p>
+            {% endif %}
+        </div>
 
         <div class="form-group">
             <h3>Existing Prerequisite Courses</h3>
@@ -132,96 +129,78 @@
             {% endif %}
         </div>
 
+        <!-- Image upload and deletion -->
+        <div class="form-group">
+            <h3>Course Image</h3>
+            {% if course.image %}
+                <img src="{{ course.image.url }}" alt="{{ course.course_name }}" style="max-width: 200px;">
+                <br>
+                <label>
+                    <input type="checkbox" name="delete_image" value="on"> Delete existing image
+                </label>
+            {% else %}
+                <p>No image uploaded yet.</p>
+            {% endif %}
+            <br>
+            {{ course_form.image.label_tag }}
+            {{ course_form.image|add_class:"form-control-file" }}
+        </div>
+
         <button type="submit" class="btn btn-primary">Save Changes</button>
         <a href="{% url 'course:course_list' %}" class="btn btn-secondary">Return to Course List</a>
     </form>
 </div>
 
 <script>
-    // Initialize tags array with existing tags from the backend
-    const tags = [];
-    document.querySelectorAll('#existing-tags-list .badge').forEach(tagElement => {
-        const tagText = tagElement.childNodes[0].nodeValue.trim();
-        tags.push(tagText.toUpperCase());
-    });
-
-    // Set up tags by topic
-    const tagsByTopic = {
-        {% for t in topic %}
-        '{{ t.name|lower }}': [
-            {% for tag in all_tags %}
-                {% if tag.topic.id == t.id %}
-                    '{{ tag.name }}'{% if not forloop.last %}, {% endif %}
-                {% endif %}
+    document.addEventListener('DOMContentLoaded', function() {
+        const tags = [
+            {% for tag in tags %}
+            { id: "{{ tag.id }}", name: "{{ tag.name }}", topicId: "{{ tag.topic.id }}" },
             {% endfor %}
-        ],
-        {% endfor %}
-    };
+        ];
 
-    function updateTagsDropdown() {
-        const selectedTopic = document.getElementById('topic-select').value;
-        const tagsContainer = document.getElementById('tags-container');
-        tagsContainer.style.display = selectedTopic ? 'block' : 'none';
+        // Create a set of current tag IDs for easy lookup
+        const currentTags = new Set([
+            {% for current_tag in course.tags.all %}
+            "{{ current_tag.id }}",
+            {% endfor %}
+        ]);
 
-        const tagsList = document.getElementById('tags-list');
-        tagsList.innerHTML = '';
+        const topicSelect = document.getElementById('topic');
+        const tagsListContainer = document.getElementById('tags-list');
+        const form = document.querySelector('form');
 
-        if (selectedTopic && tagsByTopic[selectedTopic]) {
-            tagsByTopic[selectedTopic].forEach(tag => {
-                const tagElement = document.createElement('span');
-                tagElement.className = 'badge badge-info mr-1';
-                tagElement.textContent = tag;
-                tagElement.onclick = () => transferTag(tagElement);
+        // Hidden input to store selected tag IDs
+        const selectedTagsInput = document.createElement('input');
+        selectedTagsInput.type = 'hidden';
+        selectedTagsInput.name = 'selected_tags';
+        form.appendChild(selectedTagsInput);
 
-                // Mark tag as selected if it's in the tags array
-                if (tags.includes(tag.toUpperCase())) {
-                    tagElement.classList.add('selected-tag');
-                }
+        // When the topic changes, update the tags
+        topicSelect.addEventListener('change', function() {
+            const selectedTopicId = this.value;
+            tagsListContainer.innerHTML = '';
 
-                tagsList.appendChild(tagElement);
-            });
-        }
-    }
-
-    function transferTag(tagElement) {
-        const tag = tagElement.textContent;
-        const tagUpper = tag.toUpperCase();
-
-        if (!tags.includes(tagUpper)) {
-            tags.push(tagUpper);
-            tagElement.classList.add('selected-tag');
-            updateTagsList();
-        }
-    }
-
-    function removeTag(index) {
-        tags.splice(index, 1);
-        updateTagsList();
-    }
-
-    function updateTagsList() {
-        const tagsList = document.getElementById('existing-tags-list');
-        tagsList.innerHTML = '';
-        tags.forEach((tag, index) => {
-            const tagElement = document.createElement('span');
-            tagElement.className = 'badge badge-info mr-1 selected-tag';
-            tagElement.textContent = tag;
-
-            const removeButton = document.createElement('button');
-            removeButton.type = 'button';
-            removeButton.className = 'btn btn-danger btn-sm ml-1';
-            removeButton.textContent = 'X';
-            removeButton.onclick = () => removeTag(index);
-
-            tagElement.appendChild(removeButton);
-            tagsList.appendChild(tagElement);
+            if (selectedTopicId) {
+                const filteredTags = tags.filter(tag => tag.topicId === selectedTopicId && !currentTags.has(tag.id));
+                filteredTags.forEach(tag => {
+                    const tagCheckbox = document.createElement('div');
+                    tagCheckbox.innerHTML = `
+                        <input type="checkbox" name="tags" class="tag-checkbox" value="${tag.id}" id="tag_${tag.id}">
+                        <label for="tag_${tag.id}">${tag.name}</label>
+                    `;
+                    tagsListContainer.appendChild(tagCheckbox);
+                });
+            }
         });
-        updateTagsInput();
-    }
 
-    function updateTagsInput() {
-        document.getElementById('tags-input').value = tags.join(',');
-    }
+        // Collect selected tag IDs before form submission
+        form.addEventListener('submit', function() {
+            const selectedTagIds = Array.from(tagsListContainer.querySelectorAll('.tag-checkbox:checked'))
+                .map(checkbox => checkbox.value);
+            selectedTagsInput.value = selectedTagIds.join(',');
+        });
+    });
 
     document.getElementById('add-prerequisite').addEventListener('click', function() {
         var container = document.getElementById('prerequisite-container');
@@ -248,12 +227,4 @@
         container.appendChild(newInput);
     });
 </script>
-
-<style>
-    .selected-tag {
-        background-color: lightgray;
-        color: #000;
-    }
-</style>
-
 {% endblock %}

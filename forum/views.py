@@ -6,6 +6,9 @@ from course.models import Course
 from django.core.paginator import Paginator
 from module_group.models import ModuleGroup, Module
 from django.contrib.auth.models import User
+from PIL import Image
+from io import BytesIO
+from django.core.files.base import ContentFile
 
 
 def question_list(request):
@@ -111,7 +114,12 @@ def edit_question(request, pk):
         if form.is_valid():
             if 'image-clear' in request.POST:
                 question.image.delete()
-            form.save()
+            question = form.save(commit=False)
+            width = form.cleaned_data.get('width')
+            height = form.cleaned_data.get('height')
+            if width and height and question.image:
+                question.image = resize_image(question.image, width, height)
+            question.save()
             return redirect('forum:question_detail', pk=pk)
     else:
         form = ForumQuestionForm(instance=question)
@@ -228,8 +236,6 @@ def dislike_reply(request, pk):
         reply.dislikes.remove(request.user)
     else:
         reply.dislikes.add(request.user)
-        reply.likes.remove(request.user)
-    return redirect('forum:question_detail', pk=reply.comment.question.pk if reply.comment else reply.parent_reply.comment.question.pk)
 
 @login_required
 def report_content(request, report_type, report_id):
@@ -267,3 +273,11 @@ def get_reported_content(report_type, report_id):
     elif report_type == 'reply':
         return get_object_or_404(Reply, pk=report_id)
     return None
+
+def resize_image(image, width, height):
+    img = Image.open(image)
+    img = img.resize((width, height), Image.ANTIALIAS)
+    buffer = BytesIO()
+    img.save(buffer, format='JPEG')
+    return ContentFile(buffer.getvalue())
+

@@ -14,6 +14,7 @@ class Course(models.Model):
     published = models.BooleanField(default=True)
     prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='is_prerequisite_for')
     tags = models.ManyToManyField('Tag', blank=True, related_name='courses')
+    image = models.ImageField(upload_to='course_images/', null=True, blank=True)
 
     def __str__(self):
         return self.course_name
@@ -61,13 +62,14 @@ class Enrollment(models.Model):
 
 class CourseMaterial(models.Model):
     MATERIAL_TYPE_CHOICES = [
-        ('document', 'Document'),
-        ('video', 'Video'),
-        ('reading', 'Reading Material'),
+        ('assignments', 'Assignments'),
+        ('labs', 'Labs'),
+        ('lectures', 'Lectures'),
+        ('references', 'References'),  # New material type
     ]
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='materials', null=True)
     material_id = models.PositiveIntegerField()  # Make sure this uniquely identifies the material
-    material_type = models.CharField(max_length=10, choices=MATERIAL_TYPE_CHOICES)
+    material_type = models.CharField(max_length=20, choices=MATERIAL_TYPE_CHOICES)
     order = models.PositiveIntegerField()  # Order of appearance
     title = models.CharField(max_length=255)
 
@@ -84,7 +86,6 @@ class ReadingMaterial(models.Model):
 
     def __str__(self):
         return self.title
-
 
 
 class Completion(models.Model):

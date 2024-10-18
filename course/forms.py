@@ -13,19 +13,16 @@ class CourseForm(forms.ModelForm):
     tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),
         required=False,
-        widget=forms.CheckboxSelectMultiple,
-        label="Tags"
+        widget=forms.CheckboxSelectMultiple
     )
-
-    def clean_integer_field(self):
-        data = self.cleaned_data.get('integer_field')
-        if data == '':
-            return None  # or handle as needed
-        return data
 
     class Meta:
         model = Course
-        fields = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'prerequisites', 'tags']  # sửa lại
+        fields = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'prerequisites', 'tags', 'image']  # sửa lại
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['image'].required = False
 
 class SessionForm(forms.ModelForm):
     session_name = forms.CharField(max_length=50, required=False, label="Session Name")
@@ -70,3 +67,8 @@ class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ['name', 'topic']
+
+class ReadingMaterialEditForm(forms.ModelForm):
+    class Meta:
+        model = ReadingMaterial
+        fields = ['title', 'content']

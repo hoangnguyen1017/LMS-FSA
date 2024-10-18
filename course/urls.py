@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 app_name = 'course'
 urlpatterns = [
@@ -23,6 +25,7 @@ urlpatterns = [
     # Material
     path('edit/<int:pk>/reorder/<int:session_id>/', views.reorder_course_materials, name='reorder_course_materials'),
     path('reading-material/<int:id>/', views.reading_material_detail, name='reading_material_detail'),
+    path('<int:pk>/content/edit/<int:session_id>/<int:reading_material_id>/edit/', views.edit_reading_material, name='edit_reading_material'),
     # Certificate
     path('<int:pk>/generate-certificate/', views.generate_certificate_png, name='generate_certificate'),
     # Topic URLs
@@ -36,4 +39,4 @@ urlpatterns = [
     path('tags/add/', views.tag_add, name='tag_add'),
     path('tags/edit/<int:pk>/', views.tag_edit, name='tag_edit'),
     path('tags/delete/<int:pk>/', views.tag_delete, name='tag_delete'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

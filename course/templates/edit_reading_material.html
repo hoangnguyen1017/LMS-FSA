@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Reading Material{% endblock %}
+
+{% block content %}
+<h1>Edit Reading Material: {{ reading_material.title }}</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <script src="https://cdn.ckeditor.com/4.16.0/full/ckeditor.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            CKEDITOR.replace('id_content');  // Replace 'id_content' with the actual ID of your textarea
+        });
+    </script>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <!-- go back :)) -->
+    <a href="{% url 'course:course_content_edit' course.pk sessions.0.id %}" class="btn btn-secondary" style="margin-left: 10px;">Back</a>
+</form>
+{% endblock %}

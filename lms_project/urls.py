@@ -20,11 +20,7 @@ urlpatterns = [
     path('training_program/', include('training_program.urls')),
     path('training_program_subjects/', include('training_program_subjects.urls')),
     path('feedback/', include('feedback.urls')),
-    path('assignment/', include('assignment.urls')),
     path('forum/', include('forum.urls')),
-    path('quiz/', include('quiz.urls')),
     path('ckeditor/', include('ckeditor_uploader.urls')),
     path('course/', include('course.urls')),
-    path('training_program_for_courses/', include('training_program_for_courses.urls')),
-    path('training_program_manage_courses/', include('training_program_manage_courses.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

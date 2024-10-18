@@ -69,6 +69,7 @@ urlpatterns = [
     path('student_performance', include('student_performance.urls')),
     path('user_progress', include('user_progress.urls')),
     path('user_summary', include('user_summary.urls')),
+    path('book', include('book.urls')),
 
 
     #group06 - Binh_Thang - Coding

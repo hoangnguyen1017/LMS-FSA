@@ -15,6 +15,7 @@ from functools import wraps
 from django.contrib.auth.decorators import login_required
 from django import forms
 from course.forms import UserCourseProgress
+
 @login_required
 def assign_training_programs(request, user_id):
     user = get_object_or_404(User, id=user_id)

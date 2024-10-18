@@ -46,6 +46,7 @@ class CustomUserAdmin(ImportExportModelAdmin, BaseUserAdmin):
         (None, {'fields': ('username', 'password')}),
         ('Personal Info', {'fields': ('first_name', 'last_name', 'email')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Training Programs', {'fields': ('training_programs',)}),  # Added training_programs field
         ('Modules', {'fields': ('modules',)}),  # Thêm trường modules ở đây
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
@@ -69,6 +70,12 @@ class CustomUserAdmin(ImportExportModelAdmin, BaseUserAdmin):
         return obj.profile.role.role_name if hasattr(obj, 'profile') and obj.profile.role else 'No Role'
     get_role.short_description = 'Role'
 
+    # Method to display training programs of the user in the admin list
+    def get_training_programs(self, obj):
+        return ", ".join([tp.name for tp in obj.training_programs.all()])
+    get_training_programs.short_description = 'Training Programs'
+
+    
 # Kiểm tra xem mô hình User có đã được đăng ký chưa
 if User in admin.site._registry:
     admin.site.unregister(User)

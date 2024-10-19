@@ -93,7 +93,10 @@ INSTALLED_APPS = [
     #group05 
     'activity', 'ai_insights', 'analytics_report','assignment', 'certificate', 'course_completion', 
     'performance_analytics', 'progress_notification', 'student_performance', 
-    'user_progress', 'user_summary', 'book'
+    'user_progress', 'user_summary', 'book',
+
+    #ngattt
+    'reports',
 ]
 
 MIDDLEWARE = [

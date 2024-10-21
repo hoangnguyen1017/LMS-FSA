@@ -6,33 +6,32 @@
 <div class="container mt-4">
     <h2>Assignment List</h2>
     <a href="{% url 'assignment:assignment_add' %}" class="btn btn-primary">Add New Assignment</a>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Assignment Name </th>
-                <th>Start Date</th>
-                <th>End Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for assignment in assignments %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ assignment.assignment_name}}</td>
-                <td>{{ assignment.start_date }}</td>
-                <td>{{ assignment.end_date }}</td>
-                
-                <td><i class="{{ module.icon }}"></i></td>
-                <td>
-                    <a href="{% url 'assignment:assignment_detail' assignment.pk %}" class="btn btn-info btn-sm">Details</a>
-                    <a href="{% url 'assignment:assignment_edit' assignment.pk %}" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="{% url 'assignment:assignment_delete' assignment.pk %}" class="btn btn-danger btn-sm">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
     
+    <div class="row mt-4">
+        <div class="col-md-12"> 
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Assignment Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in assignments %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ assignment.assignment_name }}</td>
+                        <td class="justify-content-end">
+                            <a href="{% url 'assignment:assignment_detail' assignment.pk %}" class="btn btn-info btn-sm">Details</a>
+                            <a href="{% url 'assignment:assignment_edit' assignment.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                            <a href="{% url 'assignment:assignment_delete' assignment.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                            <a href="{% url 'assignment:assignment_add_coding_exercise' assignment.pk %}"><i class="btn btn-success fas fa-plus"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

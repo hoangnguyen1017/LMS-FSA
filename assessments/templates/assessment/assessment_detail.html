@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>{{ assessment.title }}</h2>
+<p><strong>Course:</strong> {{ assessment.course }}</p>
+<p><strong>Type:</strong> {{ assessment.assessment_type }}</p>
+<p><strong>Due Date:</strong> {{ assessment.due_date }}</p>
+<p><strong>Total Score:</strong> {{ assessment.total_score }}</p>
+
+<h3>Exercises</h3>
+<ul>
+    {% for exercise in assessment.exercises.all %}
+    <li>{{ exercise.title }}</li>
+    {% empty %}
+    <li>No exercises assigned.</li>
+    {% endfor %}
+</ul>
+
+<h3>Questions</h3>
+<ul>
+    {% for question in assessment.questions.all %}
+    <li>{{ question.question_text }}</li>
+    {% empty %}
+    <li>No questions assigned.</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'assessment:assessment_list' %}" class="btn btn-secondary">Back to Assessments</a>
+<a href="{% url 'assessment:student_assessment_attempt' assessment.id %}" class="btn btn-primary">Attempt Assessment</a>
+{% endblock %}

@@ -19,6 +19,17 @@ class AssessmentForm(forms.ModelForm):
             'exercises': forms.CheckboxSelectMultiple(),
         }
 
+class InviteCandidatesForm(forms.Form):
+    emails = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control w-100',  # Bootstrap class for full-width textarea
+            'rows': 5,  # Adjust the height of the textarea
+            'placeholder': 'Enter email addresses separated by commas...',
+        }),
+        help_text="Enter email addresses separated by commas."
+    )
+
+
 
 class AssessmentAttemptForm(forms.ModelForm):
     class Meta:

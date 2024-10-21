@@ -1,44 +1,119 @@
 {% extends "base.html" %}
-{% load static %}
-{% load form_filters %}
+
+{% block title %}Edit Assessment{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-lg border-0 rounded-lg">
-                <div class="card-header bg-dark text-white text-center">
-                    <h4 class="card-title mb-0">Create Assessment</h4>
+<div class="container mt-4">
+    <h2 class="text-center mb-4">{% if assessment %}Edit Assessment{% else %}Create New Assessment{% endif %}</h2>
+
+    <form method="POST" id="assessment-form" class="mb-5">
+        {% csrf_token %}
+
+        <!-- Assessment Details Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4>Assessment Details</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_title" class="form-label">Title</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}<div class="text-danger">{{ form.title.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_course" class="form-label">Course</label>
+                            {{ form.course }}
+                            {% if form.course.errors %}<div class="text-danger">{{ form.course.errors }}</div>{% endif %}
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body p-4">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            {{ form.non_field_errors }}
-                            {% for field in form %}
-                                <div class="mb-4">
-                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
-                                    <div class="input-group">
-                                        {{ field|add_class:"form-control" }}
-                                        {% if field.help_text %}
-                                            <small class="form-text text-muted">{{ field.help_text }}</small>
-                                        {% endif %}
-                                    </div>
-                                    {% if field.errors %}
-                                        <div class="text-danger mt-1">
-                                            {{ field.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_assessment_type" class="form-label">Assessment Type</label>
+                            {{ form.assessment_type }}
+                            {% if form.assessment_type.errors %}<div class="text-danger">{{ form.assessment_type.errors }}</div>{% endif %}
                         </div>
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-success me-md-2 px-4 py-2">Save</button>
-                            <a href="{% url 'assessment:assessment_list' %}" class="btn btn-secondary px-4 py-2">Cancel</a>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_total_score" class="form-label">Total Score</label>
+                            {{ form.total_score }}
+                            {% if form.total_score.errors %}<div class="text-danger">{{ form.total_score.errors }}</div>{% endif %}
                         </div>
-                    </form>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_due_date" class="form-label">Due Date</label>
+                            {{ form.due_date }}
+                            {% if form.due_date.errors %}<div class="text-danger">{{ form.due_date.errors }}</div>{% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Exercises Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h4>Select Exercises</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Exercise List Section -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="search-exercises" class="form-label">Search Exercises</label>
+                            <input type="text" id="search-exercises" class="form-control" placeholder="Search for exercises..." onkeyup="filterExercises()">
+                        </div>
+                        <div class="exercise-list" id="exercise-list" style="height: 300px; overflow-y: auto; border: 1px solid #ccc;">
+                            {% for exercise in exercises %}
+                                <div class="exercise-item" style="cursor: pointer;">
+                                    <input type="checkbox" name="exercises" value="{{ exercise.id }}" id="exercise-{{ exercise.id }}" 
+                                        {% if exercise.id in selected_exercises %}checked{% endif %}>
+                                    <label for="exercise-{{ exercise.id }}">{{ exercise.title }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>                        
+                    </div>
+
+                    <!-- Exercise Preview Section -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="search-exercises" class="form-label">Preview Selected Exercise</label>
+                            <input type="text" id="search-exercises111" class="form-control" placeholder="Search for exercises..." onkeyup="filterExercises()">
+                        </div>
+                        <div id="exercise-content" style="height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+                            <p>Select an exercise from the list to preview its content here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-success">Save Assessment</button>
+            <a href="{% url 'assessment:assessment_list' %}" class="btn btn-secondary">Back to List</a>
+        </div>
+    </form>
 </div>
+
+<script>
+    // Function to filter exercises in the list
+    function filterExercises() {
+        const input = document.getElementById('search-exercises').value.toLowerCase();
+        const exercises = document.querySelectorAll('.exercise-item');
+        exercises.forEach(exercise => {
+            const label = exercise.querySelector('label').textContent.toLowerCase();
+            exercise.style.display = label.includes(input) ? 'block' : 'none';
+        });
+    }
+</script>
 {% endblock %}

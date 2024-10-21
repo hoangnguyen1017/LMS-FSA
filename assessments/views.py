@@ -11,12 +11,20 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-from django.shortcuts import render, get_object_or_404, redirect
-from .forms import AssessmentForm  # Ensure you have a form for the assessment
-from .models import Assessment, Exercise
+from .forms import AssessmentForm, InviteCandidatesForm  # Ensure you have a form for the assessment
+from .models import Assessment, Exercise, StudentAssessmentAttempt, InvitedCandidate
 
+@login_required
+def assessment_detail(request, pk):
+    assessment = get_object_or_404(Assessment, pk=pk)
+    attempts = StudentAssessmentAttempt.objects.filter(assessment=assessment)
 
+    return render(request, 'assessment/assessment_detail.html', {
+        'assessment': assessment,
+        'attempts': attempts,
+    })
 
+@login_required
 def assessment_edit(request, pk):
     assessment = get_object_or_404(Assessment, id=pk)
     exercises = Exercise.objects.all()  # Fetch all available exercises
@@ -35,13 +43,34 @@ def assessment_edit(request, pk):
     else:
         form = AssessmentForm(instance=assessment)
 
-    return render(request, 'assessment/assessment_edit.html', {
+    return render(request, 'assessment/assessment_form.html', {
         'form': form,
         'assessment': assessment,
         'exercises': exercises,
         'selected_exercises': selected_exercises,
     })
 
+@login_required
+def invite_candidates(request, pk):
+    assessment = get_object_or_404(Assessment, pk=pk)
+
+    if request.method == 'POST':
+        form = InviteCandidatesForm(request.POST)
+        if form.is_valid():
+            # Save emails to the assessment
+            assessment.invited_candidates = form.cleaned_data['emails']
+            assessment.invite_candidates()  # Send invitations
+            assessment.invited_count += len(form.cleaned_data['emails'].split(','))
+            assessment.save()
+            return redirect('assessment:assessment_list')  # Redirect to wherever you want after inviting
+
+    else:
+        form = InviteCandidatesForm()
+
+    return render(request, 'assessment/invite_candidates.html', {
+        'form': form,
+        'assessment': assessment,
+    })
 
 
 @login_required
@@ -113,7 +142,7 @@ def assessment_create(request):
     else:
         form = AssessmentForm()
 
-    return render(request, 'assessment/add_exercise.html', {
+    return render(request, 'assessment/assessment_form.html', {
         'form': form,
         'exercises': exercises,
         'page_obj': page_obj,
@@ -122,34 +151,7 @@ def assessment_create(request):
     })
 
 
-def save_assessment(request):
-    if request.method == 'POST':
-        form = AssessmentForm(request.POST)
-        if form.is_valid():
-            form.save()
-            # Return a JSON response indicating success
-            return JsonResponse({'status': 'success'})
-        else:
-            # Return a JSON response with the form errors
-            return JsonResponse({'status': 'error', 'message': form.errors.as_json()})
-    
-    # If not POST, return a 404
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=404)
 
-def assessment_create1(request):
-    if request.method == 'POST':
-        form = AssessmentForm(request.POST)
-        if form.is_valid():
-            assessment = form.save(commit=False)
-            assessment.created_by = request.user
-            assessment.save()
-            form.save_m2m()  # Save ManyToMany relationships
-            messages.success(request, 'Assessment created successfully!')
-            return redirect('assessment:assessment_list')
-    else:
-        form = AssessmentForm()
-    return render(request, 'assessment/assessment_form.html', {'form': form})
-    
 
 @login_required
 def assessment_detail(request, pk):

@@ -7,6 +7,8 @@ from course.models import Course
 from exercises.models import Exercise
 from quiz.models import Quiz, Question
 from assignment.models import Assignment
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 class AssessmentType(models.Model):
@@ -48,6 +50,9 @@ class Assessment(models.Model):
     due_date = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_assessments')
 
+    invited_emails = models.TextField(blank=True, verbose_name="Invited Candidates")
+
+
     class Meta:
         ordering = ['created_at', 'course']
         verbose_name = "Assessment"
@@ -60,6 +65,25 @@ class Assessment(models.Model):
         """Check if the due date has passed."""
         return self.due_date and timezone.now() > self.due_date
 
+    def invite_candidates(self):
+        """Send invitations to all invited candidates."""
+        candidates = self.invited_candidates.split(',')
+        for email in candidates:
+            email = email.strip()
+            if email:  # Check if email is not empty
+                send_mail(
+                    'You are Invited to an Assessment',
+                    f'You have been invited to participate in the assessment: {self.title}',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+
+class InvitedCandidate(models.Model):
+    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='invited_candidates_list')  # Changed related_name
+    email = models.EmailField()
+
+    # Additional fields and methods if needed
 
 class StudentAssessmentAttempt(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

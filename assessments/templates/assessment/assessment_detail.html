@@ -2,30 +2,96 @@
 {% load static %}
 
 {% block content %}
-<h2>{{ assessment.title }}</h2>
-<p><strong>Course:</strong> {{ assessment.course }}</p>
-<p><strong>Type:</strong> {{ assessment.assessment_type }}</p>
-<p><strong>Due Date:</strong> {{ assessment.due_date }}</p>
-<p><strong>Total Score:</strong> {{ assessment.total_score }}</p>
+<div class="container mt-4">
+    <!-- Assessment Details Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2>{{ assessment.title }}</h2>
+            <a href="{% url 'assessment:assessment_edit' assessment.pk %}" class="btn btn-sm btn-outline-secondary float-right">Edit</a>
+        </div>
+        <div class="card-body">
+            <p><strong>Course:</strong> {{ assessment.course }}</p>
+            <p><strong>Assessment Type:</strong> {{ assessment.assessment_type }}</p>
+            <p><strong>Due Date:</strong> {{ assessment.due_date|date:"F d, Y" }}</p>
+            <p><strong>Total Score:</strong> {{ assessment.total_score }}</p>
+        </div>
+    </div>
 
-<h3>Exercises</h3>
-<ul>
-    {% for exercise in assessment.exercises.all %}
-    <li>{{ exercise.title }}</li>
-    {% empty %}
-    <li>No exercises assigned.</li>
-    {% endfor %}
-</ul>
+    <!-- Two-Column Layout for Exercises and Questions -->
+    <div class="row mb-4">
+        <!-- Exercises Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Exercises</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for exercise in assessment.exercises.all %}
+                        <li class="list-group-item">
+                            <a href="{% url 'exercises:exercise_detail' exercise.id %}" target="_blank">{{ exercise.title }}</a>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">No exercises assigned.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+            </div>
+        </div>
 
-<h3>Questions</h3>
-<ul>
-    {% for question in assessment.questions.all %}
-    <li>{{ question.question_text }}</li>
-    {% empty %}
-    <li>No questions assigned.</li>
-    {% endfor %}
-</ul>
+        <!-- Questions Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Questions</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for question in assessment.questions.all %}
+                        <li class="list-group-item">{{ question.question_text }}</li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">No questions assigned.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<a href="{% url 'assessment:assessment_list' %}" class="btn btn-secondary">Back to Assessments</a>
-<a href="{% url 'assessment:student_assessment_attempt' assessment.id %}" class="btn btn-primary">Attempt Assessment</a>
+    <!-- Invited Candidates Section at the Bottom -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Invited Candidates</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Email</th>
+                        <th>Quiz Score</th>
+                        <th>Assignment Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts %}
+                    <tr>
+                        <td>{{ attempt.user.get_full_name }}</td>
+                        <td>{{ attempt.user.email }}</td>
+                        <td>{{ attempt.score_quiz }}</td>
+                        <td>{{ attempt.score_ass }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No candidates have been invited yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <a href="{% url 'assessment:assessment_list' %}" class="btn btn-secondary mt-4">Back to Assessments</a>
+</div>
 {% endblock %}

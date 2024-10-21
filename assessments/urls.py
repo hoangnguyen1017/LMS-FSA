@@ -17,7 +17,7 @@ urlpatterns = [
     path('<int:pk>/', views.assessment_detail, name='assessment_detail'),
     path('<int:assessment_id>/attempt/', views.student_assessment_attempt, name='student_assessment_attempt'),
     path('get-exercise-content/<int:exercise_id>/', views.get_exercise_content, name='get_exercise_content'),
-    path('save-assessment/', views.save_assessment, name='save-assessment'),
+    path('<int:pk>/invite/', views.invite_candidates, name='invite_candidates'),
 
     path('assessmenttype', AssessmentTypeListView.as_view(), name='assessmenttype_list'),
     path('assessmenttype/add/', AssessmentTypeCreateView.as_view(), name='assessmenttype_create'),

@@ -1,32 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top Performers Report</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
-        <h2>Top Performers</h2>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Course</th>
-                    <th>Progress (%)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for performer in top_performers %}
-                <tr>
-                    <td>{{ performer.user.username }}</td>
-                    <td>{{ performer.course.name }}</td>
-                    <td>{{ performer.progress_percentage }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</body>
-</html>
+<h3>Top Performers Report</h3>
+{% if top_performers %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Course</th>
+            <th>Progress (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for performer in top_performers %}
+        <tr>
+            <td>{{ performer.user.username }}</td>
+            <td>{{ performer.course.name }}</td>
+            <td>{{ performer.progress_percentage }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No top performers found.</p>
+{% endif %}

@@ -402,11 +402,20 @@ def course_edit(request, pk):
                     course.tags.add(tag)
 
             # Handle prerequisite deletion
-            current_prerequisites = list(course.prerequisites.all())
-            for prereq in current_prerequisites:
-                if request.POST.get(f'delete_prerequisite_{prereq.id}'):
-                    print(f"Deleting prerequisite: {prereq.course_name}")
-                    course.prerequisites.remove(prereq)
+            current_prerequisites = request.POST.get('deleted_prerequisite_ids')
+            if current_prerequisites:
+                current_prerequisites = current_prerequisites.split(',')
+                for prereq_id in current_prerequisites:
+                    if prereq_id:  # Ensure there's a value to work with
+                        try:
+                            # Convert the ID to an integer
+                            prereq_id = int(prereq_id)
+                            # Attempt to get the prerequisite from the course
+                            prereq = course.prerequisites.get(id=prereq_id)
+                            course.prerequisites.remove(prereq)
+                            print(f"Deleted prerequisite: {prereq.course_name}")
+                        except course.prerequisites.DoesNotExist:
+                            print(f"Prerequisite with ID {prereq_id} does not exist.")
 
             # Handle adding new prerequisites
             prerequisite_ids = request.POST.getlist('prerequisite_courses')
@@ -416,14 +425,15 @@ def course_edit(request, pk):
                     print(f"Adding prerequisite: {prerequisite_course.course_name}")
                     course.prerequisites.add(prerequisite_course)
 
-            # Handle sessions update
+            # Handle existing sessions update
             session_ids = request.POST.getlist('session_ids')
             session_names = request.POST.getlist('session_names')
             for session_id, session_name in zip(session_ids, session_names):
-                print(f"Updating session {session_id} name to: {session_name}")
-                session = Session.objects.get(id=session_id)
-                session.name = session_name
-                session.save()
+                if session_id:  # Only process if session_id is not empty
+                    print(f"Updating session {session_id} name to: {session_name}")
+                    session = Session.objects.get(id=session_id)
+                    session.name = session_name
+                    session.save()
 
             # Handle adding new sessions
             new_session_names = request.POST.getlist('new_session_names')
@@ -433,10 +443,12 @@ def course_edit(request, pk):
                     Session.objects.create(course=course, name=session_name, order=course.sessions.count() + 1)
 
             # Handle session deletion
-            delete_session_ids = request.POST.getlist('delete_session_ids')
-            for session_id in delete_session_ids:
-                print(f"Deleting session {session_id}")
-                Session.objects.filter(id=session_id).delete()
+            delete_session_ids = request.POST.get('delete_session_ids')
+            if delete_session_ids:
+                delete_session_ids = delete_session_ids.split(',')
+                for session_id in delete_session_ids:
+                    if session_id:
+                        Session.objects.filter(id=session_id).delete()
 
             messages.success(request, 'course updated successfully.')
             return redirect('course:course_edit', pk=course.pk)
@@ -504,6 +516,22 @@ def course_detail(request, pk):
 
     # Get all users who are instructors (you might need to adjust this query based on how you identify instructors)
     instructor = course.instructor  # Assuming instructors are staff members
+    is_instructor = Course.objects.filter(instructor=request.user).exists()
+    if is_instructor:
+        user_type = 'instructor'
+    else:
+        user_type = 'student'
+
+    enrolled_users = Enrollment.objects.filter(course=course).select_related('student')
+
+    # Calculate progress for each enrolled user
+    user_progress = [
+        {
+            'user': enrollment.student,
+            'progress': course.get_completion_percent(enrollment.student)
+        }
+        for enrollment in enrolled_users
+    ]
 
     context = {
         'course': course,
@@ -517,6 +545,8 @@ def course_detail(request, pk):
         'latest_feedbacks': latest_feedbacks,
         'tags': course.tags.all() if course.tags else [],
         'instructor': instructor,  # Add this line
+        'user_type': user_type,
+        'user_progress': user_progress,
     }
 
     return render(request, 'course_detail.html', context)

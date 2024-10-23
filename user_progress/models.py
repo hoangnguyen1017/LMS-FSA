@@ -1,5 +1,6 @@
 from django.db import models
-from course.models import Course, UserCourseProgress
+from course.models import Course
+from user.models import UserCourseProgress
 
 # # Create your models here.
 # class UserCourseProgress(models.Model):

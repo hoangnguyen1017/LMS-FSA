@@ -10,7 +10,6 @@ def role_required(required_roles):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
             if request.user.is_authenticated:
-                # Kiểm tra nếu là superuser, cho phép truy cập không cần kiểm tra vai trò
                 if request.user.is_superuser:
                     return view_func(request, *args, **kwargs)
 

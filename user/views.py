@@ -14,7 +14,7 @@ from .decorators import role_required
 from functools import wraps
 from django.contrib.auth.decorators import login_required
 from django import forms
-from .forms import UserCourseProgress
+from course.forms import UserCourseProgress
 from course.models import Enrollment
 from quiz.models import StudentQuizAttempt
 from activity.models import UserActivityLog

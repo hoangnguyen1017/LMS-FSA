@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from training_program.models import TrainingProgram
 from module_group.models import Module
+from course.models import Course
 from subject.models import Subject
 
 class User(AbstractUser):
@@ -52,15 +53,18 @@ class Profile(models.Model):
         return f"{self.user.username if self.user else self.student.username} - {self.role.role_name if self.role else 'No Role'}"
 
 
-class UserCourseProgress(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    training_program = models.ForeignKey(TrainingProgram, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    progress = models.FloatField(default=0.0)  # Tiến độ học tập
-    last_accessed = models.DateTimeField(auto_now=True)  # Thời gian người dùng truy cập gần nhất
+    
+# class UserCourseProgress(models.Model):
+#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+#     training_program = models.ForeignKey(TrainingProgram, on_delete=models.CASCADE)
+#     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+#     progress = models.FloatField(default=0.0)  # Tiến độ học tập
+#     last_accessed = models.DateTimeField(auto_now=True)  # Thời gian người dùng truy cập gần nhất
 
-    class Meta:
-        unique_together = ('user', 'training_program', 'subject')  # Đảm bảo mỗi người dùng chỉ có một tiến độ cho mỗi môn học trong chương trình
+#     class Meta:
+#         unique_together = ('user', 'training_program', 'subject')  # Đảm bảo mỗi người dùng chỉ có một tiến độ cho mỗi môn học trong chương trình
 
-    def __str__(self):
-        return f"{self.user.username} - {self.training_program.name} - {self.subject.name}"
+#     def __str__(self):
+#         return f"{self.user.username} - {self.training_program.name} - {self.subject.name}"
+
+

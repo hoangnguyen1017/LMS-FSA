@@ -1,6 +1,7 @@
 from django import forms
 from role.models import Role
-from user.models import Profile, User, Student, UserCourseProgress
+from user.models import Profile, User, Student
+
 from training_program.models import TrainingProgram
 
 
@@ -117,8 +118,5 @@ class AssignTrainingProgramForm(forms.ModelForm):
         fields = ['training_programs']
         
 
-class UserCourseProgressForm(forms.ModelForm):
-    class Meta:
-        model = UserCourseProgress
-        fields = ['user', 'training_program', 'subject', 'progress']
+
 

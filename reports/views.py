@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from user.models import UserCourseProgress
+from course.models import UserCourseProgress
 from django.db.models import Avg
 
 # Render the dashboard page

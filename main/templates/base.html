@@ -36,6 +36,11 @@
             <ul class="navbar-nav ml-auto">
                 
                 {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'admin:index' %}">
+                        <i class="fas fa-user-shield"></i> Admin Django&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    </a> <!-- Link to Django admin -->
+                </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'main:logout' %}">Welcome, {{ user.username }}! (Logout)</a>
                     </li>

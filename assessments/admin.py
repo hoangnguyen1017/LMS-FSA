@@ -50,3 +50,18 @@ class StudentAssessmentAttemptAdmin(ImportExportModelAdmin):
     search_fields = ('user__username', 'assessment__title')
     list_filter = ('assessment', 'attempt_date')
 
+
+from .models import AssessmentType
+
+# Resource class for import/export functionality
+class AssessmentTypeResource(resources.ModelResource):
+    class Meta:
+        model = AssessmentType
+        fields = ('id', 'type_name')  # Specify the fields to be used for import/export
+
+# Register AssessmentType with import/export functionality in the admin
+@admin.register(AssessmentType)
+class AssessmentTypeAdmin(ImportExportModelAdmin):
+    resource_class = AssessmentTypeResource
+    list_display = ('type_name',)  # Columns to be displayed in the list view
+    search_fields = ('type_name',)  # Add search functionality by `type_name`

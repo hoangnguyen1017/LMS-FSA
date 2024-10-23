@@ -230,16 +230,17 @@ function filterQuestions() {
 
     });
 }
-      
-        
-// Function to add a question
+
 function addQuestion(id, text) {
     // Get the selected questions div and input field
     const selectedQuestionsList = document.getElementById('selected-questions-list');
     const selectedQuestionsInput = document.getElementById('selected-questions');
 
+    // Split the value into an array of selected question IDs
+    let selectedQuestions = selectedQuestionsInput.value ? selectedQuestionsInput.value.split(',') : [];
+
     // Check if this question is already added
-    if (!selectedQuestionsInput.value.includes(id)) {
+    if (!selectedQuestions.includes(id)) {
         // Create the question item element
         const questionItem = document.createElement('li');
         questionItem.classList.add('selected-question-item', 'd-flex', 'justify-content-between', 'align-items-center');
@@ -253,18 +254,17 @@ function addQuestion(id, text) {
 
         // Add the question to the right section
         selectedQuestionsList.appendChild(questionItem);
-        
-        // Update the hidden input with the selected question IDs
-        let selectedQuestions = selectedQuestionsInput.value ? selectedQuestionsInput.value.split(',') : [];
+
+        // Add the question ID to the array
         selectedQuestions.push(id);
+        
+        // Update the hidden input with the selected question IDs (comma-separated)
         selectedQuestionsInput.value = selectedQuestions.join(',');
         
-        // Remove the "No questions selected" message if present
-        if (selectedQuestionsList.querySelector('li')) {
-            selectedQuestionsList.querySelector('li').remove();
-        }
-
-
+        // Debugging log to check the hidden input value
+        console.log("Selected Questions (after addition):", selectedQuestionsInput.value);
+    } else {
+        console.log("Question already added:", id);
     }
 }
 

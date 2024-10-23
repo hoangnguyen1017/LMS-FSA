@@ -20,12 +20,17 @@ from django.utils import timezone
 from openpyxl.utils import get_column_letter
 from django.db.models import Count
 from django.urls import reverse
+from django.core.mail import send_mail
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
+from user.models import User
 
 
 
 def quiz_list(request):
     module_groups = ModuleGroup.objects.all()
     quizzes = Quiz.objects.select_related('course').annotate(question_count=Count('questions')).all().order_by('-created_at')
+    
     courses = Course.objects.all()
     # Lọc quiz dựa trên subject được chọn
     selected_course = request.GET.get('course', '')
@@ -58,6 +63,7 @@ def quiz_add(request):
             quiz.start_datetime = request.POST.get('start_datetime')  
             quiz.end_datetime = request.POST.get('end_datetime')  
             quiz.attempts_allowed = request.POST.get('attempts_allowed')  
+            quiz.created_by = request.user
             quiz.save()  
             return redirect('quiz:quiz_list')
         else:
@@ -80,7 +86,7 @@ def quiz_edit(request, pk):
             return redirect('quiz:quiz_list')
     else:
         form = QuizForm(instance=quiz)
-    return render(request, 'quiz_form.html', {'form': form})
+    return render(request, 'quiz_form.html', {'form': form, 'quiz': quiz})
 
 def quiz_delete(request, pk):
     quiz = get_object_or_404(Quiz, pk=pk)
@@ -92,7 +98,15 @@ def quiz_delete(request, pk):
 
 def quiz_question(request, pk):
     quiz = get_object_or_404(Quiz, pk=pk)
-    questions = Question.objects.filter(quiz=quiz).prefetch_related('answer_options') # Prefetch answers
+    
+    search_query = request.GET.get('search', '')
+
+    if search_query:  
+        questions = Question.objects.filter(quiz=quiz, question_text__icontains=search_query).prefetch_related('answer_options')
+    else:
+        questions = Question.objects.filter(quiz=quiz).prefetch_related('answer_options')
+
+
     question_form = QuestionForm()
 
     if request.method == 'POST':
@@ -104,6 +118,15 @@ def quiz_question(request, pk):
                 question.save()
                 return redirect('quiz:quiz_question', pk=quiz.id)  # Redirect to the same page to refresh questions
             
+        elif 'edit_question' in request.POST:  # Handle question editing
+            question_id = request.POST.get('question_id')
+            question = get_object_or_404(Question, pk=question_id)
+            question.question_text = request.POST.get('question_text')
+            question.question_type = request.POST.get('question_type')
+            question.points = request.POST.get('points')
+            question.save()
+            return redirect('quiz:quiz_question', pk=quiz.id) # Redirect after edit    
+
         elif 'edit_answers' in request.POST:
             question_id = request.POST.get('question_id')
             question = get_object_or_404(Question, pk=question_id)
@@ -147,12 +170,15 @@ def quiz_question(request, pk):
                         pass  # Handle errors (e.g., invalid ID, already deleted)
 
             return redirect('quiz:quiz_question', pk=quiz.id)
-
+        
     return render(request, 'quiz_question.html', {
         'quiz': quiz,
         'questions': questions,
         'question_form': question_form,
+        'search_query': search_query,
     })
+
+
 
 
 def get_answers(request, question_pk):
@@ -178,20 +204,22 @@ def question_add(request, quiz_id):
         form = QuestionForm()
     return render(request, 'question_form.html', {'quiz': quiz, 'form': form})
 
-def question_edit(request, question_id):
+def question_edit(request, question_id): # Now takes question_id directly
     question = get_object_or_404(Question, id=question_id)
-    quiz = get_object_or_404(Quiz, id=question.quiz.id)  # Lấy quiz từ question
+    quiz = question.quiz
+    # Set the editing flag in session so that the template shows the form
+    request.session['editing_question'] = question.id
 
     if request.method == 'POST':
         form = QuestionForm(request.POST, instance=question)
         if form.is_valid():
             form.save()
-            #return redirect('quiz:quiz_detail', pk=quiz.id)
-            return redirect('quiz:quiz_question', pk=quiz.id)
+            del request.session['editing_question'] # Clear the edit flag from session
+            return redirect('quiz:quiz_question', pk=quiz.id)  
     else:
         form = QuestionForm(instance=question)
-
-    return render(request, 'question_form.html', {'quiz': quiz, 'form': form})
+    
+    return redirect(reverse('quiz:quiz_question', kwargs={'pk': quiz.id}))
 
 def question_delete(request, pk):
     question = get_object_or_404(Question, pk=pk)
@@ -282,13 +310,8 @@ def take_quiz(request, quiz_id):
 def quiz_result(request, quiz_id, attempt_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     attempt = get_object_or_404(StudentQuizAttempt, id=attempt_id, user=request.user)
-    student_answers = StudentAnswer.objects.filter(attempt=attempt)
-
-    return render(request, 'quiz_result.html', {
-        'quiz' : quiz,
-        'attempt': attempt,
-        'student_answers': student_answers,
-    })
+    context = _get_quiz_result_context(quiz, attempt) # Sử dụng hàm chung
+    return render(request, 'quiz_result.html', context)
 
 def import_questions(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
@@ -633,3 +656,62 @@ def excel_to_json_view(request):
         form = ExcelUploadForm()
 
     return render(request, 'excel_to_json.html', {'form': form})
+
+def send_quiz_invite(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    if request.method == 'POST':
+        if request.user.is_authenticated:  # Kiểm tra xem người dùng đã đăng nhập chưa
+            sender_email = request.user.email # Sử dụng email của người dùng hiện tại
+        
+        emails = request.POST.get('emails').split(',')
+        subject = f"Invitation to take quiz: {quiz.quiz_title}"
+        public_link = request.build_absolute_uri(reverse('quiz:take_quiz_public', args=[quiz.id]))
+        message = f"You are invited to take the quiz '{quiz.quiz_title}'. Please click the link below to access the quiz:\n{public_link}"
+
+        for email in emails:
+            try:
+                send_mail(subject, message, sender_email, [email.strip()], fail_silently=False) # Gửi email
+            except Exception as e:
+                # Xử lý lỗi (log, hiển thị thông báo lỗi...)
+                print(f"Error sending email to {email}: {e}")
+                return HttpResponse("Error sending invites. Please check the email addresses and try again.")
+
+        return HttpResponse("Invites sent successfully!")
+
+    return HttpResponse("Invalid request.")
+def copy_public_invite_link(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    public_link = request.build_absolute_uri(reverse('quiz:take_quiz_public', args=[quiz.id]))
+    return JsonResponse({'link': public_link})  # Trả về link dưới dạng JSON để dễ xử lý ở frontend
+
+
+def take_quiz_public(request, quiz_id): # Hàm mới cho người dùng nhận link
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    if request.method == 'POST':
+        email = request.POST.get('email') # Lấy email từ form đăng nhập
+        user = User.objects.filter(email=email).first() # Tìm user theo email
+        if user:
+            login(request, user) # Đăng nhập user tự động
+            return redirect('quiz:take_quiz_invited', quiz_id=quiz.id)  # Chuyển hướng đến hàm take_quiz hiện có
+        else:
+            return render(request, 'public_login.html', {'quiz_id': quiz_id, 'error': 'Invalid email'})  # Hiển thị thông báo lỗi
+
+    return render(request, 'public_login.html', {'quiz_id': quiz_id}) # Render form đăng nhập
+
+
+def _get_quiz_result_context(quiz, attempt):
+    student_answers = StudentAnswer.objects.filter(attempt=attempt)
+    questions_with_options = []
+    for answer in student_answers:
+        question = answer.question
+        options = AnswerOption.objects.filter(question=question)
+        questions_with_options.append({
+            'question': question,
+            'options': options,
+            'selected_option': answer.selected_option
+        })
+    return {
+        'quiz': quiz,
+        'attempt': attempt,
+        'questions_with_options': questions_with_options,
+    }

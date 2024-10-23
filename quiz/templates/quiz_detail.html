@@ -153,4 +153,38 @@
         margin-right: 15px; /* Adjust as necessary for desired spacing */
     }
 </style>
+
+<script id="quiz-data">
+    const quizId = {{ quiz.id }}; // Gán quizId tại đây
+</script>
+
+<script>
+    const sendInviteButton = document.querySelector('.btn-primary');  // Nút Send Invite
+    const copyLinkButton = document.querySelector('.btn-outline-primary'); // Nút Copy Link
+
+    sendInviteButton.addEventListener('click', () => {
+    const emails = document.querySelector('input[type="text"]').value;  // Lấy email
+    fetch(`/quiz/${quizId}/send_invite/`, {  // Thay đổi đường dẫn URL cho phù hợp
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': '{{ csrf_token }}' //  Thêm CSRF token
+        },
+        body: `emails=${emails}`
+    })
+    .then(response => response.text())
+    .then(data => alert(data)); // Hiển thị thông báo thành công/lỗi
+    });
+
+    copyLinkButton.addEventListener('click', () => {
+        fetch(`/quiz/${quizId}/copy_public_link/`)
+        .then(response => response.json())
+        .then(data => {
+            navigator.clipboard.writeText(data.link);
+            alert("Link copied to clipboard!");
+    });
+    });
+
+</script>
+
 {% endblock %}

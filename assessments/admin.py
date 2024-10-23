@@ -25,7 +25,7 @@ class AssessmentTypeAdmin(ImportExportModelAdmin):
 @admin.register(Assessment)
 class AssessmentAdmin(ImportExportModelAdmin):
     resource_class = AssessmentResource
-    list_display = ['title', 'course', 'assessment_type', 'due_date', 'total_score', 'created_by']
+    list_display = ['title', 'course', 'assessment_type', 'total_score', 'created_by'] #'due_date', 
 
 @admin.register(StudentAssessmentAttempt)
 class StudentAssessmentAttemptAdmin(ImportExportModelAdmin):

@@ -5,11 +5,13 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from course.models import Course
 from exercises.models import Exercise
-from quiz.models import Quiz, Question
+from quiz.models import Quiz, Question, AnswerOption
 from assignment.models import Assignment
 from django.core.mail import send_mail
 from django.conf import settings
-
+from django.utils import timezone
+from datetime import timedelta
+from django.utils.translation import gettext_lazy as _
 
 class AssessmentType(models.Model):
     type_name = models.CharField(max_length=50, unique=True)
@@ -43,23 +45,23 @@ class Assessment(models.Model):
     assessed_count = models.IntegerField(default=0, verbose_name="Assessed Count")
     qualified_count = models.IntegerField(default=0, verbose_name="Qualified Count") 
 
-    qualify_score = models.IntegerField(default=0, verbose_name="Qualify Score")
-    total_score = models.IntegerField(default=0, verbose_name="Total Score")
+    qualify_score = models.IntegerField(default=60, verbose_name="Qualify Score")
+    total_score = models.IntegerField(default=100, verbose_name="Total Score")
     
     created_at = models.DateTimeField(default=timezone.now)
-    due_date = models.DateTimeField(null=True, blank=True)
+    # due_date = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_assessments')
 
+    time_limit = models.IntegerField(default=0)
     invited_emails = models.TextField(blank=True, verbose_name="Invited Candidates")
-
-
+    
     class Meta:
         ordering = ['created_at', 'course']
         verbose_name = "Assessment"
         verbose_name_plural = "Assessments"
 
     def __str__(self):
-        return f"{self.title} ({self.assessment_type}) - Due: {self.due_date}"
+        return f"{self.title} ({self.assessment_type})"
 
     def is_past_due(self):
         """Check if the due date has passed."""
@@ -79,11 +81,66 @@ class Assessment(models.Model):
                     fail_silently=False,
                 )
 
+
 class InvitedCandidate(models.Model):
-    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='invited_candidates_list')  # Changed related_name
+    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='invited_candidates_list')
     email = models.EmailField()
+    invitation_date = models.DateTimeField(auto_now_add=True)  # Automatically set when the candidate is invited
+    expiration_date = models.DateTimeField(null=True, blank=True)  # Can be null until set
+
+    def save(self, *args, **kwargs):
+        # Call set_expiration_date before saving the instance
+        self.set_expiration_date()
+        super().save(*args, **kwargs)
+
+    def set_expiration_date(self, days=7):
+        """
+        Set the expiration date based on the invitation date and number of days.
+        Default is 7 days.
+        """
+        if self.invitation_date:
+            self.expiration_date = self.invitation_date + timedelta(days=days)
+        else:
+            self.expiration_date = timezone.now() + timedelta(days=days)
+
+    def __str__(self):
+        return f"Invited Candidate: {self.email} for {self.assessment.title}"
+    
+
 
     # Additional fields and methods if needed
+
+
+class NonRegisteredCandidateAttempt(models.Model):
+    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
+
+    # Information specific to non-registered candidates
+    email = models.EmailField()
+    score_quiz = models.IntegerField(default=0, verbose_name="Quiz Score")
+    score_ass = models.IntegerField(default=0, verbose_name="Assignment Score")
+    note = models.TextField(blank=True, null=True, verbose_name="Notes")
+
+    # Timestamps
+    attempt_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Non-Registered Candidate Attempt"
+        verbose_name_plural = "Non-Registered Candidate Attempts"
+
+    def __str__(self):
+        return f"Attempt by {self.email} for {self.assessment}"
+
+    def clean(self):
+        # Ensure both scores are non-negative
+        if self.score_quiz < 0:
+            raise ValidationError({'score_quiz': _("Quiz score cannot be negative.")})
+        if self.score_ass < 0:
+            raise ValidationError({'score_ass': _("Assignment score cannot be negative.")})
+
+    def save(self, *args, **kwargs):
+        # Clean data before saving
+        self.clean()
+        super().save(*args, **kwargs)
 
 class StudentAssessmentAttempt(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -115,3 +172,19 @@ class StudentAssessmentAttempt(models.Model):
         # Clean data before saving
         self.clean()
         super().save(*args, **kwargs)
+
+class UserAnswer(models.Model):
+    attempt = models.ForeignKey(StudentAssessmentAttempt, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_option = models.ForeignKey(AnswerOption, on_delete=models.SET_NULL, null=True)
+    text_response = models.TextField(null=True, blank=True)
+
+class UserSubmission(models.Model):
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    code = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    score = models.IntegerField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.exercise.title}"

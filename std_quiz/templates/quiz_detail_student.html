@@ -17,7 +17,6 @@
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>No</th>
                 <th>Question</th>
                 <th>Type</th>
                 <th>Points</th>
@@ -27,7 +26,6 @@
         <tbody>
             {% for question in questions %}
             <tr>
-                <td>{{ forloop.counter }}</td>
                 <td>{{ question.question_text }}</td>
                 <td>{{ question.question_type }}</td>
                 <td>{{ question.points }}</td>

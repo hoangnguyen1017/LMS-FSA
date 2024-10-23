@@ -54,7 +54,9 @@
                                 </a>
                                 <a class="btn btn-outline-primary btn-sm" href="{% url 'assessment:assessment_detail' item.assessment.pk %}">
                                     <i class="fas fa-arrow-right"></i> Open
+                                    
                                 </a>
+                            
                             </div>
                             
                         </div>   
@@ -66,9 +68,9 @@
                                     <div class="qualifying mt-3 d-flex align-items-center">  <!-- Progress bar container -->
                                         <small><strong>Qualify: </strong></small>
                                         <div class="progress mx-2" style="flex-grow: 1;"> <!-- Add mx-2 for horizontal spacing -->
-                                            <div class="progress-bar" role="progressbar" style="width: {{ item.question_count }}%;" aria-valuenow="{{ item.question_count }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            <div class="progress-bar" role="progressbar" style="width: {{ item.assessment.qualified_count }}%;" aria-valuenow="{{ item.assessment.qualified_count }}" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
-                                        <small class="qualifying-percentage">{{ item.question_count }}%</small>    
+                                        <small class="qualifying-percentage">{{ item.assessment.qualified_count }}%</small>    
                                     </div>
 
                                     <div class="assessment-details mt-3">
@@ -102,6 +104,10 @@
                     </div>
     
                     <div class="card-footer footer-actions d-flex justify-content-between">
+                        <a href="{% url 'assessment:take_assessment' item.assessment.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-circle"></i> Preview
+                        </a>
+                        
                         <a href="{% url 'assessment:invite_candidates' item.assessment.pk %}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-envelope"></i> Send Invitation
                         </a>

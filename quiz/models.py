@@ -22,6 +22,8 @@ class Quiz(models.Model):
     def __str__(self):
         return self.quiz_title
 
+
+
 # Model for Question
 class Question(models.Model):
     QUESTION_TYPES = [
@@ -37,7 +39,7 @@ class Question(models.Model):
 
     def __str__(self):
         return self.question_text
-
+    
 # Model for Answer Option
 class AnswerOption(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answer_options')

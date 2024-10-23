@@ -9,15 +9,20 @@ class AssessmentTypeForm(forms.ModelForm):
 class AssessmentForm(forms.ModelForm):
     class Meta:
         model = Assessment
-        fields = ['title', 'course', 'assessment_type', 'total_score', 'due_date', 'exercises']
+        fields = ['title', 'course', 'assessment_type', 'total_score', 'qualify_score', 'time_limit', 'exercises', 'questions']#'due_date', 
         widgets = {
-            'due_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'course': forms.Select(attrs={'class': 'form-control'}),
-            'assessment_type': forms.Select(attrs={'class': 'form-control'}),
-            'total_score': forms.NumberInput(attrs={'class': 'form-control'}),
+            # 'due_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter course title'}),
+            'course': forms.Select(attrs={'class': 'form-control', 'style': 'width: 100%;'}),
+            'assessment_type': forms.Select(attrs={'class': 'form-control', 'placeholder': 'Select assessment type'}),
+            'total_score': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter total score'}),
+            'qualify_score': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter minimum score to qualify'}),
+            'time_limit': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter time limit for assessment'}),
             'exercises': forms.CheckboxSelectMultiple(),
+            'questions': forms.CheckboxSelectMultiple(),
         }
+    
+
 
 class InviteCandidatesForm(forms.Form):
     emails = forms.CharField(

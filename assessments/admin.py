@@ -1,21 +1,60 @@
 from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Assessment, InvitedCandidate, NonRegisteredCandidateAttempt, StudentAssessmentAttempt, UserAnswer, UserSubmission
+from .models import AssessmentType, Assessment, InvitedCandidate, NonRegisteredCandidateAttempt, StudentAssessmentAttempt, UserAnswer, UserSubmission
+from import_export import resources, fields
+from import_export.widgets import ForeignKeyWidget
+from course.models import Course
+from user.models import User  # Ensure you import User model
 
-# Define a resource for the Assessment model
 class AssessmentResource(resources.ModelResource):
+    course = fields.Field(
+        column_name='course__course_name',
+        attribute='course',
+        widget=ForeignKeyWidget(Course, 'course_name')
+    )
+    created_by = fields.Field(
+        column_name='created_by__username',  # Match your import column name
+        attribute='created_by',  # Field in your model
+        widget=ForeignKeyWidget(User, 'username')  # Use appropriate field for lookup
+    )
+    assessment_type = fields.Field(  # Corrected this
+        column_name='assessment_type__type_name',  # Match your import column name
+        attribute='assessment_type',  # Field in your model
+        widget=ForeignKeyWidget(AssessmentType, 'type_name')  # Correctly refer to AssessmentType
+    )
+
     class Meta:
         model = Assessment
-        fields = ('id', 'course__course_name', 'title', 'assessment_type__type_name', 'invited_count', 'assessed_count', 'qualified_count', 'created_at', 'created_by__username')
-        export_order = ('id', 'course__course_name', 'title', 'assessment_type__type_name', 'invited_count', 'assessed_count', 'qualified_count', 'created_at', 'created_by__username')
+        fields = (
+            'id',
+            'course',
+            'title',
+            'assessment_type',  # Use the field name directly
+            'invited_count',
+            'assessed_count',
+            'qualified_count',
+            'created_at',
+            'created_by'
+        )
+        export_order = (
+            'id',
+            'course',
+            'title',
+            'assessment_type',  # Use the field name directly
+            'invited_count',
+            'assessed_count',
+            'qualified_count',
+            'created_at',
+            'created_by'
+        )
 
 # Register Assessment with ImportExportModelAdmin
 @admin.register(Assessment)
 class AssessmentAdmin(ImportExportModelAdmin):
     resource_class = AssessmentResource
     list_display = ('title', 'course', 'assessment_type', 'invited_count', 'assessed_count', 'qualified_count')
-    search_fields = ('title', 'course__name', 'assessment_type__type_name')
+    search_fields = ('title', 'course__course_name', 'assessment_type__type_name')  # Fixed typo 'coure_name'
     list_filter = ('course', 'assessment_type')
 
 # Define resources for other models and register similarly

@@ -31,7 +31,8 @@ class AssessmentType(models.Model):
 
 
 class Assessment(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assessments', verbose_name="Course")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)  # This line ensures a course reference
+    
     title = models.CharField(max_length=255)
     
     # Many-to-many relationships

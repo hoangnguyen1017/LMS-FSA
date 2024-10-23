@@ -16,7 +16,7 @@ python manage.py runserver
 pip freeze > requirements.txt
 
 
-find . -path "/migrations/.py" ! -name "_init_.py" -delete
+find . -path "*/migrations/*.py" ! -name "__init__.py" -delete
 
 windows:  Get-ChildItem -Path . -Recurse -Filter "*.py" | Where-Object { $_.Name -ne "__init__.py" -and $_.FullName -like "*migrations*" } | Remove-Item
 

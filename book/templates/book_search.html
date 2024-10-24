@@ -2,97 +2,301 @@
 
 {% block content %}
 <!-- Book Search Section -->
-<div style="text-align: center; margin-top: -30px; background-color: #598068; padding: 20px 0; width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; border-radius: 10px;">
-    <h1 style="color:#33ffca;">Book Search</h1>
+<div style="text-align: center; margin-top: -30px; background-color: #3498db; padding: 20px 0; width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; border-radius: 10px;">
+    <h1 style="color:#ebf1ee;">Book Search</h1>
 
-    <form method="GET" action="{% url 'book_search' %}" style="display: inline-block; margin-top: 1px">
+    <form method="GET" action="{% url 'book_search' %}" style="display: inline-block; margin-top: 1px" id="search-form">
         <div style="display: inline-block; position: relative;">
-            <input type="text" name="q" placeholder="Search for books..." required style="padding: 10px 15px; width: 300px; border: 1px solid #33ffca; border-radius: 25px; font-size: 1rem;">
-            <button type="submit" style="padding: 10px 20px; position: absolute; right: -90px; top: 0; background-color: #33ffca; color: #598068; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem;">Search</button>
+            <input type="text" name="q" placeholder="Search for books..." value="{{ query }}" required style="padding: 10px 15px; width: 300px; border: 1px solid #3498db; border-radius: 25px; font-size: 1rem;">
+            <button type="submit" style="padding: 10px 20px; position: absolute; right: -90px; top: 0; background-color: #35DBB2; color: #ebf1ee; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem;">Search</button>
         </div>
         
         <!-- Radio buttons for selecting book type -->
         <div style="margin-top: 10px;">
-            <input type="radio" id="free" name="book_type" value="free" {% if request.GET.book_type == "free" or not request.GET.book_type %}checked{% endif %}>
-            <label for="free" style="color:#33ffca;">Free Books</label>
+            <input type="radio" id="free" name="book_type" value="free" {% if request.GET.book_type == "free" or not request.GET.book_type %}checked{% endif %} onchange="this.form.submit()">
+            <label for="free" style="color:#ebf1ee;">Free Books</label>
 
-            <input type="radio" id="paid" name="book_type" value="paid" {% if request.GET.book_type == "paid" %}checked{% endif %}>
-            <label for="paid" style="color:#33ffca;">Paid Books</label>
+            <input type="radio" id="paid" name="book_type" value="paid" {% if request.GET.book_type == "paid" %}checked{% endif %} onchange="this.form.submit()">
+            <label for="paid" style="color:#ebf1ee;">Paid Books</label>
         </div>
     </form> 
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" style="display:none; margin-top: 20px;">
+        <div class="spinner"></div>
+    </div>
 </div>
 
 <!-- Book Results Section -->
-<div style="margin-top: 30px;">
+<div id="book-results" style="margin-top: 30px;">
     {% if query %}
-        <h2>Book Search Results for "{{ query }}"</h2>
+        <h2 style="text-align: center;">Book Search Results for "{{ query }}"</h2>
     {% endif %}
 
     {% if books %}
-        <ul style="list-style-type: none; padding: 0; text-align: center;">
+        <div class="book-grid">
         {% for book in books %}
-            <li style="display: flex; align-items: flex-start; margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: #88FFDF;">
-                {% if book.thumbnail %}
-                    <div style="flex-shrink: 0;">
-                        <img src="{{ book.thumbnail }}" alt="Book cover of {{ book.title }}" style="max-width: 150px;"/>
-                    </div>
-                {% else %}
-                    <div style="flex-shrink: 0;">
-                        <p>No image available</p>
-                    </div>
-                {% endif %}
-                
-                <div style="margin-left: 15px; flex-grow: 1; text-align: left;">
-                    <h3>{{ book.title }}</h3>
-                    <p style="font-size: 0.9em;"><strong>Author(s):</strong> {{ book.authors|join:", " }}</p>
-                    <p style="font-size: 0.8em;"><strong>Description:</strong> {{ book.description }}</p>
-                    <p style="font-size: 0.8em;"><strong>Publisher:</strong> {{ book.publisher }}</p>
-                    <p style="font-size: 0.8em;"><strong>Published Date:</strong> {{ book.publishedDate }}</p>
-                    <p>
-                        <a href="{{ book.infoLink }}" target="_blank">Read more about this book</a>
-                        {% if book.previewLink %}
-                            | <a href="{{ book.previewLink }}" target="_blank">Read Preview</a>
-                        {% endif %}
-                    </p>
+            <div class="book-card">
+                <div class="book-cover">
+                    {% if book.thumbnail %}
+                        <img src="{{ book.thumbnail }}" alt="Book cover of {{ book.title }}" />
+                    {% else %}
+                        <div class="no-image">No image available</div>
+                    {% endif %}
                 </div>
-            </li>
+                <div class="book-info">
+                    <h3>{{ book.title }}</h3>
+                    <p class="author"><strong>Author(s):</strong> {{ book.authors|join:", " }}</p>
+                    <p class="publisher"><strong>Publisher:</strong> {{ book.publisher }}</p>
+                    <p class="published-date"><strong>Published:</strong> {{ book.publishedDate }}</p>
+                    <div class="book-description">
+                        <p>{{ book.description|truncatechars:150 }}</p>
+                        {% if book.description|length > 150 %}
+                            <a href="#" class="read-more" data-full-description="{{ book.description }}">Read More</a>
+                        {% endif %}
+                    </div>
+                    <div class="book-links">
+                        <a href="{{ book.infoLink }}" target="_blank" class="btn btn-info">More Info</a>
+                        {% if book.previewLink %}
+                            <a href="{{ book.previewLink }}" target="_blank" class="btn btn-preview">Preview</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         {% endfor %}
-        </ul>
+        </div>
     {% else %}
-        <p>No books found for "{{ query }}". Please try a different search term.</p>
+        <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border: 1px solid #f5c6cb; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+            <h3 style="margin: 0 0 10px 0;">No books found for "{{ query }}"</h3>
+            <p>Please try a different search term.</p>
+        </div>
     {% endif %}
 </div>
 
 <!-- Pagination Controls -->
 <div style="text-align: center; margin-top: 20px;">
-    <div>
+    <div class="pagination">
         {% if books.has_previous %}
-            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page=1">&laquo; First</a>
-            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ books.previous_page_number }}">Previous</a>
+            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page=1" class="page-link">&laquo; First</a>
+            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ books.previous_page_number }}" class="page-link">Previous</a>
         {% else %}
-            <span>&laquo; First</span>
-            <span>Previous</span>
+            <span class="page-link disabled">&laquo; First</span>
+            <span class="page-link disabled">Previous</span>
         {% endif %}
 
-        {% comment %} Dynamic pagination range {% endcomment %}
         {% for page_num in paginator.page_range %}
             {% if page_num >= books.number|add:-5 and page_num <= books.number|add:5 %}
                 {% if page_num == books.number %}
-                    <strong>{{ page_num }}</strong>  <!-- Highlight current page -->
+                    <span class="page-link active">{{ page_num }}</span>
                 {% else %}
-                    <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ page_num }}">{{ page_num }}</a>
+                    <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ page_num }}" class="page-link">{{ page_num }}</a>
                 {% endif %}
             {% endif %}
         {% endfor %}
 
         {% if books.has_next %}
-            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ books.next_page_number }}">Next</a>
-            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ paginator.num_pages }}">Last &raquo;</a>
+            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ books.next_page_number }}" class="page-link">Next</a>
+            <a href="?q={{ query|urlencode }}&book_type={{ book_type }}&page={{ paginator.num_pages }}" class="page-link">Last &raquo;</a>
         {% else %}
-            <span>Next</span>
-            <span>Last &raquo;</span>
+            <span class="page-link disabled">Next</span>
+            <span class="page-link disabled">Last &raquo;</span>
         {% endif %}
     </div>
 </div>
+
+<!-- JavaScript -->
+<script>
+    // Show loading spinner on form submit
+    document.getElementById('search-form').addEventListener('submit', function() {
+        document.getElementById('loading-spinner').style.display = 'block';
+    });
+
+    // Show loading spinner on radio button change
+    const radioButtons = document.querySelectorAll('input[name="book_type"]');
+    radioButtons.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            document.getElementById('loading-spinner').style.display = 'block';
+            document.getElementById('search-form').submit();
+        });
+    });
+
+    // Read More functionality
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('read-more')) {
+            e.preventDefault();
+            const fullDescription = e.target.getAttribute('data-full-description');
+            const descriptionElement = e.target.previousElementSibling;
+            descriptionElement.textContent = fullDescription;
+            e.target.style.display = 'none';
+        }
+    });
+</script>
+
+<!-- CSS for Spinner, Book Grid, and overall styling -->
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f4f4f4;
+    }
+
+    .spinner {
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid #FF5733;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .book-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .book-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .book-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .book-cover {
+        height: 200px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        background-color: #f0f0f0;
+    }
+
+    .book-cover img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+    }
+
+    .no-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        color: #666;
+        font-style: italic;
+    }
+
+    .book-info {
+        padding: 15px;
+    }
+
+    .book-info h3 {
+        margin-top: 0;
+        font-size: 1.2em;
+        color: #2c3e50;
+    }
+
+    .book-info p {
+        margin: 5px 0;
+        font-size: 0.9em;
+    }
+
+    .book-description {
+        margin-top: 10px;
+        font-size: 0.9em;
+    }
+
+    .read-more {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .book-links {
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .btn {
+        padding: 5px 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9em;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-info {
+        background-color: #3498db;
+        color: #fff;
+    }
+
+    .btn-preview {
+        background-color: #2ecc71;
+        color: #fff;
+    }
+
+    .btn:hover {
+        opacity: 0.8;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .page-link {
+        padding: 5px 10px;
+        margin: 0 5px;
+        border: 1px solid #3498db;
+        color: #3498db;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    .page-link.active {
+        background-color: #3498db;
+        color: #fff;
+    }
+
+    .page-link.disabled {
+        color: #ccc;
+        border-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 600px) {
+        .book-grid {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
+    }
+</style>
+
+<script>
+    // Show loading spinner on pagination link click
+    const paginationLinks = document.querySelectorAll('.pagination .page-link:not(.disabled)');
+    paginationLinks.forEach(function(link) {
+        link.addEventListener('click', function() {
+            document.getElementById('loading-spinner').style.display = 'block';
+        });
+    });
+</script>
+
 
 {% endblock %}

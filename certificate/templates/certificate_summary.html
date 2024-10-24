@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "user_summary.html" %}
 
 
 {% block title %}Certificate{% endblock %}
@@ -117,61 +117,81 @@
             background-color: #4CAF50;
             color: white;
             border-radius: 4px;
-        }
-       
-    
+        }    
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="">
-            <h1>{{ user.username }}</h1>
-        </a>
-        <div class="tabs">
-            <a href="{% url 'user_progress:user_progress_summary' %}"><button class="tab" onclick="openTab(event, 'progress')">User Progress</button></a>
-            <a href="{% url 'performance_analytics:performance_analytics_summary' %}"><button class="tab" onclick="openTab(event, 'performance')">Performance</button></a>
-            <a href="{% url 'ai_insights:ai_insights_summary' %}"><button class="tab" onclick="openTab(event, 'insights')">AI Insights</button></a>
-            <a href="{% url 'certificate:certificate_summary' %}"><button class="tab active" onclick="openTab(event, 'certificates')">Certificates</button></a>
-        </div>
-
-        <div id="progress" class="tab-content"></div>
-        <div id="performance" class="tab-content"></div>
-        <div id="insights" class="tab-content"></div>
-
+        {{ block.super }}
         <div id="certificates" class="tab-content active">
+            {% if page_obj %}
             <div class="grid">
-            {% for certificate in page_obj %}
-                <div class="card">
-                    <a href="{% url 'course:course_detail' certificate.course.id %}">  
-                        <h3>{{ certificate.course }}</h3>
-                    </a>
-                    <p><strong>Issue Date:</strong> {{ certificate.issue_date }}</p>
-                    <div style="text-align: right;">
-                        <a href="{% url 'certificate:certificate_pdf' certificate.id %}" class="btn btn-sm" style="font-size: 1em;">View</a>
-                    </div> 
-                </div>
-            {% endfor %}
-                
-                <div class="pagination">
-                    <span class="step-links">
-                        {% if page_obj.has_previous %}
-                            <a href="?page=1">&laquo; First</a>
-                            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                        {% endif %}
-
-                        <span class="current">
-                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-                        </span>
-
-                        {% if page_obj.has_next %}
-                            <a href="?page={{ page_obj.next_page_number }}">Next</a>
-                            <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
-                        {% endif %}
-                    </span>
-                </div>
+                {% for certificate in page_obj %}
+                    <div class="card">
+                        <a href="{% url 'course:course_detail' certificate.course.id %}" style="text-decoration: none;">  
+                            <h3>{{ certificate.course }}</h3>
+                        </a>
+                        
+                        <p><strong>Issue Date:</strong> {{ certificate.issue_date }}</p>
+                        <div style="text-align: right;">
+                            <a href="{% url 'certificate:certificate_pdf' certificate.id %}" class="btn btn-sm" style="font-size: 1em;">View</a>
+                        </div> 
+                    </div>
+                {% endfor %}
             </div>
+                
+            <div class="pagination">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1">&laquo; First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    {% endif %}
+    
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                    </span>
+    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+            {% else %}
+                <center> <p>No certificates found.</p> </center>
+            {% endif %}
         </div>
     </div>
+    <script>
+        // Function to store the active tab in localStorage
+        function setTab(tabName) {
+            localStorage.setItem('activeTab', tabName);
+            loadActiveTab();
+        }
+
+        // Function to load the active tab
+        function loadActiveTab() {
+            var activeTab = localStorage.getItem('activeTab') || 'certificates'; // Default to 'certificates'
+
+            document.querySelectorAll('.tab').forEach(button => {
+                if (button.getAttribute('onclick').includes(activeTab)) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                if (content.id === activeTab) {
+                    content.style.display = 'block';
+                } else {
+                    content.style.display = 'none';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadActiveTab);
+    </script>
 
 </body>
 {% endblock %}

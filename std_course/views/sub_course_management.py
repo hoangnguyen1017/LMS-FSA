@@ -6,7 +6,7 @@ from django.core.cache import cache
 
 from module_group.models import ModuleGroup
 
-from ..models import Course, Quiz, Question, Answer_Option, Enrolled_course, Sub_Course
+from ..models import Course, Quiz, Question, Answer_Option, Enrolled_Course, Sub_Course
 from ..forms import Sub_Course_Form
 
 from django.contrib.auth.decorators import login_required, user_passes_test

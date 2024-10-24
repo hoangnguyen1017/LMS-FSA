@@ -1,135 +1,113 @@
 from django.contrib import admin
-
-# Register your models here.
-from .models import Course, ReadingMaterial
-
-from django.contrib import admin
 from import_export import resources, fields
+from import_export.widgets import ManyToManyWidget, ForeignKeyWidget
 from import_export.admin import ImportExportModelAdmin
-from import_export.widgets import ForeignKeyWidget
-from .models import Course, UserCourseProgress  # Import the models
-from user.models import User
+from .models import Course, Session, Topic, Tag
+from django.contrib.auth.models import User
 
-# # Course Resource
-# class CourseResource(resources.ModelResource):
-#     created_by = fields.Field(
-#         column_name='created_by__username',  # Assuming username is the desired attribute to import/export
-#         attribute='created_by',
-#         widget=ForeignKeyWidget(User, 'username')  # Use the username to link to the User model
-#     )
 
-#     class Meta:
-#         model = Course
-#         fields = ('id', 'course_name', 'course_description', 'created_by', 'created_at', 'updated_at')
-
-# # UserCourseProgress Resource
-# class UserCourseProgressResource(resources.ModelResource):
-#     user = fields.Field(
-#         column_name='user__username',  # Assuming username is the desired attribute to import/export
-#         attribute='user',
-#         widget=ForeignKeyWidget(User, 'username')  # Use the username to link to the User model
-#     )
-#     course = fields.Field(
-#         column_name='course__course_name',  # Assuming course_name is the desired attribute to import/export
-#         attribute='course',
-#         widget=ForeignKeyWidget(Course, 'course_name')  # Use course_name to link to the Course model
-#     )
-
-#     class Meta:
-#         model = UserCourseProgress
-#         fields = ('id', 'user', 'course', 'progress_percentage', 'last_accessed')
-
-# # Admin registration for Course
-# @admin.register(Course)
-# class CourseAdmin(ImportExportModelAdmin):
-#     resource_class = CourseResource
-#     list_display = ('course_name', 'created_by', 'created_at', 'updated_at')
-#     search_fields = ('course_name', 'created_by__username')  # Searchable fields
-#     list_filter = ('created_by',)  # Filter by created_by
-
-# # Admin registration for UserCourseProgress
-# @admin.register(UserCourseProgress)
-# class UserCourseProgressAdmin(ImportExportModelAdmin):
-#     resource_class = UserCourseProgressResource
-#     list_display = ('user', 'course', 'progress_percentage', 'last_accessed')
-#     search_fields = ('user__username', 'course__course_name')  # Searchable fields
-#     list_filter = ('user', 'course')  # Filter by user and course
-
-from django.contrib import admin
-from import_export import resources
-from import_export.admin import ImportExportModelAdmin
-from .models import Course, Session, Enrollment, ReadingMaterial, SessionCompletion, UserCourseProgress
-
-# Define resources for each model
 class CourseResource(resources.ModelResource):
+    creator = fields.Field(
+        attribute='creator',
+        column_name='creator__username',
+        widget=ForeignKeyWidget(User, 'username')
+    )
+    instructor = fields.Field(
+        attribute='instructor',
+        column_name='instructor__username',
+        widget=ForeignKeyWidget(User, 'username')
+    )
+    prerequisites = fields.Field(
+        attribute='prerequisites',
+        column_name='prerequisites',
+        widget=ManyToManyWidget(Course, field='course_name', separator='|')
+    )
+    tags = fields.Field(
+        attribute='tags',
+        column_name='tags',
+        widget=ManyToManyWidget(Tag, field='name', separator='|')
+    )
+
     class Meta:
         model = Course
-        fields = ('id', 'course_name', 'course_code', 'description', 'creator', 'instructor', 'published', 'tags')  # Add fields you want to import/export
+        fields = (
+            'course_name',
+            'course_code',
+            'description',
+            'creator',
+            'instructor',
+            'published',
+            'prerequisites',
+            'tags',
+        )
+        import_id_fields = ('course_name',)
 
+    def after_import(self, dataset, result, **kwargs):
+        for row in dataset.dict:
+            course_name = row['course_name']
+            try:
+                # Get the course by name
+                course = Course.objects.get(course_name=course_name)
+
+                # Process prerequisites after the course has been saved
+                if row.get('prerequisites'):
+                    prerequisites = row['prerequisites'].split('|')
+                    for prereq_name in prerequisites:
+                        prereq_name = prereq_name.strip()
+                        if prereq_name:
+                            # Find or create the prerequisite course using course_name
+                            prereq_course, _ = Course.objects.get_or_create(course_name=prereq_name)
+                            # Add the prerequisite to the course
+                            course.prerequisites.add(prereq_course)
+            except Course.DoesNotExist:
+                print(f"Course '{course_name}' does not exist.")  # Handle missing courses
+
+# Session resource class
 class SessionResource(resources.ModelResource):
+    course = fields.Field(attribute='course', column_name='course__course_name',
+                           widget=ForeignKeyWidget(Course, 'course_name'))
     class Meta:
         model = Session
-        fields = ('id', 'course__course_name', 'name', 'order')  # Customize as needed
+        fields = ('id', 'course', 'name', 'order')
+        import_id_fields = ('id',)
 
-class EnrollmentResource(resources.ModelResource):
+class TopicResource(resources.ModelResource):
     class Meta:
-        model = Enrollment
-        fields = ('id', 'student__username', 'course__course_name', 'date_enrolled')  # Customize as needed
+        model = Topic
+        fields = ('id', 'name')  # Add any additional fields you want to include
+        import_id_fields = ('id',)
 
-class ReadingMaterialResource(resources.ModelResource):
+class TagResource(resources.ModelResource):
+    topic = fields.Field(attribute='topic', column_name='topic__name', widget=ForeignKeyWidget(Topic, 'name'))
+
     class Meta:
-        model = ReadingMaterial
-        fields = ('id', 'session__name', 'title', 'material_type', 'order')  # Customize as needed
+        model = Tag
+        fields = ('id', 'name', 'topic')  # Include any other relevant fields
+        import_id_fields = ('id',)
 
-class SessionCompletionResource(resources.ModelResource):
-    class Meta:
-        model = SessionCompletion
-        fields = ('id', 'user__username', 'course__course_name', 'session__name', 'completed')  # Customize as needed
-
-class UserCourseProgressResource(resources.ModelResource):
-    class Meta:
-        model = UserCourseProgress
-        fields = ('id', 'user__username', 'course__course_name', 'progress_percentage', 'last_accessed')  # Customize as needed
-
-# Register the Course model with import/export functionality
 @admin.register(Course)
 class CourseAdmin(ImportExportModelAdmin):
     resource_class = CourseResource
-    list_display = ('course_name', 'course_code', 'creator', 'instructor', 'published')
+    list_display = ('course_name', 'course_code', 'published')
+    list_per_page = 5
     search_fields = ('course_name', 'course_code')
+    list_filter = ('published',)
 
-# Register the Session model with import/export functionality
 @admin.register(Session)
 class SessionAdmin(ImportExportModelAdmin):
     resource_class = SessionResource
     list_display = ('course', 'name', 'order')
     search_fields = ('course__course_name', 'name')
 
-# Register the Enrollment model with import/export functionality
-@admin.register(Enrollment)
-class EnrollmentAdmin(ImportExportModelAdmin):
-    resource_class = EnrollmentResource
-    list_display = ('student', 'course', 'date_enrolled')
-    search_fields = ('student__username', 'course__course_name')
+@admin.register(Topic)
+class TopicAdmin(ImportExportModelAdmin):
+    resource_class = TopicResource
+    list_display = ('name',)
+    search_fields = ('name',)
 
-# Register the ReadingMaterial model with import/export functionality
-@admin.register(ReadingMaterial)
-class ReadingMaterialAdmin(ImportExportModelAdmin):
-    resource_class = ReadingMaterialResource
-    list_display = ('session', 'title', 'order')
-    search_fields = ('session__name', 'title')
-
-# Register the SessionCompletion model with import/export functionality
-@admin.register(SessionCompletion)
-class SessionCompletionAdmin(ImportExportModelAdmin):
-    resource_class = SessionCompletionResource
-    list_display = ('user', 'course', 'session', 'completed')
-    search_fields = ('user__username', 'course__course_name')
-
-# Register the UserCourseProgress model with import/export functionality
-@admin.register(UserCourseProgress)
-class UserCourseProgressAdmin(ImportExportModelAdmin):
-    resource_class = UserCourseProgressResource
-    list_display = ('user', 'course', 'progress_percentage', 'last_accessed')
-    search_fields = ('user__username', 'course__course_name')
+@admin.register(Tag)
+class TagAdmin(ImportExportModelAdmin):
+    resource_class = TagResource
+    list_display = ('name', 'topic')
+    search_fields = ('name', 'topic__name')
 

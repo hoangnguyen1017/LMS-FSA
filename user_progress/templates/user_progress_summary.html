@@ -1,90 +1,74 @@
-{% extends "base.html" %}
+{% extends 'user_summary.html' %}
 
-
-{% block title %}Certificate{% endblock %}
+{% block title %}User Progress{% endblock %}
 
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    /* Existing styles remain unchanged */
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        /* padding: 20px; */
+        background-color: #f0f0f0;
+    }
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+        color: #333;
+    }
+    .tabs {
+        display: flex;
+        margin-bottom: 20px;
+    }
+    .tab {
+        padding: 10px 20px;
+        background-color: #e0e0e0;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .tab:hover {
+        background-color: #d0d0d0;
+    }
+    .tab.active {
+        background-color: #4CAF50;
+        color: white;
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    .card {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .badge {
+        display: inline-block;
+        padding: 3px 7px;
+        background-color: #2196F3;
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
     
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-        }
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-        }
-        .tab {
-            padding: 10px 20px;
-            background-color: #e0e0e0;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .tab:hover {
-            background-color: #d0d0d0;
-        }
-        .tab.active {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .card {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        .progress-bar {
-            background-color: #4CAF50;
-            height: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .progress {
-            background-color: #4CAF50;
-            height: 100%;
-            width: 0;
-        }
-        .badge {
-            display: inline-block;
-            padding: 3px 7px;
-            background-color: #2196F3;
-            color: white;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-
-        
     /* New styles for progress bar */
     .progress-container {
         width: 100%;
@@ -92,6 +76,13 @@
         border-radius: 5px;
         margin: 10px 0;
         height: 25px;
+    }
+    .progress-bar-progress {
+        height: 100%;
+        background-color: #4CAF50;
+        width: 0%; /* Initial width; will be set dynamically */
+        border-radius: 5px;
+        transition: width 0.4s ease;
     }
 
     /* Existing "My Courses" styles */
@@ -114,6 +105,12 @@
         background-color: #f2f2f2;
         border-radius: 5px;
         margin-right: 15px;
+    }
+    .course-icon img {
+    max-width: 100%;  /* Giới hạn chiều rộng của ảnh không vượt quá phần tử cha */
+    height: 100%;     /* Chiều cao tự động điều chỉnh theo tỷ lệ */
+    object-fit: fill; /* Đảm bảo ảnh vừa khít với phần tử cha */
+    display: block;   /* Loại bỏ khoảng trống dưới ảnh do inline elements */
     }
     .course-details {
         margin-left: 10px;
@@ -196,20 +193,13 @@
     .toggle-section:hover {
         text-decoration: underline;
     }
+    
 
-    </style>
-</head>
+</style>
+
 <body>
     <div class="container">
-        <a href="">
-            <h1>{{ user.username }}</h1>
-        </a>
-        <div class="tabs">
-            <a href="{% url 'user_progress:user_progress_summary' %}"><button class="tab active" onclick="openTab(event, 'progress')">User Progress</button></a>
-            <a href="{% url 'performance_analytics:performance_analytics_summary' %}"><button class="tab" onclick="openTab(event, 'performance')">Performance</button></a>
-            <a href="{% url 'ai_insights:ai_insights_summary' %}"><button class="tab" onclick="openTab(event, 'insights')">AI Insights</button></a>
-            <a href="{% url 'certificate:certificate_summary' %}"><button class="tab" onclick="openTab(event, 'certificates')">Certificates</button></a>
-        </div>
+       {{block.super}}
 
         <div id="progress" class="tab-content active">
             <div class="card">
@@ -217,147 +207,96 @@
                 <p><strong>Name:</strong> {{user.username}}</p>
                 <p><strong>Email:</strong> {{user.email}}</p>
                 <p><strong>Total Courses:</strong> {{course_count}}</p>
-                <p><strong>Completed Courses:</strong> 3</p>
+                <p><strong>Completed Courses:</strong> {{completed}}</p>
+                {% if not percent_complete == 0 %}
                 <div class="progress-container">
-                    <div class="progress-bar" style="width: 60%;"></div> <!-- Set the width dynamically -->
+                    <div class="progress-bar-progress" style="width: {{percent_complete}}%"> <center>{{percent_complete}}%</center> </div> <!-- Set the width dynamically -->
                 </div>
+                {% else %}
+                <div class="progress-container">
+                    <center style="color: red;">0%</center> 
+                </div>
+                {% endif %}
             </div>
 
-            <!-- Toggle for "My Courses" -->
-            <div class="toggle-section" onclick="toggleMyCourses()">My Courses &#9660;</div>
-           
+
             <div id="myCoursesContent" class="collapsible-content show">
-                {% for course in courses %}
+                {% for course in page_obj_pro %}
                     <div class="course-container">
                         <div class="course-info">
-                            <div class="course-icon"></div>
-                            <div class="course-details">
-                                <p class="course-title" style="padding-right: 10px;">{{course.courses.course}}</p>
-                                <div class="progress-container" style="width: 80vh;">
-                                    <div class="progress-bar" style="width: {{course.Percent}}%;"> {{course.Percent}}% </div> 
-                                </div>
+                            <div class="course-icon">
+                                <img src='https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://d2j5ihb19pt1hq.cloudfront.net/certificates/cert-course.png?auto=format%2Ccompress&dpr=2&h=72'>
                             </div>
-                            
+                            <div class="course-details">
+                                <p class="course-title" style="padding-right: 10px;">{{course.course.name}}</p>
+                                {% if not course.progress_percentage == 0 %}
+                                <div class="progress-container" style="width: 90vh;">
+                                    <div class="progress-bar-progress" style="width: {{course.progress_percentage}}%"> <center>{{course.progress_percentage}}%</center> </div>
+                                </div>
+                                {% else %}
+                                <div class="progress-container" style="width: 90vh;">
+                                    <center style="color: red;"> 0% </center>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <!-- <div class="progress-container">
-                            <div class="progress-bar" style="width: {{course.Percent}}%;"> {{course.Percent}}% </div> 
-                        </div> -->
                         <button class="add-linkedin">Add to LinkedIn</button>
-                        
                     </div>
                 {% empty %}
                     <p>No courses found.</p>
                 {% endfor %}
+            
+                <!-- Phần phân trang để di chuyển giữa các trang -->
+                <div class="pagination show">
+                    <span class="step-links">
+                        <!-- Nút "First" và "Previous" -->
+                        {% if page_obj_pro.has_previous %}
+                            <a href="?page=1">&laquo; First</a>
+                            <a href="?page={{ page_obj_pro.previous_page_number }}">Previous</a>
+                        {% else %}
+                            <span class="disabled">&laquo; First</span>
+                            <span class="disabled">Previous</span>
+                        {% endif %}
+                
+                        <!-- Hiển thị số trang hiện tại -->
+                        <span class="current">
+                            Page {{ page_obj_pro.number }} of {{ page_obj_pro.paginator.num_pages }}.
+                        </span>
+                
+                        <!-- Nút "Next" và "Last" -->
+                        {% if page_obj_pro.has_next %}
+                            <a href="?page={{ page_obj_pro.next_page_number }}">Next</a>
+                            <a href="?page={{ page_obj_pro.paginator.num_pages }}">Last &raquo;</a>
+                        {% else %}
+                            <span class="disabled">Next</span>
+                            <span class="disabled">Last &raquo;</span>
+                        {% endif %}
+                    </span>
+                </div>
             </div>
 
-            <!-- Pagination controls -->
-            <div class="pagination show">
-                <button onclick="changePage(-1)" id="prevButton">Previous</button>
-                <span class="pagination-info">Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
-                <button onclick="changePage(1)" id="nextButton">Next</button>
-            </div>
+            
         </div>
 
-        <div id="performance" class="tab-content"></div>
-        <div id="insights" class="tab-content"></div>
-        <div id="certificates" class="tab-content"></div>
-    </div>
 
     <script>
-        // Get the currently active tab from localStorage or set to the default
-        // const activeTab = localStorage.getItem('activeTab') || 'progress';
-        
-        // document.addEventListener('DOMContentLoaded', function () {
-        //     openTab(null, activeTab); // Open the saved tab on page load
-        // });
-
-        // function openTab(evt, tabName) {
-        //     var i, tabContent, tabLinks;
-        //     tabContent = document.getElementsByClassName("tab-content");
-        //     for (i = 0; i < tabContent.length; i++) {
-        //         tabContent[i].style.display = "none"; // Hide all tab content
-        //     }
-        //     tabLinks = document.getElementsByClassName("tab");
-        //     for (i = 0; i < tabLinks.length; i++) {
-        //         tabLinks[i].className = tabLinks[i].className.replace(" active", ""); // Remove active class from all tabs
-        //     }
-        //     document.getElementById(tabName).style.display = "block"; // Show the selected tab
-        //     if (evt) {
-        //         evt.currentTarget.className += " active"; // Add active class to the clicked tab
-        //         localStorage.setItem('activeTab', tabName); // Store the active tab in localStorage
-        //     } else {
-        //         // If no event is provided, it means it's called on page load
-        //         tabLinks[0].className += " active"; // Ensure the first tab is marked as active if no event
-        //     }
-        // }
-
-
-        // Toggle My Courses section
-        function toggleMyCourses() {
-            var content = document.getElementById("myCoursesContent");
-            var pagination = document.querySelector(".pagination");
-            if (content.classList.contains("show")) {
-                content.classList.remove("show");
-                pagination.classList.remove("show");
-            } else {
-                content.classList.add("show");
-                pagination.classList.add("show");
+        // Existing tab switching function
+        function openTab(evt, tabName) {
+            var i, tabContent, tabLinks;
+            tabContent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].style.display = "none";
             }
+            tabLinks = document.getElementsByClassName("tab");
+            for (i = 0; i < tabLinks.length; i++) {
+                tabLinks[i].className = tabLinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
         }
 
-        
-        const itemsPerPage = 3;
-        let currentPage = 1;
-
-        function displayCourses() {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageItems = courses.slice(startIndex, endIndex);
-
-            const courseContent = document.getElementById("myCoursesContent");
-            courseContent.innerHTML = "";
-
-            pageItems.forEach(course => {
-                const courseElement = document.createElement("div");
-                courseElement.className = "course-container";
-                courseElement.innerHTML = `
-                    <div class="course-info">
-                        <div class="course-icon"></div>
-                        <div class="course-details">
-                            <p class="course-title">${course.title}</p>
-                            <p class="institution">${course.institution}</p>
-                            <p class="grade">Grade Achieved: ${course.grade}</p>
-                        </div>
-                    </div>
-                    <button class="add-linkedin">Add to LinkedIn</button>
-                `;
-                courseContent.appendChild(courseElement);
-            });
-
-            updatePaginationInfo();
-        }
-
-        function updatePaginationInfo() {
-            document.getElementById("currentPage").textContent = currentPage;
-            document.getElementById("totalPages").textContent = Math.ceil(courses.length / itemsPerPage);
-            
-            document.getElementById("prevButton").disabled = (currentPage === 1);
-            document.getElementById("nextButton").disabled = (currentPage === Math.ceil(courses.length / itemsPerPage));
-        }
-
-        function changePage(direction) {
-            currentPage += direction;
-            displayCourses();
-        }
-
-        // Initial display
-        displayCourses();
-
-        
-
-
-
-        
     </script>
 </body>
+</html>
+
 {% endblock %}

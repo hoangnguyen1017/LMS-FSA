@@ -1,12 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.forms.models import model_to_dict
 from .models import AIInsights
-from .forms import AI_InsightsForm, ExcelImportForm
+from course.models import Course
+from .forms import AI_InsightsForm, ExcelImportForm, AI_InsightsCourseForm
 import pandas as pd
 from django.contrib import messages
 from module_group.models import ModuleGroup
 from django.http import HttpResponse
 import openpyxl
+import json
 
 # User views
 def ai_insights_list(request):
@@ -129,15 +131,95 @@ def import_ai_insights(request):
 from django.core.paginator import Paginator
 
 def ai_insights_summary(request):
-    user = request.user  
-    ai_insights = AIInsights.objects.filter(user=user.id)
-    paginator = Paginator(ai_insights, 1) 
+    user = request.user      
+    labels = ['Warning', 'Compliment', 'Info', 'Undefined']
+    if request.method == 'POST':
+        filter_form = AI_InsightsCourseForm(request.POST)
+        if filter_form.is_valid():
+            if filter_form.data['course'] == '':
+                filter_form = AI_InsightsCourseForm()
+                ai_insights = AIInsights.objects.filter(user=user.id).order_by('-created_at')
+                ai_insights_count = len(list(ai_insights))
 
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+                warning = ai_insights.filter(insight_type='Warning')
+                compliment = ai_insights.filter(insight_type='Compliment')
+                info = ai_insights.filter(insight_type='Info')
 
-    context = {
-        'page_ai_insights': page_obj,
-        'user': request.user,
-    }
+                warning_count = len(list(warning))
+                compliment_count = len(list(compliment))
+                info_count = len(list(info))
+
+                data = [warning_count, compliment_count, info_count, (ai_insights_count-warning_count-compliment_count-info_count)]
+                paginator = Paginator(ai_insights, 4) 
+                page_number = request.GET.get('page')
+                page_obj = paginator.get_page(page_number)
+                context = {
+                    'page_ai_insights': page_obj,
+                    'user': request.user,
+                    'filter_form': filter_form,
+                    'data': json.dumps(data),
+                    'labels': json.dumps(labels),
+                    'chart_name': 'All courses',
+                    'is_valid': False
+                    }
+                return render(request, 'ai_insights_summary.html', context)
+            ai_insights = AIInsights.objects.filter(user=user.id, course=filter_form.data['course']).order_by('-created_at')
+            course = Course.objects.get(id=filter_form.data['course']).course_name
+            ai_insights_count = len(list(ai_insights))
+
+            warning = ai_insights.filter(insight_type='Warning')
+            compliment = ai_insights.filter(insight_type='Compliment')
+            info = ai_insights.filter(insight_type='Info')
+
+            warning_count = len(list(warning))
+            compliment_count = len(list(compliment))
+            info_count = len(list(info))
+
+            data = [warning_count, compliment_count, info_count, (ai_insights_count-warning_count-compliment_count-info_count)]
+            paginator = Paginator(ai_insights, 4) 
+
+            page_number = request.GET.get('page')
+            page_obj = paginator.get_page(page_number)
+
+            context = {
+                'page_ai_insights': page_obj,
+                'user': request.user,
+                'filter_form': filter_form,
+                'data': json.dumps(data),
+                'labels': json.dumps(labels),
+                'chart_name': course,
+                'is_valid': True
+            }
+            return render(request, 'ai_insights_summary.html', context)
+    else:
+        filter_form = AI_InsightsCourseForm()
+
+        ai_insights = AIInsights.objects.filter(user=user.id).order_by('-created_at')
+
+        ai_insights_count = len(list(ai_insights))
+
+        warning = ai_insights.filter(insight_type='Warning')
+        compliment = ai_insights.filter(insight_type='Compliment')
+        info = ai_insights.filter(insight_type='Info')
+
+        warning_count = len(list(warning))
+        compliment_count = len(list(compliment))
+        info_count = len(list(info))
+
+        data = [warning_count, compliment_count, info_count, (ai_insights_count-warning_count-compliment_count-info_count)]
+        paginator = Paginator(ai_insights, 4) 
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        
+
+        context = {
+            'page_ai_insights': page_obj,
+            'user': request.user,
+            'filter_form': filter_form,
+            'data': json.dumps(data),
+            'labels': json.dumps(labels),
+            'chart_name': 'All courses',
+            'is_valid': True
+        }
     return render(request, 'ai_insights_summary.html', context)

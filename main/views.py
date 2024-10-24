@@ -4,7 +4,6 @@ from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from .forms import LoginForm
 
-
 # Logout view
 @login_required
 def logout_view(request):
@@ -26,21 +25,34 @@ def login_view(request):
 
     return render(request, 'login.html', {'form': form})
 
-
+# Home view (Dashboard)
 @login_required
 def home_view(request):
-    # modules = request.user.modules.all()
     modules = Module.objects.all()
-    module_groups = ModuleGroup.objects.all() #ModuleGroup.objects.filter(modules__in=modules).distinct()
+    module_groups = ModuleGroup.objects.all()
+    user_engagement_data = get_user_engagement_statistics(request.user)
+    support_feedback_data = get_support_feedback_data(request.user)
 
     return render(request, 'home.html', {
         'module_groups': module_groups,
         'modules': modules,
+        'user_engagement_data': user_engagement_data,
+        'support_feedback_data': support_feedback_data,
     })
 
 
+# Functions to get additional data for other tabs (this can be customized as needed)
+def get_user_engagement_statistics(user):
+    # Return dummy data for now (replace with actual logic)
+    return {
+        'courses_completed': 3,
+        'time_spent': 45,  # hours
+        'assignments_submitted': 7,
+    }
 
-
-
-
-
+def get_support_feedback_data(user):
+    # Return dummy data for now (replace with actual logic)
+    return [
+        {'date': '2024-09-10', 'message': 'Great course!'},
+        {'date': '2024-09-12', 'message': 'I had issues with module 3.'},
+    ]

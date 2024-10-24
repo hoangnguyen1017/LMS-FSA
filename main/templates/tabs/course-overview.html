@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LMS Reports Dashboard</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .card-header {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .report-section {
+      margin-top: 30px;
+    }
+    .table-striped tbody tr:nth-of-type(odd) {
+      background-color: rgba(0,0,0,.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="text-center">LMS Reports Dashboard</h1>
+
+    <!-- User Activity Report -->
+    <div class="report-section">
+      <div class="card">
+        <div class="card-header">
+          <h4>User Activity Report</h4>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <thead class="thead-dark">
+              <tr>
+                <th>User Name</th>
+                <th>Role</th>
+                <th>Last Login</th>
+                <th>Courses Active</th>
+                <th>Time Spent (hrs)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>John Doe</td>
+                <td>Student</td>
+                <td>2024-10-15 10:45 AM</td>
+                <td>3</td>
+                <td>12.5</td>
+              </tr>
+              <tr>
+                <td>Jane Smith</td>
+                <td>Instructor</td>
+                <td>2024-10-12 08:30 AM</td>
+                <td>5</td>
+                <td>40.2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course Progress Report -->
+    <div class="report-section">
+      <div class="card">
+        <div class="card-header">
+          <h4>Course Progress Report</h4>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <thead class="thead-dark">
+              <tr>
+                <th>Course Name</th>
+                <th>Student Name</th>
+                <th>Progress (%)</th>
+                <th>Grade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Introduction to AI</td>
+                <td>John Doe</td>
+                <td>85%</td>
+                <td>A</td>
+              </tr>
+              <tr>
+                <td>Python for Beginners</td>
+                <td>Jane Smith</td>
+                <td>75%</td>
+                <td>B+</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assessment Performance Report -->
+    <div class="report-section">
+      <div class="card">
+        <div class="card-header">
+          <h4>Assessment Performance Report</h4>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <thead class="thead-dark">
+              <tr>
+                <th>Student Name</th>
+                <th>Course</th>
+                <th>Quiz Avg Score</th>
+                <th>Exam Avg Score</th>
+                <th>AI Proctoring Alerts</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>John Doe</td>
+                <td>Introduction to AI</td>
+                <td>88%</td>
+                <td>90%</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td>Jane Smith</td>
+                <td>Python for Beginners</td>
+                <td>78%</td>
+                <td>85%</td>
+                <td>1</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Feedback Report -->
+    <div class="report-section">
+      <div class="card">
+        <div class="card-header">
+          <h4>Student Feedback Report</h4>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <thead class="thead-dark">
+              <tr>
+                <th>Course Name</th>
+                <th>Student Name</th>
+                <th>Feedback</th>
+                <th>Sentiment (AI Analysis)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Introduction to AI</td>
+                <td>John Doe</td>
+                <td>Great course, very helpful!</td>
+                <td>Positive</td>
+              </tr>
+              <tr>
+                <td>Python for Beginners</td>
+                <td>Jane Smith</td>
+                <td>Good, but could use more examples.</td>
+                <td>Neutral</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI-Driven Insights Report -->
+    <div class="report-section">
+      <div class="card">
+        <div class="card-header">
+          <h4>AI-Driven Insights Report</h4>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <thead class="thead-dark">
+              <tr>
+                <th>Student Name</th>
+                <th>Predicted Outcome</th>
+                <th>At-Risk Status</th>
+                <th>Suggested Interventions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>John Doe</td>
+                <td>Pass with Distinction</td>
+                <td>No</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td>Jane Smith</td>
+                <td>Needs Improvement</td>
+                <td>Yes</td>
+                <td>Extra tutoring sessions, personalized learning path</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+

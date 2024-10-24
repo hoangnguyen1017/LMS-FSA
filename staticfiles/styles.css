@@ -167,3 +167,10 @@ h1 {
 .dropdown-item i {
     margin-right: 5px; /* Khoảng cách giữa biểu tượng và chữ */
 }
+
+.scrollable-div {
+    max-height: 60vh;  /* Set the maximum height for the scrollable area */
+    overflow-y: scroll; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Disable horizontal scrolling */
+    border: 1px solid #ccc; /* Optional: Add a border to the scrollable div */
+}

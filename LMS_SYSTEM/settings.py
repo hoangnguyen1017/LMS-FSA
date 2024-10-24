@@ -30,6 +30,17 @@ AUTH_USER_MODEL = 'user.User'  # Change 'user' to the name of your app
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'codinglmsfsa@gmail.com'  # Your email address
+EMAIL_HOST_PASSWORD = 'adst vdek luiv zkny'  # Your email password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Set the default from email
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-h+p6t3%50m)_a15%4&i*q_ule5a_$566#wu=f_5uvlapiqq%5v'
 
@@ -77,7 +88,7 @@ INSTALLED_APPS = [
     'main', #for hompage
 
     'exercises', #Binh_Thang
-    'assessments', #Cuong
+
 
     'user', 'role', #group01
 
@@ -85,15 +96,18 @@ INSTALLED_APPS = [
     'course', 'feedback', 'forum', 
 
     #group03
-    'quiz', 'std_quiz', # 'std_course',
+    'quiz', 'std_quiz', 'course_Truong', 'tools', # 'std_course',
 
     #group04
     'chat', 'chatapp', 'thread', 'collaboration_group', 
 
     #group05 
-    'activity', 'ai_insights', 'analytics_report','assignment', 'certificate',  
+    'activity', 'ai_insights', 'analytics_report','assignment', 'certificate', 'course_completion', 
     'performance_analytics', 'progress_notification', 'student_performance', 
-    'user_progress', 'user_summary',
+    'user_progress', 'user_summary', 'book',
+
+    #ngattt
+    'reports', 'assessments', 
 ]
 
 MIDDLEWARE = [
@@ -151,7 +165,6 @@ WSGI_APPLICATION = 'LMS_SYSTEM.wsgi.application'
 #         'PORT': '5432',       # Default PostgreSQL port
 #     }
 # }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',

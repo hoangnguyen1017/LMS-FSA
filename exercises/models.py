@@ -1,5 +1,6 @@
 from django.db import models
 from user.models import User
+from django.conf import settings
 
 # Create your models here.
 class Exercise(models.Model):
@@ -19,8 +20,9 @@ class Exercise(models.Model):
     def __str__(self):
         return self.title
 
+
 class Submission(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    student = models.ForeignKey('user.User', on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     code = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

@@ -10,6 +10,15 @@
     <p><strong>Start Date:</strong> {{ assignment.start_date}}</p>
     <p><strong>End Date:</strong> {{ assignment.end_date }}</p>
     
+    <h3>Associated Exercises</h3>
+    <ul class="list-group">
+        {% for exercise in exercises %}
+        <li class="list-group-item">{{ exercise.title }}</li>
+        {% empty %}
+        <li class="list-group-item">No exercises associated with this assignment.</li>
+        {% endfor %}
+    </ul>
+
     <a href="{% url 'assignment:assignment_list' %}" class="btn btn-primary">Back to Assignment List</a>
 </div>
 {% endblock %}

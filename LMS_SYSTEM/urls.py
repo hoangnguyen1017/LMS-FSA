@@ -46,7 +46,10 @@ urlpatterns = [
     #group03
     path('quiz/', include('quiz.urls')),  
     path('std_quiz/', include('std_quiz.urls')),
+    path('course_Truong/', include('course_Truong.urls')),
+    path('tools/', include('tools.urls')),
     
+
     #group04
     path('chat/', include('chat.urls')),
     path('chatapp/', include('chatapp.urls')),
@@ -59,6 +62,7 @@ urlpatterns = [
     path('ai_insights/', include('ai_insights.urls')),
     path('analytics_report/', include('analytics_report.urls')),
     path('assignment/', include('assignment.urls')),
+    path('course_completion/', include('course_completion.urls')),
 
     path('performance_analytics/', include('performance_analytics.urls')),
     path('progress_notification/', include('progress_notification.urls')),
@@ -68,10 +72,12 @@ urlpatterns = [
     path('book/', include('book.urls')),
 
 
-
     #group06 - Binh_Thang - Coding
     path('exercises/', include('exercises.urls')), 
-    path('assessments/', include('assessments.urls'))
+    path('assessments/', include('assessments.urls')),
+
+    #ngattt
+    path('reports/', include('reports.urls'))
     
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

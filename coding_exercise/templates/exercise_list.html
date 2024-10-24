@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Programming Exercises{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Programming Exercises</h2>
+    
+    <div class="mb-3">
+        <a href="{% url 'coding_exercise:exercise_add' %}" class="btn btn-primary" title="Add New Exercise" data-toggle="tooltip">
+            <i class="fas fa-plus"></i> Add New Exercise
+        </a> 
+        <a href="{% url 'coding_exercise:result_list' %}" class="btn btn-secondary" title="My Submissions" data-toggle="tooltip">
+            <i class="fas fa-file-alt"></i> My Submissions
+        </a>
+    </div>
+    
+    <table class="table table-bordered mt-4">
+        <thead>
+            <tr>
+                <th>Title</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exercise in exercises %}
+                <tr>
+                    <td>
+                        <a href="{% url 'coding_exercise:exercise_detail_student' exercise.id %}">{{ exercise.title }}</a>
+                    </td>
+                    
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="2" class="text-center">No exercises available.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

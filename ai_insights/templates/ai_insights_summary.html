@@ -1,19 +1,20 @@
-{% extends "base.html" %}
+{% extends "user_summary.html" %}
+{% load form_filters %}
 
-
-{% block title %}Certificate{% endblock %}
 
 {% block content %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     
     <style>
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: #f0f0f0;
         }
         .container {
@@ -56,7 +57,6 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             padding: 15px;
-            margin-bottom: 15px;
         }
         .progress-bar {
             background-color: #4CAF50;
@@ -69,10 +69,34 @@
             height: 100%;
             width: 0;
         }
-        .badge {
+        .badge-warning {
+            display: inline-block;
+            padding: 3px 7px;
+            background-color: #ff2c2c;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .badge-info {
             display: inline-block;
             padding: 3px 7px;
             background-color: #2196F3;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .badge-comliment {
+            display: inline-block;
+            padding: 3px 7px;
+            background-color: #00b627;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .badge-undefined {
+            display: inline-block;
+            padding: 3px 7px;
+            background-color: #535353;
             color: white;
             border-radius: 4px;
             font-size: 12px;
@@ -81,81 +105,214 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 15px;
+            position: relative;
+            padding-bottom: 40px; /* Adds space for the paginator */
         }
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 20px;
-    }
-    .pagination button {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        margin: 0 4px;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: background-color 0.3s;
-    }
-    .pagination button:hover {
-        background-color: #45a049;
-    }
-    .pagination button:disabled {
-        background-color: #cccccc;
-        cursor: not-allowed;
-    }
-    .pagination-info {
-        margin: 0 10px;
-    }
-    .hidden {
-        display: none;
-    }
-    .collapsible-content, .pagination {
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-        transition: max-height 0.5s ease, opacity 0.5s ease;
-    }
+        .grid-chart {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            position: relative;
+            padding-bottom: 20px; /* Adds space for the paginator */
+        }
 
-    .collapsible-content.show, .pagination.show {
-        max-height: 1000px; /* Adjust this value based on your content */
-        opacity: 1;
-    }
+        .pagination {
+            position: relative;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .pagination .step-links {
+            display: inline-block;
+        }
+        .pagination .step-links a {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #e0e0e0;
+            color: #333;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .pagination .step-links a:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .pagination .current {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+        }
 
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="">
-            <h1>{{ user.username }}</h1>
-        </a>
-        <div class="tabs">
-            <a href="{% url 'user_progress:user_progress_summary' %}"><button class="tab" onclick="openTab(event, 'progress')">User Progress</button></a>
-            <a href="{% url 'performance_analytics:performance_analytics_summary' %}"><button class="tab" onclick="openTab(event, 'performance')">Performance</button></a>
-            <a href="{% url 'ai_insights:ai_insights_summary' %}"><button class="tab active" onclick="openTab(event, 'insights')">AI Insights</button></a>
-            <a href="{% url 'certificate:certificate_summary' %}"><button class="tab" onclick="openTab(event, 'certificates')">Certificates</button></a>
-        </div>
-
-        <div id="progress" class="tab-content"></div>
-        <div id="performance" class="tab-content"></div>
-
+        {{ block.super}}
         <div id="insights" class="tab-content active">
-            {% for ai_insight in page_ai_insights %}
-            <div class="card">
-                <h3>{{ ai_insight.course }}</h3>
-                <ul>
-                    <li>Insight Type: <span class="badge">{{ ai_insight.insight_type }}</span></li>
-                    <li>Insight Text: {{ ai_insight.insight_text }}</li>
-                    <li>Created At: {{ ai_insight.created_at }}</li>
-                </ul>
-                <a href="{% url 'course:course_detail' ai_insight.course.id %}" class="btn btn-primary">Go to course {{ ai_insight.course }}</a>
+            {% if page_ai_insights %}
+            <div class="container mt-3">
+                
+                <form method="post" enctype="multipart/form-data">  <!-- Added enctype for file uploads -->
+                    
+                    {% csrf_token %}
+                        <div class="form-group">
+                            {{ filter_form.course.label_tag }}
+                            {{ filter_form.course|add_class:"form-control" }}                                        
+                        </div>
+                        <p>
+                        <button type="submit" class="btn btn-primary" title="View Filtered Insights">
+                            Show Insights
+                        </button>  
+                        {% if not is_valid %}
+                        <span style="color: red;">Invalid Input</span>
+                        {% endif %}
+                        </p>  
+                </form>
+                
             </div>
-            {% endfor %}
-        <!-- Insert pagination -->
+            <div class="container mt-3 grid" style="margin-top: 10px; padding-bottom: 20px;">
+                {% for ai_insight in page_ai_insights %}
+                    <div class="card">
+                        <h3>{{ ai_insight.course }}</h3>
+                        <ul>
+                            {% if ai_insight.insight_type == 'Warning' %}
+                            <li>Insight Type: <span class="badge-warning">{{ ai_insight.insight_type }}</span></li>
+                            {% elif ai_insight.insight_type == 'Compliment' %}
+                            <li>Insight Type: <span class="badge-comliment">{{ ai_insight.insight_type }}</span></li>
+                            {% elif ai_insight.insight_type == 'Info' %}
+                            <li>Insight Type: <span class="badge-info">{{ ai_insight.insight_type }}</span></li>
+                            {% else %}
+                            <li>Insight Type: <span class="badge-undefined">{{ ai_insight.insight_type }}</span></li>
+                            {% endif %}
+                            <li>Insight Text: {{ ai_insight.insight_text }}</li>
+                            <li>Created At: {{ ai_insight.created_at }}</li>
+                        </ul>
+                        <a href="{% url 'course:course_detail' ai_insight.course.id %}" class="btn btn-primary">Go to course {{ ai_insight.course }}</a>
+                    </div>
+                {% endfor %}
+                </div>
+                <div class="pagination">
+                    <span class="step-links">
+                        <a href="?page=1">&laquo; First</a>
+                        {% if page_ai_insights.has_previous %}
+                            <a href="?page={{ page_ai_insights.previous_page_number }}">Previous</a>
+                        {% endif %}
+    
+                        <span class="current">
+                            Page {{ page_ai_insights.number }} of {{ page_ai_insights.paginator.num_pages }}.
+                        </span>
+    
+                        {% if page_ai_insights.has_next %}
+                            <a href="?page={{ page_ai_insights.next_page_number }}">Next</a>
+                        {% endif %}
+                        <a href="?page={{ page_ai_insights.paginator.num_pages }}">Last &raquo;</a>
+                    </span>
+                </div>
+            <div class="container mt-3" style="padding-bottom: 10px;">
+                <h5>Overall Chart and Information</h5>
+            <div class="grid-chart">
+                <div class="card">
+                    <canvas id="myChart" width="400" height="100" style="max-height: 30vh;"></canvas>
+                </div>
+                <div class="card">
+                    <span>hello</span>
+                </div>
+            </div>
         </div>
+        {% else %}
+        <div class="container mt-3">
+            <center>There is none of your insights to show here. If you think there is an error, contact: ...</center>
+        </div>
+            {% endif %}
+        </div>
+    </div>
 
         <div id="certificates" class="tab-content"></div>
     </div>
 </body>
+<script>
+    const data1 = {
+            labels: {{ labels|safe }},
+            datasets: [{
+                data: {{ data|safe }},
+                backgroundColor: ['#ff2c2c', '#00b627', '#2196F3', '#535353'],
+                borderColor: ['#ff2c2c', '#00b627', '#2196F3', '#535353'],
+                hoverOffset: 4
+            }]
+        };
+
+        const config1 = {
+            type: 'pie',
+            data: data1,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '{{ chart_name }}'
+                    },
+                    legend: {
+                        position: 'right'
+                    },
+                    datalabels: {
+                        formatter: (value, context) => {
+                            // let percentage = (value / context.chart._metasets
+                            // [context.datasetIndex].total * 100)
+                            //     .toFixed(2) + '%';
+                            if (value > 0) {
+                                return value
+                            } else {
+                                return ''
+                            }
+                        },
+                        color: '#fff',
+                        font: {
+                            size: 14,
+                        },
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        };
+
+        const pieChart1 = new Chart(
+            document.getElementById('myChart'),
+            config1
+        );
+    // Function to store the active tab in localStorage
+    function setTab(tabName) {
+        localStorage.setItem('activeTab', tabName);
+        loadActiveTab();
+    }
+
+    // Function to load the active tab
+    function loadActiveTab() {
+        var activeTab = localStorage.getItem('activeTab') || 'insights'; // Default to 'certificates'
+
+        document.querySelectorAll('.tab').forEach(button => {
+            if (button.getAttribute('onclick').includes(activeTab)) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+
+        document.querySelectorAll('.tab-content').forEach(content => {
+            if (content.id === activeTab) {
+                content.style.display = 'block';
+            } else {
+                content.style.display = 'none';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadActiveTab);
+</script>
 {% endblock %}

@@ -122,3 +122,25 @@ def import_progress_notification(request):
         form = ExcelImportForm()
 
     return render(request, 'progress_notification_list.html', {'form': form})
+
+
+from django.http import JsonResponse
+from .models import ProgressNotification
+
+def unread_notification_count(request):
+    if request.user.is_authenticated:
+        count = ProgressNotification.objects.filter(user=request.user, is_read=False).count()
+        return JsonResponse({'count': count})
+    else:
+        return JsonResponse({'count': 0})
+    
+def notification_list(request):
+    if request.user.is_authenticated:
+        notifications = ProgressNotification.objects.filter(user=request.user).order_by('-notification_date')
+        notifications.update(is_read=True)
+        notifications = list(notifications[:6])
+
+        return render(request, 'notification_list.html', {'notifications': notifications})
+    else:
+        return render(request, 'notification_list.html', {'notifications': []})
+

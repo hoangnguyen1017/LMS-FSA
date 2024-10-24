@@ -1,19 +1,18 @@
-{% extends "base.html" %}
+{% extends "user_summary.html" %}
 
 
 {% block title %}Certificate{% endblock %}
 
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     
-    <style>
+<style>
+        /* Existing styles remain unchanged */
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            /* padding: 20px; */
             background-color: #f0f0f0;
         }
         .container {
@@ -58,17 +57,6 @@
             padding: 15px;
             margin-bottom: 15px;
         }
-        .progress-bar {
-            background-color: #4CAF50;
-            height: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .progress {
-            background-color: #4CAF50;
-            height: 100%;
-            width: 0;
-        }
         .badge {
             display: inline-block;
             padding: 3px 7px;
@@ -82,251 +70,167 @@
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 15px;
         }
-
-
         
-    /* New styles for progress bar */
-    .progress-container {
-        width: 100%;
-        background-color: #e0e0e0;
-        border-radius: 5px;
-        margin: 10px 0;
-        height: 25px;
-    }
-
-    /* Existing "My Courses" styles */
-    .course-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border: 1px solid #ccc;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-radius: 8px;
-    }
-    .course-info {
-        display: flex;
-        align-items: center;
-    }
-    .course-icon {
-        width: 50px;
-        height: 50px;
-        background-color: #f2f2f2;
-        border-radius: 5px;
-        margin-right: 15px;
-    }
-    .course-details {
-        margin-left: 10px;
-    }
-    .course-title {
-        font-size: 18px;
-        color: #0056b3;
-    }
-    .course-title:hover {
-        text-decoration: underline;
-    }
-    .institution {
-        font-size: 14px;
-        color: #888;
-    }
-    .grade {
-        font-size: 14px;
-        color: #000;
-    }
-    .add-linkedin {
-        background-color: #0077b5;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    .add-linkedin:hover {
-        background-color: #005a87;
-    }
-
-    /* New styles for pagination */
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 20px;
-    }
-    .pagination button {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        margin: 0 4px;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: background-color 0.3s;
-    }
-    .pagination button:hover {
-        background-color: #45a049;
-    }
-    .pagination button:disabled {
-        background-color: #cccccc;
-        cursor: not-allowed;
-    }
-    .pagination-info {
-        margin: 0 10px;
-    }
-    .hidden {
-        display: none;
-    }
-    .collapsible-content, .pagination {
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-        transition: max-height 0.5s ease, opacity 0.5s ease;
-    }
-
-    .collapsible-content.show, .pagination.show {
-        max-height: 1000px; /* Adjust this value based on your content */
-        opacity: 1;
-    }
-
-    .toggle-section {
-        color: #0056b3;
-        cursor: pointer; /* Thay đổi con trỏ thành hình bàn tay khi hover */
-    }
-
-    /* Hiệu ứng gạch chân khi di chuột */
-    .toggle-section:hover {
-        text-decoration: underline;
-    }
-
-    </style>
-</head>
+        /* New styles for progress bar */
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin: 10px 0;
+            height: 25px;
+        }
+        .progress-bar-performance {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%; /* Initial width; will be set dynamically */
+            border-radius: 5px;
+            transition: width 0.4s ease;
+        }
+    
+        /* Existing "My Courses" styles */
+        .course-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+        .course-info {
+            display: flex;
+            align-items: center;
+        }
+        .course-icon {
+            width: 50px;
+            height: 50px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+        .course-icon img {
+        max-width: 100%;  /* Giới hạn chiều rộng của ảnh không vượt quá phần tử cha */
+        height: 100%;     /* Chiều cao tự động điều chỉnh theo tỷ lệ */
+        object-fit: fill; /* Đảm bảo ảnh vừa khít với phần tử cha */
+        display: block;   /* Loại bỏ khoảng trống dưới ảnh do inline elements */
+        }
+        .course-details {
+            margin-left: 10px;
+        }
+        .course-title {
+            font-size: 18px;
+            color: #0056b3;
+        }
+        .course-title:hover {
+            text-decoration: underline;
+        }
+        .institution {
+            font-size: 14px;
+            color: #888;
+        }
+        .grade {
+            font-size: 14px;
+            color: #000;
+        }
+        .add-linkedin {
+            background-color: #0077b5;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .add-linkedin:hover {
+            background-color: #005a87;
+        }
+    
+        
+    
+        .toggle-section {
+            color: #0056b3;
+            cursor: pointer; /* Thay đổi con trỏ thành hình bàn tay khi hover */
+        }
+    
+        /* Hiệu ứng gạch chân khi di chuột */
+        .toggle-section:hover {
+            text-decoration: underline;
+        }
+        
+    
+</style>
 <body>
     <div class="container">
-        <a href="">
-            <h1>{{ user.username }}</h1>
-        </a>
-        <div class="tabs">
-            <a href="{% url 'user_progress:user_progress_summary' %}"><button class="tab" onclick="openTab(event, 'progress')">User Progress</button></a>
-            <a href="{% url 'performance_analytics:performance_analytics_summary' %}"><button class="tab active" onclick="openTab(event, 'performance')">Performance</button></a>
-            <a href="{% url 'ai_insights:ai_insights_summary' %}"><button class="tab" onclick="openTab(event, 'insights')">AI Insights</button></a>
-            <a href="{% url 'certificate:certificate_summary' %}"><button class="tab" onclick="openTab(event, 'certificates')">Certificates</button></a>
-        </div>
-
-        <div id="progress" class="tab-content"></div>
+        {{ block.super}}
+        
 
         <div id="performance" class="tab-content active">
+            {% if page_obj %}
             <div class="grid">
                 {% for data in page_obj %}
                     <div class="card"> 
                         <h2>{{ data.course }}</h2>
                         <p><strong>Completion Rate:</strong> {{ data.completion_rate }}%</p>
                         <div class="progress-container">
-                            <div class="progress-bar" style="width: {{ data.completion_rate }}%;"></div> <!-- Set the width dynamically -->
+                            <div class="progress-bar-performance" style="width: {{ data.completion_rate }}%"> <center>{{ data.completion_rate }}%</center></div> <!-- Set the width dynamically -->
                         </div>
                         <p><strong>Average Score:</strong> {{ data.average_score }}</p>
                     </div>
                 {% endfor %}               
             </div>
+            <div class="pagination">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1">&laquo; First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    {% endif %}
+
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}">Next</a> 
+                        <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+            {% else %}
+                <center> <p>No performances found.</p> </center>
+            {% endif %}
         </div>
-
-        <div id="insights" class="tab-content"></div>
-        <div id="certificates" class="tab-content"></div>
+        </div>
     </div>
-
     <script>
-        // Get the currently active tab from localStorage or set to the default
-        // const activeTab = localStorage.getItem('activeTab') || 'progress';
-        
-        // document.addEventListener('DOMContentLoaded', function () {
-        //     openTab(null, activeTab); // Open the saved tab on page load
-        // });
-
-        // function openTab(evt, tabName) {
-        //     var i, tabContent, tabLinks;
-        //     tabContent = document.getElementsByClassName("tab-content");
-        //     for (i = 0; i < tabContent.length; i++) {
-        //         tabContent[i].style.display = "none"; // Hide all tab content
-        //     }
-        //     tabLinks = document.getElementsByClassName("tab");
-        //     for (i = 0; i < tabLinks.length; i++) {
-        //         tabLinks[i].className = tabLinks[i].className.replace(" active", ""); // Remove active class from all tabs
-        //     }
-        //     document.getElementById(tabName).style.display = "block"; // Show the selected tab
-        //     if (evt) {
-        //         evt.currentTarget.className += " active"; // Add active class to the clicked tab
-        //         localStorage.setItem('activeTab', tabName); // Store the active tab in localStorage
-        //     } else {
-        //         // If no event is provided, it means it's called on page load
-        //         tabLinks[0].className += " active"; // Ensure the first tab is marked as active if no event
-        //     }
-        // }
-
-
-        // Toggle My Courses section
-        function toggleMyCourses() {
-            var content = document.getElementById("myCoursesContent");
-            var pagination = document.querySelector(".pagination");
-            if (content.classList.contains("show")) {
-                content.classList.remove("show");
-                pagination.classList.remove("show");
-            } else {
-                content.classList.add("show");
-                pagination.classList.add("show");
-            }
+        // Function to store the active tab in localStorage
+        function setTab(tabName) {
+            localStorage.setItem('activeTab', tabName);
+            loadActiveTab();
         }
 
-        
-        const itemsPerPage = 3;
-        let currentPage = 1;
+        // Function to load the active tab
+        function loadActiveTab() {
+            var activeTab = localStorage.getItem('activeTab') || 'performance'; // Default to 'certificates'
 
-        function displayCourses() {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageItems = courses.slice(startIndex, endIndex);
-
-            const courseContent = document.getElementById("myCoursesContent");
-            courseContent.innerHTML = "";
-
-            pageItems.forEach(course => {
-                const courseElement = document.createElement("div");
-                courseElement.className = "course-container";
-                courseElement.innerHTML = `
-                    <div class="course-info">
-                        <div class="course-icon"></div>
-                        <div class="course-details">
-                            <p class="course-title">${course.title}</p>
-                            <p class="institution">${course.institution}</p>
-                            <p class="grade">Grade Achieved: ${course.grade}</p>
-                        </div>
-                    </div>
-                    <button class="add-linkedin">Add to LinkedIn</button>
-                `;
-                courseContent.appendChild(courseElement);
+            document.querySelectorAll('.tab').forEach(button => {
+                if (button.getAttribute('onclick').includes(activeTab)) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
             });
 
-            updatePaginationInfo();
+            document.querySelectorAll('.tab-content').forEach(content => {
+                if (content.id === activeTab) {
+                    content.style.display = 'block';
+                } else {
+                    content.style.display = 'none';
+                }
+            });
         }
 
-        function updatePaginationInfo() {
-            document.getElementById("currentPage").textContent = currentPage;
-            document.getElementById("totalPages").textContent = Math.ceil(courses.length / itemsPerPage);
-            
-            document.getElementById("prevButton").disabled = (currentPage === 1);
-            document.getElementById("nextButton").disabled = (currentPage === Math.ceil(courses.length / itemsPerPage));
-        }
-
-        function changePage(direction) {
-            currentPage += direction;
-            displayCourses();
-        }
-
-        // Initial display
-        displayCourses();
-
-        
-
-
-
-        
+        document.addEventListener('DOMContentLoaded', loadActiveTab);
     </script>
+
 </body>
 {% endblock %}
+

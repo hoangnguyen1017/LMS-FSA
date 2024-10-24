@@ -1,26 +1,13 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Edit Content for {{ course.course_name }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .content-wrapper {
-        padding: 20px; /* Adjust padding as needed */
-        margin: 0 auto; /* Center align the content */
-        max-width: 1600px; /* Set a max width for the content area */
-    }
-
-    .content-wrapper h1,
-    .content-wrapper h2,
-    .content-wrapper h3,
-    .content-wrapper ul {
-        margin-left: 20px; /* Indent left */
-        margin-right: 20px; /* Indent right */
-    }
-</style>
-{% endblock %}
-
 {% block content %}
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
+</head>
+<body id="content-edit">
 <div class="content-wrapper">
     <h1 style=" text-transform: uppercase; margin: 0; color: black; margin-bottom: 20px;  ">Edit Content for {{ course.course_name }}</h1>
 
@@ -91,7 +78,6 @@
     </form>
 </div>
 
-{% load static %}
 <script src="{% static 'ckeditor/ckeditor-init.js' %}"></script>
 <script src="https://cdn.ckeditor.com/4.16.0/full/ckeditor.js"></script>
 <script>
@@ -143,4 +129,5 @@
         });
     }
 </script>
+</body>
 {% endblock %}

@@ -5,184 +5,13 @@
 {% block title %}Course Content{% endblock %}
 
 {% block content %}
-
-<style>
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: Verdana, Geneva, Tahoma, sans-serif;
-    }
-    .container {
-        display: flex;
-        margin-top: 20px;
-    }
-    .sidebar {
-        width: 250px;
-        background-color: #e6f2f2;
-        padding: 20px;
-        box-sizing: border-box;
-    }
-    .subject-title {
-        font-size: 24px;
-        font-weight: bold;
-        text-align: center;
-        padding: 10px;
-        margin-bottom: 20px;
-    }
-    .dropdown-btn {
-        background: none;
-        border: none;
-        font-size: 18px;
-        font-weight: bold;
-        color: black;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        padding: 10px 0;
-    }
-    .dropdown-btn i {
-        transition: transform 0.3s;
-    }
-    .dropdown-btn.active i {
-        transform: rotate(180deg);
-    }
-    .menu {
-        list-style: none;
-        padding: 0;
-        display: none;
-    }
-    .menu li {
-        margin-bottom: 10px;
-    }
-    .menu li a {
-        text-decoration: none;
-        color: black;
-        font-size: 18px;
-        display: block;
-        padding: 10px;
-        background-color: #4db3b3;
-        color: white;
-        border-radius: 5px;
-        text-align: center;
-    }
-    .menu li a:hover {
-        background-color: #3a8a8a;
-    }
-    .menu li a.active {
-        background-color: #3a8a8a;
-    }
-    .content {
-        flex-grow: 1;
-        padding: 20px;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-    }
-    .materials-list {
-        max-height: 500px; /* Set the maximum height of the container */
-        overflow-y: auto; /* Enable vertical scrollbar */
-        border: 1px solid #e6f2f2;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        padding: 10px; /* Add padding to the container */
-        width: 100%; /* Set the width to 100% of the parent container */
-        box-sizing: border-box
-    }
-    .section-title {
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 20px;
-    }
-    .item {
-        margin-bottom: 20px;
-    }
-    .item-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-    .item-header i {
-        font-size: 24px;
-        margin-right: 10px;
-    }
-    .title {
-        font-size: 18px;
-        font-weight: bold;
-    }
-    .status {
-        margin-left: auto;
-        background-color: #4db3b3;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-size: 14px;
-    }
-    .video {
-        width: 100%;
-        height: auto;
-    }
-    .actions {
-        display: flex;
-        align-items: center;
-        margin-top: 10px;
-    }
-    .actions .btn {
-        margin-right: 10px;
-        background-color: #4db3b3;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-size: 14px;
-        text-decoration: none;
-        text-align: center;
-    }
-    .actions .btn:hover {
-        background-color: #3a8a8a;
-    }
-    .list -group {
-        margin-bottom: 0;
-    }
-    .list-group-item {
-        padding: 10px;
-        border-bottom: 1px solid #e6f2f2;
-    }
-    .list-group-item:last-child {
-        border-bottom: none;
-    }
-    .list-group-item.active {
-        background-color: #4db3b3;
-        color: white;
-    }
-    .list-group-item a {
-        text-decoration: none;
-        color: black;
-        display: block;
-    }
-    .list-group-item a:hover {
-        color: #3a8a8a;
-    }
-    .content-detail {
-        flex-grow: 1;
-        padding: 20px;
-        background-color: #e6f2f2;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        color: black;
-        overflow-y: auto;
-    }
-    .message-content {
-        background-color: #e6f2f2;
-        padding: 15px;
-        border-radius: 5px;
-        margin-top: 10px;
-    }
-</style>
-
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
+</head>
+<body id="course-content">
 <div class="container">
     <div class="sidebar">
-        <div class="subject-title">{{ course.course_name }}</div>
+        <div class="course-title">{{ course.course_name }}</div>
         <button class="dropdown-btn">SESSIONS <i class="fas fa-chevron-down"></i></button>
         <ul class="menu" id="session-menu">
             {% for session in sessions %}
@@ -250,12 +79,9 @@
                 {% endif %}
             </div>
         {% endif %}
-
-
-
     </div>
 </div>
-
+</body>
 {% endblock %}
 
 {% block extra_js %}

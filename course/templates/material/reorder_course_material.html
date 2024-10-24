@@ -1,21 +1,13 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Reorder Materials - {{ course.course_name }}{% endblock %}
 
 {% block content %}
-<style>
-    .material-handle {
-        cursor: move;
-        margin-left: auto;  /* Đẩy nút kéo về phía bên phải */
-        padding-left: 10px; /* Thêm một chút khoảng cách bên trái */
-    }
-    .list-group-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-</style>
-
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
+</head>
+<body id="reorder-material">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 <div class="container mt-5">
     <h1 style="color: #389bb0;">Reorder Materials for Course: {{ course.course_name }}</h1>
@@ -42,7 +34,7 @@
                 <h3>Reorder Materials</h3>
                 <ul id="materials-list" class="list-group mb-3">
                     {% for material in materials %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ material.id }}">
+                        <li class="list-group-item" data-id="{{ material.id }}">
                             <span>{{ material.title }}</span>
                             <span class="material-handle">☰</span>
                             <input type="hidden" name="order_{{ material.id }}" id="order_{{ material.id }}" value="{{ material.order }}">
@@ -81,4 +73,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+</body>
 {% endblock %}

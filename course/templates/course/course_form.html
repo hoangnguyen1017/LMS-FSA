@@ -1,83 +1,16 @@
 {% extends 'base.html' %}
 {% load form_filters %}
+{% load static %}
 
 {% block title %}{{ form.instance.pk|yesno:"Edit Course,Add New Course" }}{% endblock %}
 
-{% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    .main-color {
-        background-color: #389bb0;
-        color: white;
-    }
-    .main-color-text {
-        color: #389bb0;
-    }
-    .main-color-border {
-        border-color: #389bb0;
-    }
-    .full-width-container {
-        width: 100%;
-        max-width: none;
-        padding-left: 15px;
-        padding-right: 15px;
-    }
-    .form-row {
-        display: flex;
-        flex-wrap: wrap;
-        margin-right: -5px;
-        margin-left: -5px;
-    }
-    .form-row > .form-group {
-        flex: 1 1 calc(25% - 10px);
-        padding-right: 5px;
-        padding-left: 5px;
-        margin-bottom: 1rem;
-    }
-    .form-group label {
-        font-weight: bold;
-    }
-    .form-group input, .form-group select, .form-group textarea {
-        transition: border-color 0.3s ease-in-out;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-        border-color: #389bb0;
-        outline: none;
-    }
-    .btn {
-        transition: background-color 0.3s ease-in-out;
-    }
-    .btn:hover {
-        background-color: #2a7a8a;
-    }
-    .description-container {
-        width: 100%;
-        margin-top: 1rem;
-        font-weight: bold;
-    }
-    .description-input {
-        width: 100%;
-        min-height: 200px;
-    }
-    .form-group-inline {
-        display: flex;
-        gap: 1rem;
-    }
-    .form-group-inline .form-group {
-        flex: 1;
-    }
-    .button-group {
-        display: flex;
-        gap: 1rem;
-    }
-    .select2-container {
-        width: 100% !important;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container mx-auto p-8 bg-white rounded-lg shadow-xl">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
+</head>
+<body id="course-form">
+<div class="container">
     <h2 class="text-2xl font-semibold text-teal-600 mb-4 main-color-text">{{ form.instance.pk|yesno:"Edit Course,Add New Course" }}</h2>
     <form method="post" class="space-y-4" enctype="multipart/form-data">
         {% csrf_token %}
@@ -140,6 +73,7 @@
         </div>
     </form>
 </div>
+</body>
 {% endblock %}
 
 {% block extra_js %}

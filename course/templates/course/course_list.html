@@ -1,70 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block extra_css %}
-<style>
-    .main-color {
-        background-color: #389bb0;
-        color: white;
-    }
-    .main-color-text {
-        color: #389bb0;
-    }
-    .main-color-border {
-        border-color: #389bb0;
-    }
-    .full-width-container {
-        width: 100%;
-        max-width: none;
-        padding-left: 15px;
-        padding-right: 15px;
-    }
-    .course-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-    }
-    .course-card {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        width: 100%;
-    }
-    .course-card-body {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    .course-image-container {
-        width: 100%;
-        height: 100%; /* Fixed height for image container */
-        overflow: hidden;
-        margin-bottom: 1rem;
-    }
-    .course-image {
-        width: 300px;
-        height: 200px;
-        object-fit: cover;
-    }
-    .course-details {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    .course-card-footer {
-        margin-top: auto;
-    }
-    .search-container {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-    .search-input {
-        width: 200px;
-        margin-right: 0.5rem;
-    }
-</style>
-{% endblock %}
+
 {% block content %}
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
+</head>
+<body id="course-list">
 <div class="full-width-container bg-white p-6">
     <h1 class="text-2xl font-bold mb-6 main-color-text">Courses</h1>
     <div class="flex justify-between items-center mb-6">
@@ -215,41 +156,5 @@
         </div>
     {% endif %}
 </div>
-<style>
-    /* Custom styles for carousel controls */
-    .carousel-control {
-        width: 5%;
-    }
-
-    .carousel-control-prev-icon,
-    .carousel-control-next-icon {
-        background-size: 100% 100%;
-        width: 3rem;
-        height: 3rem;
-    }
-
-    .carousel-control-prev-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 8 8'%3E%3Cpath d='M5.25 0l-4 4 4 4 1.5-1.5-2.5-2.5 2.5-2.5-1.5-1.5z'/%3E%3C/svg%3E");
-    }
-
-    .carousel-control-next-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 8 8'%3E%3Cpath d='M2.75 0l4 4-4 4-1.5-1.5 2.5-2.5-2.5-2.5 1.5-1.5z'/%3E%3C/svg%3E");
-    }
-
-    .carousel-control-prev {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-60%);
-        left: -2%; /* Move the previous arrow further to the left */
-        width: 5%;
-    }
-
-    .carousel-control-next {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-60%);
-        right: -2%; /* Move the next arrow further to the right */
-        width: 5%;
-    }
-</style>
+</body>
 {% endblock %}

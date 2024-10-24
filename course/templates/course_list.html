@@ -25,7 +25,7 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Course Id</th>
+                <th>#</th>
                 <th>Course Code</th>
                 <th>Course Name</th>
                 <th>Description</th>
@@ -36,9 +36,9 @@
         <tbody>
             {% for course in courses %}
             <tr>
-                <td>{{ course.id }}</td>
+                <td>{{ forloop.counter }}</td>
                 <td>{{ course.course_code }}</td>
-                <td>{{ course.name }}</td>
+                <td>{{ course.course_name }}</td>
                 <td>{{ course.description }}</td>
                 <td>
                     <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm">Edit</a>
@@ -119,7 +119,7 @@
                                 <div class="col-md-4 mb-4">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h5 class="card-title">{{ course.name }}</h5>
+                                            <h5 class="card-title">{{ course.course_name }}</h5>
                                             <h6 class="card-subtitle mb-2 text-muted">Code: {{ course.course_code }}</h6>
                                             <p class="card-text">{{ course.description|truncatewords:20 }}</p>
                                             <a href="{% url 'course:course_detail' course.id %}" class="btn btn-primary">View Details</a>

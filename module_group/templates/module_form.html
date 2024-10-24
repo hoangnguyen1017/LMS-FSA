@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% load form_filters %}
 
+{% load widget_tweaks %}
 {% block title %}{{ form.instance.pk|yesno:"Edit Module,Add New Module" }}{% endblock %}
 
 {% block content %}

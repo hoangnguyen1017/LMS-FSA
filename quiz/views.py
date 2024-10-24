@@ -14,8 +14,7 @@ from subject.models import Subject
 import json
 import csv
 from django.utils import timezone
-import os
-from django.conf import settings
+
 
 
 def quiz_list(request):

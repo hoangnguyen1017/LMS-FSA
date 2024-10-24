@@ -1,4 +1,3 @@
-# main/forms.py
 from django import forms
 from user.models import User  # Sử dụng model User của Django
 from django.contrib.auth.hashers import make_password
@@ -7,55 +6,41 @@ from django.conf import settings  # Để lấy email mặc định từ setting
 from role.models import Role
 from user.models import Profile
 import random
+
+class EmailForm(forms.Form):
+    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Nhập email'}))
+
+class ConfirmationCodeForm(forms.Form):
+    confirmation_code = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nhập mã xác thực'}))
+
 class RegistrationForm(forms.ModelForm):
-    password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter password'}))
-    password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm password'}))
-    first_name = forms.CharField(max_length=255, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter first name'}))
-    last_name = forms.CharField(max_length=255, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter last name'}))
-    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter email'}))
+    password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Nhập mật khẩu'}))
+    password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Xác nhận mật khẩu'}))
+    first_name = forms.CharField(max_length=255, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nhập họ'}))
+    last_name = forms.CharField(max_length=255, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nhập tên'}))
 
     class Meta:
-        model = User  # Use Django's default User model
-        fields = ['username', 'email', 'password1', 'password2', 'first_name', 'last_name']  # Include first name and last name
+        model = User
+        fields = ['username', 'email', 'password1', 'password2', 'first_name', 'last_name']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter username'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nhập tên người dùng'}),
         }
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
-            raise forms.ValidationError("Passwords do not match")
+            raise forms.ValidationError("Mật khẩu không khớp")
         return password2
 
     def save(self, commit=True):
         user = super().save(commit=False)
         password = self.cleaned_data["password1"]
-        user.password = make_password(password)  # Hash the password
-        user.first_name = self.cleaned_data['first_name']  # Save first name
-        user.last_name = self.cleaned_data['last_name']  # Save last name
-        user.email = self.cleaned_data['email']  # Save email
-
+        user.set_password(password)
         if commit:
             user.save()
-            user_role = Role.objects.get(role_name='User')  
-            profile = Profile.objects.create(user=user, role=user_role)
-            random_number = random.randint(1000, 9999)
-
-            # Send confirmation email after successful registration
-            send_mail(
-                'Account Registration Successful',
-                f'Hello {user.username},\n\n'
-                f'You have successfully registered an account on the system.\n\n'
-                f'Your login information:\n'
-                f'Username: {user.username}\n'
-                f'Password: {password}\n'
-                f'Your confirmation code is: {random_number}',
-                settings.DEFAULT_FROM_EMAIL,  # Sender email
-                [user.email],  # User's email
-                fail_silently=False,
-            )
         return user
+
 
 class PasswordResetRequestForm(forms.Form):
     email = forms.EmailField(label='Email')

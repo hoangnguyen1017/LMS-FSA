@@ -105,20 +105,10 @@ class RoleForm(forms.ModelForm):
         fields = ['role_name']
         
 
-class AssignTrainingProgramForm(forms.ModelForm):
-    training_programs = forms.ModelMultipleChoiceField(
-        queryset=TrainingProgram.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=True
-    )
-
-    class Meta:
-        model = User
-        fields = ['training_programs']
         
 
 class UserCourseProgressForm(forms.ModelForm):
     class Meta:
         model = UserCourseProgress
-        fields = ['user', 'training_program', 'subject', 'progress']
+        fields = ['user', 'course', 'progress_percentage']
 

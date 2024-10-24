@@ -1,5 +1,5 @@
 from django import forms
-from .models import *
+from .models import Course, Session, Enrollment, Completion,ReadingMaterial
 from user.models import User
 #from ckeditor.widgets import CKEditorWidget
 
@@ -21,7 +21,7 @@ class CourseForm(forms.ModelForm):
 
     class Meta:
         model = Course
-        fields = ['name', 'course_code', 'description', 'creator', 'instructor', 'prerequisites', 'tags']  # sửa lại
+        fields = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'prerequisites', 'tags']  # sửa lại
 
 class SessionForm(forms.ModelForm):
     session_name = forms.CharField(max_length=50, required=False, label="Session Name")

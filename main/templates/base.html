@@ -3,44 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Learning Management System{% endblock %}</title>
 
     <!-- CSS Libraries -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/hover.css/2.3.1/css/hover-min.css">
-    
+
     {% block extra_css %}{% endblock %}
 
     <style>
         body {
-            background-color: #f8f9fa;
-        }
-        footer {
-            position: relative;
-            bottom: 0;
-            width: 100%;
+            background-color: #F8F9FA; /* Màu nền nhất quán */
+            padding-top: 70px; /* Khoảng trống ở đầu trang */
         }
         .navbar-brand {
             font-weight: bold;
             font-size: 1.5rem;
+            color: #343A40 !important; /* Màu xám đen */
         }
         .dropdown-menu {
             border-radius: 0.5rem;
         }
         .card {
+            max-width: 1200px; 
+            margin: 0 auto;
             border: none;
-            border-radius: 0.5rem;
-            transition: transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px; 
+            transition: transform 0.25s ease-in-out;
         }
         .card:hover {
-            transform: scale(1.05);
+            transform: scale(1.01);
         }
+        .custom-navbar {
+            background-color: #2196F3; /* Màu xanh nhẹ */
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            z-index: 1000; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        }
+        .navbar-nav .nav-link {
+            color: #343A40 !important; /* Màu xám đen */
+        }
+        .navbar-nav .nav-link:hover {
+            color: darkgray; /* Màu chữ khi hover */
+        }
+        .dropdown-divider {
+            margin: 0.5rem 0; /* Tùy chỉnh khoảng cách cho đường ngăn cách */
+        }
+        .nav-link {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 0;
+            white-space: nowrap; /* Ngăn chặn văn bản xuống dòng */
+        }
+
+        .nav-tabs {
+            width: 100%;
+            display: flex;
+            justify-content: start; /* Thay đổi từ start thành center */
+        }
+    
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark custom-navbar shadow-sm">
         <a class="navbar-brand" href="{% url 'main:home' %}">FSA</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -48,54 +78,65 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mr-auto"></ul>
             <ul class="navbar-nav ml-auto">
+                {% if user.is_authenticated and user.is_superuser %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'admin:index' %}">
+                        <i class="fas fa-user-shield"></i> Admin Django &nbsp;&nbsp;&nbsp;|
+                    </a>
+                </li>
+                {% endif %}
+                <div class="dropdown-divider"></div>
                 {% if request.user.is_authenticated %}
-                    <!-- Dropdown xuất hiện khi người dùng đã đăng nhập -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            {% if request.user.profile.profile_picture_url %}
-                                <img src="{{ request.user.profile.profile_picture_url }}" alt="Profile Picture" class="rounded-circle" width="30" height="30" style="margin-right: 5px;">
-                            {% endif %}
-                            {{ request.user.get_full_name|default:request.user.username }}
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" href="{% url 'user:user_detail' request.user.id %}">Profile</a>
-                            <div class="dropdown-divider"></div>
-                            <!-- Form để logout người dùng -->
-                            <form action="{% url 'main:logout' %}" method="post" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="dropdown-item">Logout</button>
-                            </form>
-                        </div>
-                    </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {% if request.user.profile.profile_picture_url %}
+                        <img src="{{ request.user.profile.profile_picture_url }}" alt="Profile Picture" class="rounded-circle" width="30" height="30" style="margin-right: 5px;">
+                        {% endif %}
+                        {{ request.user.get_full_name|default:request.user.username }}
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="{% url 'user:user_detail' request.user.id %}">Profile</a>
+                        <div class="dropdown-divider"></div>
+                        <form action="{% url 'main:logout' %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item">Logout</button>
+                        </form>
+                    </div>
+                </li>
                 {% else %}
-                    <!-- Hiển thị nút đăng ký và đăng nhập nếu người dùng chưa đăng nhập -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:register' %}">Register</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:login' %}">Login</a>
-                    </li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'main:register_email' %}">Register</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'main:login' %}">Login</a></li>
                 {% endif %}
             </ul>
         </div>
     </nav>
-
-    <div class="container mt-4">
-        {% block content %}
-        {% endblock %}
+    <div class="container-fluid mt-4">
+        {% block content %}{% endblock %}
     </div>
-
-    <!-- Footer được ẩn bằng comment -->
-    {% comment %} 
-    <footer class="bg-dark text-white text-center py-3 mt-4">
-        <p>&copy; {{ current_year }} FSA. All Rights Reserved.</p>
-    </footer> 
-    {% endcomment %}
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.2/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll('.dropdown-item:contains("Logout")').forEach(function(logoutButton) {
+                logoutButton.addEventListener("click", function(event) {
+                    event.preventDefault();
+                    fetch("{% url 'main:logout' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

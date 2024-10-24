@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Progress Notification List{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Progress Notification List</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Course</th>
+                <th>Notification Message</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for notification in progress_notification %}
+            <tr>
+                <td>{{ notification.username }}</td>
+                <td>{{ notification.course }}</td>
+                <td>{{ notification.notification_message }}</td>
+                <td>
+                    <a href="{% url 'progress_notification:progress_notification_detail' notification.id %}" class="btn btn-info btn-sm">Details</a>
+                    <a href="{% url 'progress_notification:progress_notification_edit' notification.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'progress_notification:progress_notification_delete' notification.id %}" class="btn btn-danger btn-sm">Delete</a>
+
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'progress_notification:progress_notification_add' %}" class="btn btn-primary">Add New Progress Notification</a>
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load form_filters %}
 
-{% block title %}{{ course.name }}{% endblock %}
+{% block title %}{{ course.course_name }}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -13,7 +13,7 @@
         {% endfor %}
     {% endif %}
 
-    <h1 class="text-2xl font-bold mb-4">{{ course.name }} - Details</h1>
+    <h1 class="text-2xl font-bold mb-4">{{ course.course_name }} - Details</h1>
 
     <!-- Information Table -->
     <table class="table table-bordered mb-4">
@@ -55,7 +55,7 @@
                     {% if course.prerequisites.exists %}
                         <ul class="list-unstyled">
                             {% for prerequisite in course.prerequisites.all %}
-                                <li>{{ prerequisite.name }}</li>
+                                <li>{{ prerequisite.course_name }}</li>
                             {% endfor %}
                         </ul>
                     {% else %}

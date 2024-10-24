@@ -28,6 +28,9 @@
     </div>
 
     <div class="content"> <!-- Added content div -->
+        <div class="back-button mb-4">
+            <a href="{% url 'course:course_detail' course.id %}" class="btn btn-secondary">Back to Course Detail</a>
+        </div>
         <div class="materials-list">
             <div class="section-title">{{ current_session.name }}</div>
             <ul class="list-group mb-4">
@@ -86,6 +89,7 @@
 
 {% block extra_js %}
 {{ block.super }}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
     // Toggle dropdown visibility
@@ -139,6 +143,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error('Error:', error);
+                alert("An error occurred: " + xhr.responseText);  // Add alert for better visibility
             }
         });
     });

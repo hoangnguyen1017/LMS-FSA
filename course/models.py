@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from ckeditor.fields import RichTextField
 from ckeditor_uploader.fields import RichTextUploadingField
 
@@ -9,8 +9,8 @@ class Course(models.Model):
     course_code = models.CharField(max_length=20, unique=True, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
-    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_courses')
-    instructor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='taught_courses')
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_courses')
+    instructor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='taught_courses')
     published = models.BooleanField(default=True)
     prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='is_prerequisite_for')
     tags = models.ManyToManyField('Tag', blank=True, related_name='courses')
@@ -50,7 +50,7 @@ class Session(models.Model):
         return self.name
 
 class Enrollment(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     date_enrolled = models.DateTimeField(auto_now_add=True)
 
@@ -90,7 +90,7 @@ class ReadingMaterial(models.Model):
 
 class Completion(models.Model):
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     material = models.ForeignKey(CourseMaterial, on_delete=models.CASCADE, null=True, blank=True)
     completed = models.BooleanField(default=False)
 
@@ -103,7 +103,7 @@ class Completion(models.Model):
 
 class SessionCompletion(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
 
@@ -129,3 +129,15 @@ def mark_session_complete(course, user, session):
             session=session,
             defaults={'completed': True}
         )
+
+class UserCourseProgress(models.Model):
+    user = models.ForeignKey('user.User', related_name='course_progress', on_delete=models.CASCADE)  # Thêm related_name
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    last_accessed = models.DateTimeField(auto_now=True)  # Cập nhật thời gian truy cập gần nhất
+
+    class Meta:
+        unique_together = ('user', 'course')
+
+    def __str__(self):
+        return f"{self.user} - {self.course} - {self.progress_percentage}%"

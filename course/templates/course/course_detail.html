@@ -16,16 +16,18 @@
         </div>
 
         <div class="content-access-section">
-            {% if user_type == 'instructor' or user.is_superuser %}
+            {% if is_enrolled and sessions %}
                 <a href="{% url 'course:course_content' course.pk sessions.0.id %}" class="btn btn-success mb-1" style="background-color: #389bb0; border-color: #ace2e1; font-size: 23px;">Go to Content</a>
-            {% elif user_type == 'student' %}
-                {% if is_enrolled and sessions %}
-                    <a href="{% url 'course:course_content' course.pk sessions.0.id %}" class="btn btn-success mb-1" style="background-color: #389bb0; border-color: #ace2e1; font-size: 23px;">Go to Content</a>
-                {% elif is_enrolled %}
-                    <p> No sessions </p>
-                {% else %}
-                    <span class="not-enrolled-text">You are not enrolled</span>
+                {% if user_type == 'instructor' or user.is_superuser %}
+                    <a href="{% url 'course:course_unenroll' course.pk %}" class="btn btn-success mb-1" style="background-color: #FF0000; color: white;">Unenroll</a>
                 {% endif %}
+            {% elif is_enrolled %}
+                <p> No sessions </p>
+            {% else %}
+                <div class="d-inline-flex align-items-center">
+                    <a href="{% url 'course:course_enroll' course.pk %}" class="btn btn-success mb-1" style="background-color: #389bb0; border-color: #ace2e1; font-size: 23px;">Enroll</a>
+                    <p class="course-info-text mb-0 ml-2" style="font-size: 18px;">Please review the prerequisite course before enrolling</p>
+                </div>
             {% endif %}
         </div>
 
@@ -97,9 +99,6 @@
                         {% if is_enrolled %}
                             <a href="{% url 'course:course_unenroll' course.pk %}" class="user-enroll-link uppercase-title" style="color: red;">Unenroll</a>
                             <p class="course-info-text">When you un-enroll, this course will no longer appear</p>
-                        {% else %}
-                            <a href="{% url 'course:course_enroll' course.pk %}" class="enroll-link uppercase-title">Enroll</a>
-                            <p class="course-info-text">Please review the prerequisite course before enrolling</p>
                         {% endif %}
                     {% else %}
                         <!-- If the user is not authenticated -->
@@ -198,8 +197,8 @@
                         <p class="bold">{{ course.description }}</p>
                     </div>
                 </div>
-
-                <!-- Latest Student Feedback Carousel -->
+            {% endif %}
+            <!-- Latest Student Feedback Carousel -->
                 <div id="feedbackCarousel" class="carousel slide" data-ride="carousel">
                     <div class="carousel-inner">
                         {% if latest_feedbacks %}
@@ -230,15 +229,6 @@
                                     <div class="col-12">
                                         <p>No feedback has been provided for this course yet.</p>
                                     </div>
-                                    <div class="col-md-4 mb-4 d-flex align-items-center">
-                                        <a href="{% url 'feedback:course_all_feedback' course.pk %}" class="text-primary">
-                                            See All Feedback
-                                        </a>
-                                        <p style="display: inline; margin: 0 5px;"> or </p>
-                                        <a href="{% url 'feedback:give_course_feedback' course.pk %}" class="text-primary">
-                                            Give A Feedback
-                                        </a>
-                                    </div>
                                 </div>
                             </div>
                         {% endif %}
@@ -259,7 +249,6 @@
             <a href="{% url 'feedback:give_course_feedback' course.pk %}" class="text-primary">
                 Give A Feedback
             </a>
-            {% endif %}
         </div>
 
         <div id="Tab2" class="tabcontent">

@@ -83,12 +83,12 @@
 <script>
     let readingMaterialCounter = 1;
 
-    function addRMEntry() {
+    function addRMEntry(sessionName) {
         const container = document.getElementById('reading-materials');
         const newEntry = document.createElement('div');
         newEntry.className = 'reading-material-entry';
         newEntry.innerHTML = `
-            <input type="text" name="reading_material_title[]" class="form-control" placeholder="Reading Material Title">
+            <input type="text" name="reading_material_title[]" class="form-control" value="${sessionName}" placeholder="Reading Material Title">
             <textarea name="reading_material_content[]" class="form-control ckeditor"></textarea>
             <select name="reading_material_type[]" class="form-control">
                 <option value="" disabled selected>Select Material Type</option>
@@ -115,7 +115,12 @@
     document.addEventListener('DOMContentLoaded', function() {
         initializeCKEditor(document.querySelector('.ckeditor'));
 
-        document.getElementById('add-reading-material').addEventListener('click', addRMEntry);
+        // Get the session name from the selected session (this assumes the session name is available in a template variable)
+        const sessionName = "{{ selected_session.name }}";
+
+        document.getElementById('add-reading-material').addEventListener('click', function() {
+            addRMEntry(sessionName);  // Pass session name to pre-fill the title
+        });
 
         document.querySelectorAll('.delete-reading-material').forEach(button => {
             attachDeleteButton(button);

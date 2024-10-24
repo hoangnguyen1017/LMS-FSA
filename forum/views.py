@@ -95,20 +95,22 @@ def question_detail(request, pk):
 
 @login_required
 def create_question(request):
+    courses = Course.objects.all()  # Fetch all courses
     if request.method == 'POST':
         form = ForumQuestionForm(request.POST, request.FILES)
         if form.is_valid():
             question = form.save(commit=False)
-            question.user = request.user
+            question.user = request.user  # Set the user field
             question.save()
             return redirect('forum:question_list')
     else:
         form = ForumQuestionForm()
-    return render(request, 'forum_create_question.html', {'form': form})
+    return render(request, 'forum_create_question.html', {'form': form, 'courses': courses})
 
 @login_required
 def edit_question(request, pk):
     question = get_object_or_404(ForumQuestion, pk=pk)
+    courses = Course.objects.all()  # Fetch all courses
     if request.method == 'POST':
         form = ForumQuestionForm(request.POST, request.FILES, instance=question)
         if form.is_valid():
@@ -123,7 +125,7 @@ def edit_question(request, pk):
             return redirect('forum:question_detail', pk=pk)
     else:
         form = ForumQuestionForm(instance=question)
-    return render(request, 'forum_edit_question.html', {'form': form})
+    return render(request, 'forum_edit_question.html', {'form': form, 'courses': courses})
 
 @login_required
 def delete_question(request, pk):

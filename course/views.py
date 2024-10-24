@@ -6,21 +6,18 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib import messages
 import os
-from django.http import FileResponse,Http404
-from django.utils.text import slugify
 from django.urls import reverse
 from feedback.models import CourseFeedback
 from .forms import ExcelImportForm
 from django.http import HttpResponse
 import openpyxl
 import pandas as pd
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from datetime import datetime
 import base64
-from itertools import zip_longest
 import numpy as np
 import fitz
 from django.core.files.storage import default_storage
@@ -111,6 +108,7 @@ def import_courses(request):
                     prerequisites = to_none_if_nan(row.get('prerequisites'))
 
                     # Fetch User instances
+                    User = get_user_model()
                     creator = User.objects.filter(username=creator_username).first() if creator_username else None
                     instructor = User.objects.filter(username=instructor_username).first() if instructor_username else None
 

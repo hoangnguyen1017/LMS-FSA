@@ -7,10 +7,10 @@
                 <p class="card-text">{{ reply.content }}</p>
 
                 {% if reply.image %}
-                    <a href="#popup{{ reply.id }}">
+                    <a href="#popupReply{{ reply.id }}">
                         <img src="{{ reply.image.url }}" alt="Reply Image" class="img-fluid mb-3" style="width: 500px; height: 300px;">
                     </a>
-                    <div id="popup{{ reply.id }}" class="image-popup">
+                    <div id="popupReply{{ reply.id }}" class="image-popup">
                         <a href="#" class="close">&times;</a>
                         <img src="{{ reply.image.url }}" alt="Reply Image">
                     </div>

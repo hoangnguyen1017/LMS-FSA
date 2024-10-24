@@ -16,7 +16,9 @@
         </div>
 
         <div class="content-access-section">
-            {% if user_type == 'student' %}
+            {% if user_type == 'instructor' or user.is_superuser %}
+                <a href="{% url 'course:course_content' course.pk sessions.0.id %}" class="btn btn-success mb-1" style="background-color: #389bb0; border-color: #ace2e1; font-size: 23px;">Go to Content</a>
+            {% elif user_type == 'student' %}
                 {% if is_enrolled and sessions %}
                     <a href="{% url 'course:course_content' course.pk sessions.0.id %}" class="btn btn-success mb-1" style="background-color: #389bb0; border-color: #ace2e1; font-size: 23px;">Go to Content</a>
                 {% elif is_enrolled %}
@@ -24,8 +26,6 @@
                 {% else %}
                     <span class="not-enrolled-text">You are not enrolled</span>
                 {% endif %}
-            {% elif user_type == 'instructor' or user.is_superuser %}
-                    <a href="{% url 'course:course_content' course.pk sessions.0.id %}" class="btn btn-success mb-1" style="background-color: #389bb0; border-color: #ace2e1; font-size: 23px;">Go to Content</a>
             {% endif %}
         </div>
 

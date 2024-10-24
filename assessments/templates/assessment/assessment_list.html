@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block content %}
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+{% endblock %}
 
-<head>
-    <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
-</head>
+{% block content %}
 <h2 class="text-center mb-4">Assessments</h2>
 <div class="container mt-4">
     <form method="GET" action="{% url 'assessment:assessment_list' %}" class="form-inline justify-content-center mt-3">

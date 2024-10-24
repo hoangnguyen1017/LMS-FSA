@@ -197,7 +197,7 @@ input#searchInput {
 }
 
 .small-description {
-    background-color: #f0f8ff; /* Màu nền nhạt */
+    background-color: pink; /* Màu nền nhạt */
     border: 1px solid #d0e6ff; /* Đường viền nhẹ */
     padding: 5px; /* Khoảng cách bên trong */
     border-radius: 5px; /* Bo góc */

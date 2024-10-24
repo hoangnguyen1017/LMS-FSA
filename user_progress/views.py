@@ -14,7 +14,7 @@ def user_progress_summary(request):
     progress = UserProgress.objects.filter(user = request.user)
     completed = UserProgress.objects.filter(user=request.user, progress_percentage=100).count()
 
-    percent_complete = round((completed / progress.count())*100,2)
+    percent_complete = round((completed / progress.count())*100,2) if progress.count() > 0 else 0
 
     paginator_pro = Paginator(progress, 4) 
 

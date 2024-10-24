@@ -43,7 +43,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Set the default from email
 SECRET_KEY = 'django-insecure-h+p6t3%50m)_a15%4&i*q_ule5a_$566#wu=f_5uvlapiqq%5v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 #ALLOWED_HOSTS = ['codinglmsfsa.pythonanywhere.com']
@@ -199,7 +199,7 @@ USE_TZ = True
 STATIC_URL = '/staticfiles/'
 
 # Define the directory where static files will be collected (if you run `collectstatic`)
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # used for production
+STATIC_ROOT = os.path.join(BASE_DIR, STATIC_URL)  # used for production
 
 # Define additional directories to look for static files
 STATICFILES_DIRS = [

@@ -61,6 +61,26 @@
 </div>
 
 <script>
+    // Function to show Excel content and hide Word content
+function showExcel() {
+    document.getElementById("excelContent").classList.remove("d-none");
+    document.getElementById("wordContent").classList.add("d-none");
+    
+    // Update tab styles to indicate active tab
+    document.getElementById("excelTab").classList.add("active");
+    document.getElementById("wordTab").classList.remove("active");
+}
+
+// Function to show Word content and hide Excel content
+function showWord() {
+    document.getElementById("wordContent").classList.remove("d-none");
+    document.getElementById("excelContent").classList.add("d-none");
+
+    // Update tab styles to indicate active tab
+    document.getElementById("wordTab").classList.add("active");
+    document.getElementById("excelTab").classList.remove("active");
+}
+
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const fileList = document.getElementById('file-list');
@@ -145,6 +165,7 @@ function updateFileInput() {
     filesArray.forEach(file => dataTransfer.items.add(file));
     fileInput.files = dataTransfer.files; // Cập nhật file input
 }
+
 
 
 </script>

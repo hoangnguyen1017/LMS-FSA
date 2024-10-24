@@ -8,6 +8,14 @@
             <h1 class="text-center">Convert Text to JSON</h1>
         </div>
         <div class="card card-body rounded">
+            <ul class="nav nav-tabs justify-content-center">
+                <li class="nav-item">
+                    <a class="nav-link" id="excelTab" href="javascript:void(0)" onclick="showExcel()">Excel to JSON</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" id="wordTab" href="javascript:void(0)" onclick="showWord()">TXT to JSON</a>
+                </li>
+            </ul>
             <!-- Dòng chứa ô nhập và nút OK -->
             <div class="d-flex justify-content-end mb-3" style="align-items: center;">
                 <label for="number_of_textareas" style="margin-right: 10px;">Number of text areas:</label>
@@ -32,6 +40,25 @@
 <!-- ---------------------- -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 <script>
+    // Function to show Excel content and hide Word content
+function showExcel() {
+    document.getElementById("excelContent").classList.remove("d-none");
+    document.getElementById("wordContent").classList.add("d-none");
+    
+    // Update tab styles to indicate active tab
+    document.getElementById("excelTab").classList.add("active");
+    document.getElementById("wordTab").classList.remove("active");
+}
+
+// Function to show Word content and hide Excel content
+function showWord() {
+    document.getElementById("wordContent").classList.remove("d-none");
+    document.getElementById("excelContent").classList.add("d-none");
+
+    // Update tab styles to indicate active tab
+    document.getElementById("wordTab").classList.add("active");
+    document.getElementById("excelTab").classList.remove("active");
+}
     function createTextAreas() {
         const numberOfTextAreas = document.getElementById('number_of_textareas').value;
         const container = document.getElementById('textareas_container');

@@ -72,7 +72,7 @@ h1 {
 }
 /*định kiểu cho phần mô tả nhỏ*/
 .small-description {
-    background-color: #f0f8ff; /* Màu nền nhạt */
+    background-color: palevioletred; /* Màu nền nhạt */
     border: 1px solid #d0e6ff; /* Đường viền nhẹ */
     padding: 5px; /* Khoảng cách bên trong */
     border-radius: 5px; /* Bo góc */

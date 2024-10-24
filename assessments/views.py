@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from course.models import Course
 from quiz.models import Question
-from .models import Assessment, AssessmentType, StudentAssessmentAttempt, AnswerOption, UserAnswer, UserSubmission, StudentAssessmentAttempt, InvitedCandidate, NonRegisteredCandidateAttempt
+from .models import Assessment,  StudentAssessmentAttempt, AnswerOption, UserAnswer, UserSubmission, StudentAssessmentAttempt, InvitedCandidate
 from .forms import AssessmentForm, AssessmentAttemptForm, InviteCandidatesForm
 from exercises.models import Exercise
 
@@ -22,9 +22,139 @@ from django.utils import timezone
 from .tokens import invite_token_generator  # Adjust the import path as necessary
 from django.utils.encoding import force_str
 from django.db import transaction
+from django.core.exceptions import ValidationError
+from exercises.libs.submission import grade_submission, precheck
+from exercises.models import Submission
+
+#Working
+def submit_code(request, exercise_id):
+    exercise = get_object_or_404(Exercise, id=exercise_id)
+    if request.method == "POST":
+        form = Submission(request.POST)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.student = request.user
+            submission.exercise = exercise
+            submission.save()
+            result = grade_submission(submission)
+            submission.score = result['score']
+            submission.save()
+            return redirect('exercises:result_detail', submission_id=submission.id)
+        else:
+            print(form.errors)  # Print form errors to debug
+            print(request.POST)  # Print form data for debugging
+    return redirect('exercises:exercise_list')
 
 @login_required
 def take_assessment(request, assessment_id):
+    assessment = get_object_or_404(Assessment, id=assessment_id)
+    questions = assessment.questions.all()  # Get all questions in the assessment
+    exercises = assessment.exercises.all()  # Assuming you have a related exercise model
+    total_marks = assessment.total_score
+    total_questions = questions.count()  # Count all questions 
+    attempt_id = None  # Initialize as None
+
+    if not request.user.is_authenticated:
+        if request.method == 'POST':
+            # User isn't logged in, so we expect an email to be provided
+            email = request.POST.get('email')
+            if not email:
+                return render(request, 'assessment/take_assessment.html', {
+                    'assessment': assessment,
+                    'questions': questions,
+                    'exercises': exercises,
+                    'error': 'Email is required for taking this assessment.',
+                })
+            
+            # Validate email format (simple validation)
+            try:
+                from django.core.validators import validate_email
+                validate_email(email)
+            except ValidationError:
+                return render(request, 'assessment/take_assessment.html', {
+                    'assessment': assessment,
+                    'questions': questions,
+                    'exercises': exercises,
+                    'error': 'Please provide a valid email address.',
+                })
+        else:
+            # Display form with email input if not POST
+            return render(request, 'assessment/take_assessment.html', {
+                'assessment': assessment,
+                'questions': questions,
+                'exercises': exercises,
+                'anonymous': True  # Indicator for showing the email field in the template
+            })
+
+    if request.method == 'POST':
+        with transaction.atomic():
+            # If the user is authenticated, use the logged-in user, otherwise use the email for tracking
+            user = request.user if request.user.is_authenticated else None
+            email = request.POST.get('email') if not request.user.is_authenticated else None
+
+            attempt = StudentAssessmentAttempt.objects.create(
+                user=user,
+                email=email,  # Track by email if not logged in
+                assessment=assessment,
+                score_quiz=0.0,
+                score_ass=0.0
+            )
+
+            correct_answers = 0
+
+            # Process questions
+            for question in questions:
+                selected_option_id = request.POST.get(f'question_{question.id}')
+                text_response = request.POST.get(f'text_response_{question.id}')
+                selected_option = None
+
+                if selected_option_id and selected_option_id.isdigit():
+                    selected_option = AnswerOption.objects.get(id=int(selected_option_id))
+
+                # Save the student's answer
+                UserAnswer.objects.create(
+                    attempt=attempt,
+                    question=question,
+                    selected_option=selected_option,
+                    text_response=text_response
+                )
+
+                if selected_option and selected_option.is_correct:
+                    correct_answers += 1
+
+            total_exercise_score = 0
+            # Process exercises
+            for exercise in exercises:
+                exercise_response = request.POST.get(f'exercise_{exercise.id}')
+                
+                # Create a UserSubmission object for each exercise response
+                if exercise_response:  # Check if there is a response for the exercise
+                    UserSubmission.objects.create(
+                        exercise=exercise,
+                        user=user,  # Use the logged-in user or None for anonymous
+                        email=email,  # Use the email for tracking if anonymous
+                        code=exercise_response  # Store the response in the code field
+                    )
+                total_exercise_score +=1
+
+            attempt.score_quiz = (total_marks / total_questions) * correct_answers
+            attempt.score_ass = total_exercise_score
+            attempt.save()
+            attempt_id = attempt.id  # Store the attempt_id after saving the attempt
+
+            return redirect('assessment:assessment_result', assessment_id=assessment.id, attempt_id=attempt_id)
+
+    # Render the assessment page with questions and exercises
+    return render(request, 'assessment/take_assessment.html', {
+        'assessment': assessment,
+        'questions': questions,
+        'exercises': exercises,
+        'attempt_id': attempt_id,  # This will be None for GET request
+        'anonymous': not request.user.is_authenticated  # Pass a flag to show email input in the template
+    })
+
+@login_required
+def take_assessment_bk(request, assessment_id):
     assessment = get_object_or_404(Assessment, id=assessment_id)
     questions = assessment.questions.all()  # Get all questions in the assessment
     exercises = assessment.exercises.all()  # Assuming you have a related exercise model
@@ -130,7 +260,7 @@ def assessment_invite_accept(request, uidb64, token):
             if invited_candidate.expiration_date >= timezone.now():
                 # Invitation is valid, redirect to assessment
                 assessment = invited_candidate.assessment
-                return render(request, 'assessment/assessment_detail.html', {'assessment': assessment})
+                return render(request, 'assessment/take_assessment.html', {'assessment': assessment})
             else:
                 messages.error(request, "This invitation link has expired.")
                 return redirect('assessment:assessment_list')  # Redirect as appropriate

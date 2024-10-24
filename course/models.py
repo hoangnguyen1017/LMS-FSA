@@ -1,9 +1,7 @@
 from django.db import models
 from ckeditor.fields import RichTextField
 from ckeditor_uploader.fields import RichTextUploadingField
-from django.db import models
-from unidecode import unidecode
-from django.conf import settings
+
 
 class Course(models.Model):
     course_name = models.CharField(max_length=255, unique=True)
@@ -130,92 +128,14 @@ def mark_session_complete(course, user, session):
             session=session,
             defaults={'completed': True}
         )
-
 class UserCourseProgress(models.Model):
-    user = models.ForeignKey('user.User', on_delete=models.CASCADE)  # String reference to avoid circular import
+    user = models.ForeignKey('user.User', related_name='course_progress', on_delete=models.CASCADE)  # Thêm related_name
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    last_accessed = models.DateTimeField(auto_now=True)  # Updated to reflect last accessed time
+    last_accessed = models.DateTimeField(auto_now=True)  # Cập nhật thời gian truy cập gần nhất
 
     class Meta:
         unique_together = ('user', 'course')
 
     def __str__(self):
         return f"{self.user} - {self.course} - {self.progress_percentage}%"
-    
-class Sub_Course(models.Model):
-    title = models.CharField(max_length=255)
-    order = models.IntegerField()
-
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sub_courses')
-
-    class Meta:
-        unique_together = ('course', 'order')
-    
-    def __str__(self):
-        return self.title
-    
-
-class Module(models.Model):
-    title = models.CharField(max_length=255)
-    order = models.IntegerField()
-
-    created_by = models.ForeignKey('user.User', on_delete= models.SET_NULL, null=True, related_name="module_created")
-    sub_course = models.ForeignKey(Sub_Course, on_delete=models.CASCADE, related_name='modules')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        unique_together = ('order', 'sub_course')
-
-    def __str__(self):
-        return self.title
-
-class Sub_Module(models.Model):
-    title = models.CharField(max_length=255)
-    html_content = models.TextField(blank=True, null=True)
-    video_url = models.TextField(blank=True, null=True)
-
-    order = models.IntegerField()
-
-    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='sub_modules')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        unique_together = ('order', 'module')
-
-    def __str__(self):
-        return self.title
-
-
-class Image(models.Model):
-    image = models.ImageField(upload_to='images/')
-
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="images")
-
-    def delete(self, *args, **kwargs):
-        try:
-            self.image.delete()
-        except PermissionError:
-            print('Error!')
-
-        super().delete(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        if self.image:
-            name, ext = os.path.splitext(self.image.name)
-            new_filename = f"{unidecode(name)}{ext}"
-            self.image.name = new_filename
-
-        super().save(*args, **kwargs)
-
-        
-class Enrolled_Course(models.Model):
-    user = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='enrolled_courses')
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrolled_users')
-
-    class Meta:
-        unique_together = ('user', 'course')

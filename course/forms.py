@@ -1,11 +1,8 @@
 from django import forms
 from .models import *
 from user.models import User
-from course.models import UserCourseProgress
 #from ckeditor.widgets import CKEditorWidget
-
 # Form for creating and editing courses
-
 class CourseForm(forms.ModelForm):
     creator = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Creator")
     instructor = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Instructor")
@@ -73,18 +70,3 @@ class ReadingMaterialEditForm(forms.ModelForm):
     class Meta:
         model = ReadingMaterial
         fields = ['title', 'content']
-
-class UserCourseProgressForm(forms.ModelForm):
-    class Meta:
-        model = UserCourseProgress
-        fields = ['user', 'course', 'progress_percentage']  # Exclude 'last_accessed' as it's auto-managed
-        widgets = {
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'course': forms.Select(attrs={'class': 'form-control'}),
-            'progress_percentage': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': 0,
-                'max': 100,
-                'step': 0.01
-            }),
-        }

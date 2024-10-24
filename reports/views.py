@@ -18,7 +18,7 @@ def course_progress_report(request):
 
 # Overall Progress Report
 def overall_progress_report(request):
-    overall_progress = UserCourseProgress.objects.values('user__username', 'course__coures_name').annotate(
+    overall_progress = UserCourseProgress.objects.values('user__username', 'course__name').annotate(
         avg_progress=Avg('progress_percentage')
     ).order_by('course__name')
     return render(request, 'reports/overall_progress_report.html', {'overall_progress': overall_progress})

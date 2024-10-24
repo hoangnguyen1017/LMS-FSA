@@ -1,64 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<div class="container mt-4">
+    
+    <h1 class="mb-4 text-center">Learning Management System </h1>
+    {% for group in module_groups %}
+    <div class="mb-5">
+        <h2 class="text-primary mb-3">{{ group.name }}</h2>  
 
-    <div class="container mt-5">
-        <h1 class="text-center">LMS Dashboard</h1>
-        
-        <!-- Navigation Tabs -->
-        <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
-            
-            <li class="nav-item">
-                <a class="nav-link active" id="modules-tab" data-toggle="tab" href="#modules" role="tab" aria-controls="modules" aria-selected="false">Modules</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="course-overview-tab" data-toggle="tab" href="#course-overview" role="tab" aria-controls="course-overview" aria-selected="true">Course Overview</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="learning-resources-tab" data-toggle="tab" href="#learning-resources" role="tab" aria-controls="learning-resources" aria-selected="false">Learning Resources</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="engagement-statistics-tab" data-toggle="tab" href="#engagement-statistics" role="tab" aria-controls="engagement-statistics" aria-selected="false">User Engagement Statistics</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="support-feedback-tab" data-toggle="tab" href="#support-feedback" role="tab" aria-controls="support-feedback" aria-selected="false">Support and Feedback</a>
-            </li>
-        </ul>
-        
-        <!-- Tab Content -->
-        <div class="tab-content mt-3">
-            
+        <div class="row">
+            {% for module in modules %}
+                {% if module.module_group == group %}
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <!-- Bọc nội dung card trong thẻ a để tạo liên kết -->
+                        <a href="{% url module.module_url %}" class="text-decoration-none text-dark">
+                            <div class="card-body text-center d-flex flex-column justify-content-center" style="height: 180px; width: 100%; overflow: hidden;">
+                                <!-- Module Icon -->
+                                <div class="icon mb-3">
+                                    <i class="{{ module.icon }} fa-3x" style="color: #2196F3;"></i> <!-- Thay đổi màu icon -->
+                                </div>
 
-            <!-- Modules Tab -->
-            <div class="tab-pane show active " id="modules" role="tabpanel" aria-labelledby="modules-tab">
-                {% include 'tabs/modules.html' %}
-            </div>
-
-            <!-- Course Overview Tab -->
-            <div class="tab-pane fade " id="course-overview" role="tabpanel" aria-labelledby="course-overview-tab">
-                {% include 'tabs/course-overview.html' %}
-            </div>
-
-            <!-- Learning Resources Tab -->
-            <div class="tab-pane fade" id="learning-resources" role="tabpanel" aria-labelledby="learning-resources-tab">
-                {% include 'tabs/learning-resources.html' %}
-            </div>
-
-            <!-- User Engagement Statistics Tab -->
-            <div class="tab-pane fade" id="engagement-statistics" role="tabpanel" aria-labelledby="engagement-statistics-tab">
-                {% include 'tabs/engagement-statistics.html' %}
-            </div>
-
-            <!-- Support and Feedback Tab -->
-            <div class="tab-pane fade" id="support-feedback" role="tabpanel" aria-labelledby="support-feedback-tab">
-                {% include 'tabs/support-feedback.html' %}
-            </div>
+                                <!-- Module Name -->
+                                <h5 class="card-title" style="font-size: 1.5rem;">{{ module.module_name }}</h5>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
         </div>
     </div>
+    {% endfor %}
+</div>
+{% endblock %}
 
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% block extra_css %}
+<style>
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s; /* Thay đổi thời gian cho các hiệu ứng */
+    }
+
+    .card:hover {
+        transform: scale(1.03); /* Phóng to thẻ một chút */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Thêm bóng đổ khi hover */
+    }
+</style>
 {% endblock %}

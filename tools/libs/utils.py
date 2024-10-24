@@ -1,11 +1,9 @@
-import streamlit as st
+
 import pandas as pd
 import json
 import re
-from mitosheet.streamlit.v1 import spreadsheet
 from io import BytesIO
-from streamlit_option_menu import option_menu
-
+from docx import Document
 # Function to generate exams
 def generator(excel_file, number_of_questions):
     temp = []
@@ -55,18 +53,18 @@ def excel_to_json(data):
     for index, row in data.iterrows():
         try:
             # Extract question and answers
-            answers = [row[f'options[{label.lower()}]'] for label in 'ABCDEFG' if pd.notnull(row[f'options[{label.lower()}]'])]
+            answers = [row[f'options[{label}]'] for label in 'ABCDEFG' if pd.notnull(row[f'options[{label}]'])]
             correct_label = row['correct'].strip().upper()
             # Arrange answers based on the correct label
             arranged_answers = arrange_answers(answers, correct_label) if correct_label in 'ABCDEFG' else answers
 
             cleaned_question = clean_text(str(row['question']))
-            cleaned_answers = [clean_text(str(answer)) for answer in arranged_answers]
-
+            cleaned_answers = [clean_text(f"{chr(65 + i)}- {answer}") for i, answer in enumerate(arranged_answers)]
 
             question_data = {
                 "question": cleaned_question,
-                "answers": cleaned_answers
+                "answers": cleaned_answers,
+                "correct": correct_label  # Thêm trường correct vào đây
             }
             # Add the question data to the list
             output_structure["mc_questions"].append(question_data)
@@ -79,4 +77,58 @@ def excel_to_json(data):
     json_data = json.dumps(output_structure, indent=4, ensure_ascii=False)
     
     return json_data
+
+def word_to_json(word_file):
+    # Mở file Word
+    doc = Document(word_file)
+    
+    # Khởi tạo cấu trúc JSON
+    output_structure = {"mc_questions": []}
+    
+    question_text = ""
+    answers = []
+    correct_answer = ""
+    
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        
+        # Kiểm tra nếu là câu hỏi
+        if text.startswith("Q:"):
+            # Nếu đã có câu hỏi trước đó, lưu nó vào cấu trúc JSON
+            if question_text:
+                question_data = {
+                    "question": question_text,
+                    "answers": answers,
+                    "correct": correct_answer
+                }
+                output_structure["mc_questions"].append(question_data)
+                
+            # Reset cho câu hỏi mới
+            question_text = text[2:].strip()  # Lấy phần sau "Q:"
+            answers = []
+            correct_answer = ""
+        
+        # Kiểm tra nếu là đáp án
+        elif re.match(r'^[A-Z]\.\s', text):
+            answers.append(text)  # Thêm đáp án vào danh sách
+            
+        # Kiểm tra nếu là đáp án đúng
+        elif text.startswith("Correct:"):
+            correct_answer = text.split(":")[1].strip()  # Lấy phần sau "Correct:"
+
+    # Lưu câu hỏi cuối cùng nếu có
+    if question_text:
+        question_data = {
+            "question": question_text,
+            "answers": answers,
+            "correct": correct_answer
+        }
+        output_structure["mc_questions"].append(question_data)
+    
+    # Chuyển đổi cấu trúc JSON sang chuỗi
+    json_data = json.dumps(output_structure, indent=4, ensure_ascii=False)
+    
+    return json_data
+
+
 

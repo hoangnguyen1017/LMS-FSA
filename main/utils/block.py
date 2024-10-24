@@ -1,4 +1,3 @@
-from course.models import Enrolled_Course
 from functools import wraps
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404

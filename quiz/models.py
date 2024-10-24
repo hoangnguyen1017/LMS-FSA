@@ -9,7 +9,7 @@ class Quiz(models.Model):
     quiz_title = models.CharField(max_length=255)
     quiz_description = models.TextField(blank=True, null=True)
     total_marks = models.IntegerField()
-    time_limit = models.IntegerField(default=0)
+    time_limit = models.IntegerField(default=60, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -1,7 +1,7 @@
 from django import forms
 from role.models import Role
 from user.models import Profile, User, Student
-
+from course.models import UserCourseProgress
 from training_program.models import TrainingProgram
 
 
@@ -106,17 +106,10 @@ class RoleForm(forms.ModelForm):
         fields = ['role_name']
         
 
-class AssignTrainingProgramForm(forms.ModelForm):
-    training_programs = forms.ModelMultipleChoiceField(
-        queryset=TrainingProgram.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=True
-    )
-
-    class Meta:
-        model = User
-        fields = ['training_programs']
         
 
-
+class UserCourseProgressForm(forms.ModelForm):
+    class Meta:
+        model = UserCourseProgress
+        fields = ['user', 'course', 'progress_percentage']
 

@@ -11,3 +11,10 @@ class AIInsights(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.course} - {self.insight_text} - {self.insight_type}"
+    
+    def save(self, *args, **kwargs):
+        for fields in ['insight_text', 'insight_type']:
+            val = getattr(self, fields, False)
+            if val:
+                setattr(self, fields, val.capitalize().strip())
+        super(AIInsights, self).save(*args, **kwargs)

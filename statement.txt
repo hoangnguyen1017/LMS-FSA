@@ -18,6 +18,7 @@ pip freeze > requirements.txt
 
 find . -path "*/migrations/*.py" ! -name "__init__.py" -delete
 
+
 windows:  Get-ChildItem -Path . -Recurse -Filter "*.py" | Where-Object { $_.Name -ne "__init__.py" -and $_.FullName -like "*migrations*" } | Remove-Item
 
 UPDATE subject_lesson
@@ -27,3 +28,6 @@ WHERE content LIKE '%<iframe%';
 UPDATE subject_lesson
 SET content = REPLACE(content, 'sandbox=""', '')
 WHERE content LIKE '%<iframe%';
+
+{{ forloop.counter }}
+

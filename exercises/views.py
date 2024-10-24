@@ -8,6 +8,7 @@ from .libs.submission import grade_submission, precheck
 from .forms import ExerciseForm, SubmissionForm
 from .models import Exercise, Submission
 
+
 # Create your views here.
 def exercise_list(request):
     exercises = Exercise.objects.all()

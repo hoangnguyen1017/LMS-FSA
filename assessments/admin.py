@@ -1,7 +1,7 @@
 from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import AssessmentType, Assessment, InvitedCandidate, NonRegisteredCandidateAttempt, StudentAssessmentAttempt, UserAnswer, UserSubmission
+from .models import AssessmentType, Assessment, InvitedCandidate, StudentAssessmentAttempt, UserAnswer, UserSubmission
 from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget
 from course.models import Course
@@ -67,15 +67,6 @@ class InvitedCandidateAdmin(ImportExportModelAdmin):
     resource_class = InvitedCandidateResource
     list_display = ('email', 'assessment', 'invitation_date', 'expiration_date')
     search_fields = ('email', 'assessment__title')
-
-class NonRegisteredCandidateAttemptResource(resources.ModelResource):
-    class Meta:
-        model = NonRegisteredCandidateAttempt
-
-@admin.register(NonRegisteredCandidateAttempt)
-class NonRegisteredCandidateAttemptAdmin(ImportExportModelAdmin):
-    resource_class = NonRegisteredCandidateAttemptResource
-
 
 class StudentAssessmentAttemptResource(resources.ModelResource):
     class Meta:

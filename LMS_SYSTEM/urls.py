@@ -37,6 +37,7 @@ urlpatterns = [
     #group01
     path('user/', include(('user.urls', 'user'), namespace='user')),  # Register user app URLs with a namespace
     path('role/', include(('role.urls', 'user'))),
+    path('department/', include(('department.urls', 'department'))),
 
     #group02
     path('course/', include('course.urls')),
@@ -62,7 +63,7 @@ urlpatterns = [
     path('ai_insights', include('ai_insights.urls')),
     path('analytics_report', include('analytics_report.urls')),
     path('assignment', include('assignment.urls')),
-    path('course_completion', include('course_completion.urls')),
+    # path('course_completion', include('course_completion.urls')),
 
     path('performance_analytics', include('performance_analytics.urls')),
     path('progress_notification', include('progress_notification.urls')),
@@ -75,9 +76,6 @@ urlpatterns = [
     #group06 - Binh_Thang - Coding
     path('exercises/', include('exercises.urls')), 
     path('assessments/', include('assessments.urls')),
-
-    #ngattt
     path('reports/', include('reports.urls'))
-    
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

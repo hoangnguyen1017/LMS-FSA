@@ -3,20 +3,31 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model  # Import for custom user model
 from .forms import CollaborationGroupForm, GroupMemberForm
 from .models import CollaborationGroup, GroupMember
+from django.core.paginator import Paginator
 
 User = get_user_model()  # Reference the custom User model
 
 @login_required
 def collaboration_group_list(request):
     collaboration_groups = CollaborationGroup.objects.all()
+    
+    # Get all member IDs for the current user
+    user_membership_ids = GroupMember.objects.filter(user=request.user).values_list('group_id', flat=True)
+
+    # Pagination logic
+    paginator = Paginator(collaboration_groups, 10)  # Show 10 groups per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     if request.user.is_superuser:
         return render(request, 'admin_collaboration_group_list.html', {
-            'collaboration_groups': collaboration_groups
+            'page_obj': page_obj,  # Pass paginated object to template
+            'user_membership_ids': user_membership_ids
         })
 
     return render(request, 'collaboration_group_list.html', {
-        'collaboration_groups': collaboration_groups
+        'page_obj': page_obj,  # Pass paginated object to template
+        'user_membership_ids': user_membership_ids
     })
 
 @login_required
@@ -27,7 +38,7 @@ def join_group(request, group_id):
     if not GroupMember.objects.filter(group=group, user=request.user).exists():
         GroupMember.objects.create(group=group, user=request.user)
 
-    return redirect('collaboration_group:check_members', group_id=group.id)  # Redirect back to the group list
+    return redirect('collaboration_group:collaboration_group_list')  # Redirect back to the group list
 
 @login_required
 def collaboration_group_add(request):
@@ -64,7 +75,7 @@ def collaboration_group_delete(request, pk):
     collaboration_group = get_object_or_404(CollaborationGroup, pk=pk)
     
     # Only allow the creator to delete the group
-    if collaboration_group.created_by != request.user:
+    if not (request.user == CollaborationGroup.created_by or request.user.is_superuser):
         return redirect('collaboration_group:collaboration_group_list')  # Redirect if user is not the creator
     
     if request.method == 'POST':
@@ -83,6 +94,11 @@ def manage_group(request, group_id):
     members = GroupMember.objects.filter(group=group)
     all_users = User.objects.exclude(id__in=members.values_list('user_id', flat=True))
 
+    # Pagination
+    paginator = Paginator(members, 10)  # Show 10 members per page
+    page_number = request.GET.get('page')
+    paginated_members = paginator.get_page(page_number)
+
     if request.method == 'POST':
         form = GroupMemberForm(request.POST, user_queryset=all_users)  # Pass user queryset
         if form.is_valid():
@@ -96,8 +112,23 @@ def manage_group(request, group_id):
 
     return render(request, 'manage_group.html', {
         'group': group,
-        'members': members,
+        'members': paginated_members,  # Use paginated members
         'form': form,  # Pass the form instance to the template
+    })
+
+@login_required
+def check_members(request, group_id):
+    group = get_object_or_404(CollaborationGroup, pk=group_id)
+    members = GroupMember.objects.filter(group=group)
+
+    # Pagination
+    paginator = Paginator(members, 10)  # Show 10 members per page
+    page_number = request.GET.get('page')
+    paginated_members = paginator.get_page(page_number)
+
+    return render(request, 'check_members.html', {
+        'group': group,
+        'members': paginated_members  # Use paginated members
     })
 
 @login_required
@@ -122,3 +153,14 @@ def check_members(request, group_id):
         'members': members
     })
 
+@login_required
+def leave_group(request, group_id):
+    group = get_object_or_404(CollaborationGroup, pk=group_id)
+
+    # Check if the user is a member of the group
+    membership = GroupMember.objects.filter(group=group, user=request.user).first()
+
+    if membership:
+        membership.delete()  # Remove the member from the group
+
+    return redirect('collaboration_group:collaboration_group_list')  # Redirect back to the group list

@@ -9,6 +9,7 @@ from .views import (
     remove_member,
     join_group,
     check_members,
+    leave_group,
 )
 
 app_name = 'collaboration_group'
@@ -22,4 +23,6 @@ urlpatterns = [
     path('<int:group_id>/remove/<int:member_id>/', remove_member, name='remove_member'),
     path('join/<int:group_id>/', join_group, name='join_group'),  
     path('check_members/<int:group_id>/', check_members, name='check_members'),
+    path('leave/<int:group_id>/', leave_group, name='leave_group'),  # Add this line
+
 ]

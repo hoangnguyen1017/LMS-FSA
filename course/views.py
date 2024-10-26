@@ -639,7 +639,7 @@ def reorder_course_materials(request, pk, session_id):
             success_message = "Order updated successfully!"
             return render(request, 'material/reorder_course_material.html', {
                 'course': course,
-                'sessions': sessions.order_by('order'),
+                'sessions': sessions,
                 'materials': materials,
                 'selected_session_id': selected_session_id,
                 'success_message': success_message,
@@ -648,7 +648,7 @@ def reorder_course_materials(request, pk, session_id):
     # Pass the course, sessions, and materials to the template
     return render(request, 'material/reorder_course_material.html', {
         'course': course,
-        'sessions': sessions.order_by('order'),
+        'sessions': sessions,
         'materials': materials,
         'selected_session_id': selected_session_id,
     })

@@ -24,6 +24,31 @@ from django.core.files.storage import default_storage
 import random
 
 
+from django.http import HttpResponseRedirect
+
+
+@login_required
+def complete_session(request, course_id, session_id):
+    course = get_object_or_404(Course, id=course_id)
+    session = get_object_or_404(Session, id=session_id)
+
+    # Assuming session completion logic is handled here
+    session_completion, created = SessionCompletion.objects.get_or_create(
+        course=course,
+        user=request.user,
+        session=session,
+        defaults={'completed': True}
+    )
+
+    if created or not session_completion.completed:
+        session_completion.completed = True
+        session_completion.save()
+        # Check for course completion and generate certification
+        course.check_and_generate_certification(request.user)
+
+    return HttpResponseRedirect(reverse('course:course_detail', args=[course.id]))
+
+
 def export_course(request):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=lms_course.xlsx'

@@ -1,6 +1,7 @@
 # learning/views.py
 from django.shortcuts import render
 from course.models import Course  # Import the Course model
+from certification.models import Certification  # Import the Certification model
 
 def index(request):
     # Retrieve all published courses
@@ -32,7 +33,10 @@ def learning_paths(request):
     return render(request, 'learningPaths.html')
 
 def certification(request):
-    return render(request, 'certification.html')
+    # Retrieve certifications for the logged-in user
+    user_certifications = Certification.objects.filter(user=request.user)
+    return render(request, 'certification.html', {'certifications': user_certifications})
+
 
 def archived(request):
     return render(request, 'archived.html')

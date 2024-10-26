@@ -88,9 +88,13 @@
                             <div class="session-item">
                                 <input type="text" name="session_names" value="{{ session.name }}" class="form-control">
                                 <input type="hidden" name="session_ids" value="{{ session.id }}">
-                                <button type="button" class="delete-session" data-id="{{ session.id }}">
+                                <button type="button" class="delete-session" data-id="{{ session.id }}"
+                                    {% if session.materials.count > 0 %} disabled {% endif %}>
                                     <i class="fas fa-times"></i>
                                 </button>
+                                {% if session.materials.count > 0 %}
+                                    <span class="text-danger">Cannot delete: Session has materials.</span>
+                                {% endif %}
                             </div>
                         {% endfor %}
                     </div>

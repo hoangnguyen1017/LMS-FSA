@@ -658,10 +658,20 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
     # Retrieve the reading material to edit
     reading_material = get_object_or_404(ReadingMaterial, id=reading_material_id)
 
+    # Retrieve the associated CourseMaterial instance
+    course_material = get_object_or_404(CourseMaterial, material_id=reading_material_id, session=session)
+
     if request.method == 'POST':
         form = ReadingMaterialEditForm(request.POST, instance=reading_material)
+        selected_material_type = request.POST.get('material_type')
+
         if form.is_valid():
-            form.save()
+            reading_material = form.save()
+            # Update the material_type if it has been changed
+            if selected_material_type and selected_material_type != course_material.material_type:
+                course_material.material_type = selected_material_type
+                course_material.save()
+
             messages.success(request, 'Reading material updated successfully.')
             return redirect('course:course_content_edit', pk=pk, session_id=session_id)
     else:
@@ -670,13 +680,14 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
     context = {
         'reading_material': reading_material,
         'form': form,
-        'course': course,  # Pass the course to the context
-        'sessions': sessions,  # Pass the sessions to the context (if needed)
-        'session': session,  # Pass the selected session to the context
+        'course': course,
+        'sessions': sessions,
+        'session': session,
+        'material_types': CourseMaterial.MATERIAL_TYPE_CHOICES,  # Pass material type choices to the template
+        'current_material_type': course_material.material_type,  # Current material type for default selection
     }
 
     return render(request, 'material/edit_reading_material.html', context)
-
 @login_required
 def course_content(request, pk, session_id):
     course = get_object_or_404(Course, pk=pk)

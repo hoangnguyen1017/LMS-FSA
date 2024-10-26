@@ -620,7 +620,7 @@ def reorder_course_materials(request, pk, session_id):
     course = get_object_or_404(Course, pk=pk)
 
     # Fetch all sessions related to the course
-    sessions = Session.objects.filter(course=course)
+    sessions = Session.objects.filter(course=course).order_by('order')
 
     # Fetch materials for the selected session, defaulting to the first session
     selected_session_id = request.POST.get('session_id') or session_id

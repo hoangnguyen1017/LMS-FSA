@@ -5,20 +5,18 @@ from .forms import EnrollmentForm, AdminEnrollmentForm
 from course.models import Enrollment, Course
 from django.contrib.auth.decorators import user_passes_test
 from collaboration_group.models import CollaborationGroup, GroupMember
+from django.db import IntegrityError
 
 @user_passes_test(lambda u: u.is_superuser)  # Restrict access to superusers only
 def enrollment_list_admin(request):
     enrollments = Enrollment.objects.filter(student=request.user)
     all_enrollments = Enrollment.objects.all()  # Fetch all enrollments for admin view
-    return render(request, 'enrollment/admin_enrollment_list.html', {
+    return render(request, 'enrollment/admin_enroll_list.html', {
         'enrollments': enrollments,
         'all_enrollments': all_enrollments,
     })
 
-from django.db import IntegrityError
-
 def admin_enroll_users(request):
-    print('come here')
     groups = CollaborationGroup.objects.all()
     courses = Course.objects.all()  # Fetch all courses
     selected_group_id = request.GET.get('group')
@@ -55,34 +53,6 @@ def admin_enroll_users(request):
         'courses': courses,  # Pass the list of courses to the template
     })
 
-
-# def admin_enroll_users(request):
-#     if request.method == 'POST':
-#         form = AdminEnrollmentForm(request.POST)
-#         if form.is_valid():
-#             course = form.cleaned_data['course']
-#             users = form.cleaned_data['users']
-#             successful_enrollments = []
-#             duplicate_enrollments = []
-
-#             for user in users:
-#                 # Check if the user is already enrolled
-#                 if Enrollment.objects.filter(student=user, course=course).exists():
-#                     duplicate_enrollments.append(user)
-#                 else:
-#                     Enrollment.objects.create(student=user, course=course)
-#                     successful_enrollments.append(user)
-
-#             if successful_enrollments:
-#                 messages.success(request, f'Successfully enrolled {len(successful_enrollments)} users in {course.course_name}.')
-#             if duplicate_enrollments:
-#                 messages.warning(request, f'The following users were already enrolled in {course.course_name}: {", ".join([u.username for u in duplicate_enrollments])}.')
-
-#             return redirect('group_enrollment:admin_enroll_users')  # Redirect to the same page or another page
-#     else:
-#         form = AdminEnrollmentForm()
-
-#     return render(request, 'enrollment/admin_enroll_users.html', {'form': form})
 
 def enroll_student(request):
     if request.method == 'POST':

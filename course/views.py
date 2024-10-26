@@ -362,27 +362,27 @@ def course_edit(request, pk):
             # Debug: Check if an image has been uploaded
             if 'image' in request.FILES:
                 print("Image uploaded:", request.FILES['image'])
-
-                # Only delete old image after saving the new one
                 new_image = request.FILES['image']
-                if course.image.name != new_image.name and course.image.path:
+
+                # Only delete the old image after saving the new one
+                if course.image and course.image.name != new_image.name:
                     print("Old image exists, deleting:", course.image.path)
-                    default_storage.delete(course.image.path)
-                    course.image.delete()
+                    default_storage.delete(course.image.path)  # Delete from storage
+                    course.image.delete()  # Delete the model reference
+
                 course.image = new_image  # Assign the new image to the course
+                course.save()  # Save the course with the new image
+                print("New image saved.")
 
-                # Save course first with the new image to avoid premature file closing
-                course.save()
-
-            elif request.POST.get('delete_image') == 'on':  # Explicitly check for 'on'
-                print("Delete image checkbox is checked")
-
+                # Check for delete image request
+            elif 'action' in request.POST and request.POST['action'] == 'delete_image':
+                print("Delete image button clicked.")
                 if course.image:
                     print("Deleting old image:", course.image.path)
-                    default_storage.delete(course.image.path)
-                    course.image.delete()
-
-            course.save()
+                    default_storage.delete(course.image.path)  # Delete from storage
+                    course.image.delete()  # Remove the model reference
+                    course.save()  # Save after deletion
+                    print("Image deleted successfully.")
 
             # Handle tag deletion
             current_tags = list(course.tags.all())

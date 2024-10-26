@@ -53,7 +53,7 @@
                         <img src="{{ course.image.url }}" alt="{{ course.course_name }}" style="max-width: 200px;">
                         <br>
                         <input type="hidden" name="delete_image" value="on">
-                        <button type="submit" class="btn btn-danger">Clear Image</button>
+                        <button type="submit" name="action" value="delete_image" class="btn btn-danger">Clear Image</button>
                     {% else %}
                         <p>No image uploaded yet.</p>
                     {% endif %}

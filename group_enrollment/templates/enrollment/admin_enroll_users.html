@@ -11,7 +11,7 @@
 
 <div class="container mt-5">
     <h1>Enroll Users in a Course</h1>
-    <a href="{% url 'group_enrollment:admin_enrollment_list' %}" class="btn btn-secondary">Back to Enrollments</a>
+
     <!-- Display Messages -->
     {% if messages %}
         <div class="alert alert-info">
@@ -21,20 +21,41 @@
         </div>
     {% endif %}
 
-    <!-- Group Selection -->
+    <!-- Group and Course Selection -->
     <div class="mb-4">
-        <label for="groupSelect" class="form-label">Select Group:</label>
-        <form method="GET" id="groupForm">
-            <select class="form-select" id="groupSelect" name="group" onchange="this.form.submit()">
-                <option value="">-- Select Group --</option>
-                {% for group in groups %}
-                    <option value="{{ group.id }}" {% if group.id == selected_group_id %}selected{% endif %}>
-                        {{ group.group_name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </form>
+        <div class="row">
+            <!-- Group Selection Column -->
+            <div class="col-md-6">
+                <label for="groupSelect" class="form-label">Select Group:</label>
+                <form method="GET" id="groupForm">
+                    <select class="form-select" id="groupSelect" name="group" onchange="this.form.submit()">
+                        <option value="">-- Select Group --</option>
+                        {% for group in groups %}
+                            <option value="{{ group.id }}" {% if group.id|stringformat:"s" == selected_group_id|stringformat:"s" %}selected{% endif %}>
+                                {{ group.group_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+            {% if selected_group_id %}
+            <!-- Course Selection Column -->
+            <div class="col-md-6">
+                <label for="courseSelect" class="form-label">Select Course:</label>
+                <form method="POST" id="courseForm">
+                    {% csrf_token %}
+                    <select class="form-select" id="courseSelect" name="course" required>
+                        <option value="">-- Select Course --</option>
+                        {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.course_name }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+            {%endif%}
+        </div>
     </div>
+    
 
     {% if selected_group_id %}
     <!-- Enrollment Form (combines course and user selection) -->

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}My Learning{% endblock %}
+
+{% block content %}
+<div class="container bg-body-secondary my-4 p-4 rounded">
+    <h1>My Learning</h1>
+    <p class="mt-4">
+        <small>87hr 36min watch</small> 
+        <i class="fa-solid fa-circle-info"></i> 
+        <a href="#" class="link-primary">View all activity</a>
+    </p>
+
+    <nav class="nav nav-tabs my-3">
+        <div class="container">
+            <ul class="navbar-nav d-flex flex-row">
+                <li class="nav-item">
+                    <a href="{% url 'mylearning:index' %}" class="nav-link active">All Courses</a>
+                </li>
+                <li class="nav-item ms-3">
+                    <a href="{% url 'mylearning:learning_paths' %}" class="nav-link">Learning Paths</a>
+                </li>
+                <li class="nav-item ms-3">
+                    <a href="{% url 'mylearning:certification' %}" class="nav-link">Certification</a>
+                </li>
+                <li class="nav-item ms-3">
+                    <a href="{% url 'mylearning:archived' %}" class="nav-link">Archived</a>
+                </li>
+                <li class="nav-item ms-3">
+                    <a href="{% url 'mylearning:learning_tools' %}" class="nav-link">Learning Tools</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+
+<main class="container">
+    <div class="row">
+        {% for course in courses %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 position-relative">
+                <div class="position-absolute top-0 end-0 mt-2 me-2">
+                    <p class="text-center bg-secondary rounded-circle" style="width: 30px; height: 30px;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </p>
+                </div>
+                <img src="{{ course.image_url }}" class="card-img-top" alt="{{ course.title }}" style="height: 200px; object-fit: cover;">
+                
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ course.title }}</h5>
+                    <small class="text-muted">{{ course.content_type }}</small>
+
+                    <!-- Progress Bar -->
+                    <div class="progress my-2" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ course.completion_percentage }}%;" aria-valuenow="{{ course.completion_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ course.completion_percentage }}%
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-grow-1 justify-content-end">
+                        <div>
+                            {% for star in course.stars %}
+                                {% if star == 1 %}
+                                    <i class="fa-solid fa-star"></i>
+                                {% else %}
+                                    <i class="fa-regular fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <small class="text-muted">Leave a rating</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}

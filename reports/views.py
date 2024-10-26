@@ -6,11 +6,11 @@ from django.db.models import Avg
 def report_dashboard(request):
     return render(request, 'report_dashboard.html')
 
-# Individual Progress Report
 def individual_progress_report(request):
-    user_progress = UserCourseProgress.objects.filter(user_id=1)  # Example
-    return render(request, 'reports/individual_progress_report.html', {'user_progress': user_progress})
-
+    if request.user.is_authenticated:
+        user_progress = UserCourseProgress.objects.filter(user=request.user)  # Get progress for the logged-in user
+        return render(request, 'reports/individual_progress_report.html', {'user_progress': user_progress})
+    
 # Course Progress Report
 def course_progress_report(request):
     course_progress = UserCourseProgress.objects.filter(course_id=1).order_by('-progress_percentage')  # Example

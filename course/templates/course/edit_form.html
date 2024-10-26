@@ -7,6 +7,7 @@
 {% block content %}
 <head>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
 </head>
 <body id="edit-form">
@@ -83,18 +84,23 @@
             <!-- First column: Sessions -->
                 <div class="form-group" style="flex: 1;">
                     <h3>Manage Sessions</h3>
-                    <div id="sessions-container">
+                    <ul id="sessions-container" class="sortable">
                         {% for session in sessions %}
-                            <div class="session-item">
+                            <li class="session-item" data-id="{{ session.id }}">
                                 <input type="text" name="session_names" value="{{ session.name }}" class="form-control">
                                 <input type="hidden" name="session_ids" value="{{ session.id }}">
-                                <button type="button" class="delete-session" data-id="{{ session.id }}">
+                                <button type="button" class="delete-session" data-id="{{ session.id }}"
+                                    {% if session.materials.count > 0 %} disabled {% endif %}>
                                     <i class="fas fa-times"></i>
                                 </button>
-                            </div>
+                                {% if session.materials.count > 0 %}
+                                    <span class="text-danger">Cannot delete: Session has materials.</span>
+                                {% endif %}
+                            </li>
                         {% endfor %}
-                    </div>
+                    </ul>
                     <input type="hidden" name="delete_session_ids" id="delete-session-ids">
+                    <input type="hidden" name="session_order" id="session-order">
 
                     <!-- Add New Sessions -->
                     <div id="new-sessions-container"></div>
@@ -167,6 +173,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script>
     function openTab(evt, tabName) {
         // Declare all variables
@@ -320,6 +327,20 @@
             $('#delete-prerequisite-ids').val(function(i, val) {
                 return val + (val ? ',' : '') + courseId;
             });
+        });
+
+        $("#sessions-container").sortable({
+            handle: ".drag-handle", // Use a specific handle for dragging
+            update: function(event, ui) {
+                // Update the session order when the order is changed
+                let order = $(this).sortable('toArray', { attribute: 'data-id' });
+                $("#session-order").val(order.join(','));
+            }
+        });
+
+        // Make sure the sessions can be dragged
+        $(".session-item").each(function() {
+            $(this).prepend('<span class="drag-handle" style="cursor: move;">☰</span>'); // Add a drag handle
         });
 
         // Handle adding new sessions

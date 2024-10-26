@@ -2,67 +2,145 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4 text-center">Export TXT to JSON</h2>
+<style>
+    .custom-button {
+        border: 1px solid rgb(53, 37, 142); 
+        color: blue; 
+        padding: 5px 5px; 
+        background-color: rgb(224, 217, 217); 
+        cursor: pointer; 
+        font-size: 14px; 
+    }
+    .custom-button:hover {
+        background-color: lightblue; 
+    }
+    .drop-zone {
+        border: 2px dashed rgb(53, 37, 142);
+        border-radius: 20px;
+        padding: 60px;
+        text-align: center;
+        background-color: #f8f8f8;
+        cursor: pointer;
+    }
+    .drop-zone.dragover {
+        background-color: #667dae; 
+    }
+    .file-list {
+        margin-top: 10px;
+        list-style-type: none;
+        padding: 0;
+    }
+    .file-list li {
+        margin: 5px 0;
+        font-size: 14px;
+    }
+    .text-right {
+        text-align: right; 
+    }
+    .title {
+        border: 2px solid rgb(125, 44, 9);
+        font-size: 20px;
+        background-color: rgb(236, 116, 90);
+    }
+    .remove-button {
+        background: none; 
+        border: none; 
+        color: rgb(32, 25, 125); 
+        font-size: 18px; 
+        cursor: pointer; 
+        margin-left: 10px;
+    }
+    .remove-button:hover {
+        color: darkred; 
+    }
+</style>
 
-    <!-- Upload Form -->
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <form method="post" enctype="multipart/form-data" class="border p-4 rounded shadow-sm bg-light">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-success btn-block mt-4">Upload and Convert</button>
-            </form>
+<div class="card card-header title">
+    <h1 class="text-center">Convert Word Files to JSON</h1>
+</div>
+<div class="card card-body">
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+        {% csrf_token %}
+        <div class="drop-zone" id="drop-zone">
+            Drag your Word (.docx) file here!
         </div>
-    </div>
-
-    {% if json_data %}
-    <div class="mt-4">
-        <h3>JSON Data</h3>
-        <div class="json-container">
-            <pre>{{ json_data|safe }}</pre>
+        <input type="file" name="files" id="file-input" multiple style="display: none;">
+        <ul class="file-list" id="file-list"></ul>
+        <div class="text-right">
+            <button type="submit" class="custom-button">Convert</button>
         </div>
-        <div class="text-right mb-4">
-            <a href="{% url 'tools:download_json_file' %}?file_name={{ json_file_name }}" class="btn btn-primary mt-3">Download JSON</a>
-        </div>
-    </div>
-    {% endif %}
+    </form>
+</div>
+<div class="d-flex justify-content-end" style="margin-right: 20px;">
+    <a href="{% url 'tools:view_tools' %}" class="btn btn-link">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
 </div>
 
-<!-- Navigation Tabs -->
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
-    <div class="col-md-12">
-        <div class="card-header title rounded">
-            <h1 class="text-center">Convert Text to JSON</h1>
-        </div>
-        <div class="card-body rounded">
-            <ul class="nav nav-tabs justify-content-center">
-                <li class="nav-item">
-                    <a class="nav-link" id="excelTab" href="javascript:void(0)" onclick="showExcel()">Excel to JSON</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" id="wordTab" href="javascript:void(0)" onclick="showWord()">TXT to JSON</a>
-                </li>
-            </ul>
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileList = document.getElementById('file-list');
+    let filesArray = [];
+    const validExtensions = ['.docx'];
 
-            <!-- Textarea Controls -->
-            <div class="d-flex justify-content-end mb-3 align-items-center">
-                <label for="number_of_textareas" class="mr-2">Number of text areas:</label>
-                <input type="number" id="number_of_textareas" min="1" value="1" class="form-control form-control-sm" style="width: 80px;">
-                <button class="btn btn-primary btn-sm ml-2" onclick="createTextAreas()">OK</button>
-            </div>
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const droppedFiles = e.dataTransfer.files;
+        addFilesToArray(droppedFiles);
+    });
+    fileInput.addEventListener('change', () => {
+        addFilesToArray(fileInput.files);
+    });
 
-            <div class="card mt-3 rounded">
-                <div class="card-body" id="textareas_container"></div>
-            </div>
+    function addFilesToArray(newFiles) {
+        for (let i = 0; i < newFiles.length; i++) {
+            const ext = newFiles[i].name.split('.').pop().toLowerCase();
+            if (!validExtensions.includes('.' + ext)) {
+                alert(`The file '${newFiles[i].name}' is invalid! Please upload Word files (.docx) only.`);
+                continue;
+            }
+            if (!filesArray.some(file => file.name === newFiles[i].name)) {
+                filesArray.push(newFiles[i]);
+            }
+        }
+        updateFileList();
+    }
 
-            <div class="text-right mt-3">
-                <a href="{% url 'tools:download_zip_file' %}" class="btn btn-primary">Download All as ZIP</a>
-            </div>
-        </div>
-    </div>
-</div>
+    function updateFileList() {
+        fileList.innerHTML = '';
+        filesArray.forEach((file, index) => {
+            const listItem = document.createElement('li');
+            listItem.textContent = file.name;
+            const removeButton = document.createElement('button');
+            removeButton.textContent = '×';
+            removeButton.classList.add('remove-button');
+            removeButton.addEventListener('click', () => {
+                filesArray.splice(index, 1);
+                updateFileList();
+                updateFileInput();
+            });
+            listItem.appendChild(removeButton);
+            fileList.appendChild(listItem);
+        });
+        updateFileInput();
+    }
 
-{% include 'toggle_script.html' %}
-
+    function updateFileInput() {
+        const dataTransfer = new DataTransfer();
+        filesArray.forEach(file => dataTransfer.items.add(file));
+        fileInput.files = dataTransfer.files;
+    }
+</script>
 {% endblock %}

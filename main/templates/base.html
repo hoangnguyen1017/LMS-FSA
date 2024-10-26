@@ -31,40 +31,41 @@
                     </li>
                 {% endfor %}    
             </ul>
-            
                 {% endif %}
-
                 {% if request.user.is_authenticated %}
-                    <ul class="navbar-nav ml-auto">  <!-- ml-auto ensures the items are aligned to the right -->
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
-                                <i class="fas fa-user-shield"></i> Admin Django &nbsp;&nbsp;&nbsp;|
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {% if request.user.profile.profile_picture_url %}
-                                <img src="{{ request.user.profile.profile_picture_url }}" alt="Profile Picture" class="rounded-circle" width="30" height="30" style="margin-right: 5px;">
-                                {% endif %}
-                                {{ request.user.get_full_name|default:request.user.username }}
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="{% url 'user:user_detail' request.user.id %}">Profile</a>
-                                <div class="dropdown-divider"></div>
-                                <form action="{% url 'main:logout' %}" method="post" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="dropdown-item">Logout</button>
-                                </form>
-                            </div>
-                        </li>
-                    </ul>
-                {% else %}
-                    <ul class="navbar-nav ml-auto">  <!-- ml-auto to keep it aligned to the right -->
-                        <li class="nav-item"><a class="nav-link" href="{% url 'main:register_email' %}">Register</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'main:login' %}">Login</a></li>
-                    </ul>
-                {% endif %}
-                
+            <ul class="navbar-nav ml-auto">  <!-- ml-auto ensures the items are aligned to the right -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
+                        <i class="fas fa-user-shield"></i> Admin Django &nbsp;&nbsp;&nbsp;|
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {% if request.user.profile.profile_picture_url %}
+                        <img src="{{ request.user.profile.profile_picture_url }}" alt="Profile Picture" class="rounded-circle" width="30" height="30" style="margin-right: 5px;">
+                        {% endif %}
+                        {{ request.user.get_full_name|default:request.user.username }}
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="{% url 'user:user_detail' request.user.id %}">Profile</a>
+                        <div class="dropdown-divider"></div>
+                        <form action="{% url 'main:logout' %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item">Logout</button>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        {% else %}
+            <ul class="navbar-nav ml-auto">  <!-- ml-auto to keep it aligned to the right -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'main:register_email' %}">Register</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'main:login' %}">Login</a>
+                </li>
+            </ul>
+        {% endif %}
         </nav>
     </div>
     <div class="container-fluid mt-4">

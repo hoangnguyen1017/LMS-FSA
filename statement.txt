@@ -1,5 +1,7 @@
 django-admin startproject myproject
 
+This CKEditor 4.16.0 version is not secure. 
+Consider upgrading to the latest one, 4.25.0-lts.
 
 python manage.py startapp assessments
 

@@ -9,6 +9,7 @@
         border-left: 4px solid #0c5460;
     }
 </style>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
 <div class="container mt-4">
     <h2 class="text-center mb-4">{% if assessment %}Edit Assessment{% else %}Create New Assessment{% endif %}</h2>
@@ -27,7 +28,7 @@
                 <h4>Assessment Details</h4>
             </div>
             <div class="card-body">
-                
+
                 <div class="form-row">
                     <div class="col-md-4">
                         <label for="id_title" class="form-label col-md-5">Title</label> <!-- Changed to col-md-12 -->
@@ -49,14 +50,14 @@
                 </div>
                 <div class="form-row">
                     <div class="col-md-4">
-                        <label for="id_assessment_type" class="form-label col-md-5">Assessment Type</label>
+                        <label for="id_assessment_type" class="form-label col-md-7">Assessment Type</label>
                         {{ form.assessment_type }}
                         {% if form.assessment_type.errors %}
                             <div class="text-danger">{{ form.assessment_type.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="col-md-3">
-                        <label for="id_total_score" class="form-label col-md-5">Total Score</label>
+                        <label for="id_total_score" class="form-label col-md-8">Total Score</label>
                         {{ form.total_score }}
                         {% if form.total_score.errors %}
                             <div class="text-danger">{{ form.total_score.errors }}</div>

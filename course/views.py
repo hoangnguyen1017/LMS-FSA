@@ -449,6 +449,19 @@ def course_edit(request, pk):
                     if session_id:
                         Session.objects.filter(id=session_id).delete()
 
+            # Handle reordering of sessions
+            if 'session_order' in request.POST:
+                session_order = request.POST.get('session_order')
+                if session_order:
+                    session_ids = session_order.split(',')
+                    for order, session_id in enumerate(session_ids):
+                        print("Session Order:", session_order)
+                        print("Parsed Session IDs:", session_ids)
+                        Session.objects.filter(id=session_id).update(order=order)
+
+            messages.success(request, 'Course updated successfully.')
+            return redirect('course:course_edit', pk=course.pk)
+
             messages.success(request, 'course updated successfully.')
             return redirect('course:course_edit', pk=course.pk)
         else:
@@ -468,7 +481,7 @@ def course_edit(request, pk):
         'course': course,
         'prerequisites': prerequisites,
         'all_courses': all_courses,
-        'sessions': sessions,  # Pass sessions to template
+        'sessions': sessions.order_by('order'),  # Pass sessions to template
         'topics': topics,
         'tags': tags,
     })
@@ -607,7 +620,7 @@ def reorder_course_materials(request, pk, session_id):
     course = get_object_or_404(Course, pk=pk)
 
     # Fetch all sessions related to the course
-    sessions = Session.objects.filter(course=course)
+    sessions = Session.objects.filter(course=course).order_by('order')
 
     # Fetch materials for the selected session, defaulting to the first session
     selected_session_id = request.POST.get('session_id') or session_id
@@ -639,6 +652,7 @@ def reorder_course_materials(request, pk, session_id):
         'materials': materials,
         'selected_session_id': selected_session_id,
     })
+
 def reading_material_detail(request, id):
     # Fetch the reading material by ID or return a 404 if it doesn't exist
     reading_material = get_object_or_404(ReadingMaterial, id=id)
@@ -658,10 +672,20 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
     # Retrieve the reading material to edit
     reading_material = get_object_or_404(ReadingMaterial, id=reading_material_id)
 
+    # Retrieve the associated CourseMaterial instance
+    course_material = get_object_or_404(CourseMaterial, material_id=reading_material_id, session=session)
+
     if request.method == 'POST':
         form = ReadingMaterialEditForm(request.POST, instance=reading_material)
+        selected_material_type = request.POST.get('material_type')
+
         if form.is_valid():
-            form.save()
+            reading_material = form.save()
+            # Update the material_type if it has been changed
+            if selected_material_type and selected_material_type != course_material.material_type:
+                course_material.material_type = selected_material_type
+                course_material.save()
+
             messages.success(request, 'Reading material updated successfully.')
             return redirect('course:course_content_edit', pk=pk, session_id=session_id)
     else:
@@ -670,13 +694,14 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
     context = {
         'reading_material': reading_material,
         'form': form,
-        'course': course,  # Pass the course to the context
-        'sessions': sessions,  # Pass the sessions to the context (if needed)
-        'session': session,  # Pass the selected session to the context
+        'course': course,
+        'sessions': sessions,
+        'session': session,
+        'material_types': CourseMaterial.MATERIAL_TYPE_CHOICES,  # Pass material type choices to the template
+        'current_material_type': course_material.material_type,  # Current material type for default selection
     }
 
     return render(request, 'material/edit_reading_material.html', context)
-
 @login_required
 def course_content(request, pk, session_id):
     course = get_object_or_404(Course, pk=pk)
@@ -897,7 +922,7 @@ def course_content_edit(request, pk, session_id):
     # Context to render the template
     context = {
         'course': course,
-        'sessions': sessions,
+        'sessions': sessions.order_by('order'),
         'selected_session': session,
         'reading_materials': reading_materials,
         'material_types': dict(CourseMaterial.MATERIAL_TYPE_CHOICES),

@@ -23,14 +23,15 @@
             </div>
         </div>
 
-        <script src="https://cdn.ckeditor.com/4.16.0/full/ckeditor.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                CKEDITOR.replace('id_content', {
-                    height: window.innerHeight - 500  // Adjust height based on window size
-                });
-            });
-        </script>
+        <!-- Material Type Dropdown -->
+        <div style="margin-bottom: 15px; font-size: 18px; font-weight: bold;">
+            <label for="material_type">Material Type:</label>
+            <select name="material_type" class="form-control" style="margin-top: 5px;">
+                {% for key, value in material_types %}
+                    <option value="{{ key }}" {% if key == current_material_type %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
         <button type="submit" class="btn btn-primary">Save Changes</button>
         <!-- Go back :)) -->
@@ -49,5 +50,14 @@
             height: 300px;  /* Set initial height for the textarea */
         }
     </style>
+
+    <script src="https://cdn.ckeditor.com/4.16.0/full/ckeditor.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            CKEDITOR.replace('id_content', {
+                height: window.innerHeight - 500
+            });
+        });
+    </script>
 </div>
 {% endblock %}

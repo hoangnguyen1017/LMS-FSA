@@ -1,90 +1,142 @@
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
-from .forms import ExcelUploadForm, WordUploadForm
-from tools.libs.utils import excel_to_json, word_to_json
+from django import forms
+import json
 import pandas as pd
-import os
+from django.http import HttpResponse
+from .forms import ExcelUploadForm ,WordUploadForm
 import zipfile
-
-
-def view_tools(request):
-    # Assuming you have a list of tools defined somewhere in your views or imported
-    tools = [
-        {'name': 'Excel to JSON', 'url': '/excel_to_json_view/'},
-        {'name': 'Word to JSON', 'url': '/word_to_json_view/'},
-        # Add more tools as needed
-    ]
-    
-    return render(request, 'view_tools.html', {'tools': tools})
-
-
+from tools.libs.utils import excel_to_json
+import os
+from django.http import JsonResponse
+from django.core.files.storage import FileSystemStorage
+from tools.libs.utils import excel_to_json, word_to_json
+from tools.libs import txtToJson
 def excel_to_json_view(request):
     if request.method == 'POST':
         form = ExcelUploadForm(request.POST, request.FILES)
         if form.is_valid():
             json_files = []
-            for excel_file in form.cleaned_data['files']:
-                try:
-                    json_files.extend(process_excel_file(excel_file))
-                except Exception as e:
-                    print(f"Error processing '{excel_file.name}': {e}")
-                    return JsonResponse({'error': f'Error processing {excel_file.name}: {str(e)}'}, status=400)
 
-            zip_filename = create_zip_from_json_files(json_files)
-            return download_zip_file(zip_filename)
+            for excel_file in form.cleaned_data['files']:  # Sử dụng cleaned_data
+                try:
+                    # Đọc dữ liệu từ file Excel
+                    excel_data = pd.read_excel(excel_file, sheet_name=None)  # Đọc toàn bộ sheets của file Excel
+                    print(f"EXCEL_DATA IS :{excel_data}")
+
+                    for sheet_name, df in excel_data.items():
+                        # Convert the sheet to JSON
+                        json_output = excel_to_json(df)  # excel_to_json() expects a DataFrame
+                        print(json_output)
+
+                        # Create a separate JSON file for each sheet
+                        json_filename = f"{excel_file.name.split('.')[0]}_{sheet_name}.json"
+                        # json_string = json.dumps(json_output, indent=4, ensure_ascii=False)
+                        json_files.append((json_filename, json_output))  # Append each sheet's JSON to the list
+
+                except Exception as e:
+                    print(f"Lỗi khi xử lý tệp Excel '{excel_file.name}': {e}")
+
+            # Tạo tệp ZIP để chứa tất cả các file JSON
+            file_name_without_extension = os.path.splitext(excel_file.name)[0]
+            zip_filename = file_name_without_extension + '_converted.zip' 
+            response = HttpResponse(content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
+
+            with zipfile.ZipFile(response, 'w') as zip_file:
+                for json_filename, json_string in json_files:
+                    # Add each JSON file for each sheet to the ZIP
+                    zip_file.writestr(json_filename, json_string)
+
+            return response
+
     else:
         form = ExcelUploadForm()
+
     return render(request, 'tool_excel_to_json.html', {'form': form})
 
-def process_excel_file(excel_file):
-    excel_data = pd.read_excel(excel_file, sheet_name=None)
-    json_files = []
-    for sheet_name, df in excel_data.items():
-        json_output = excel_to_json(df)
-        json_filename = f"{excel_file.name.split('.')[0]}_{sheet_name}.json"
-        json_files.append((json_filename, json_output))
-    return json_files
 
-def create_zip_from_json_files(json_files):
-    zip_filename = 'exported_json_files.zip'
-    with zipfile.ZipFile(zip_filename, 'w') as zipf:
-        for json_filename, json_output in json_files:
-            zipf.writestr(json_filename, json_output)
-    return zip_filename
+from .libs.txtToJson import txt_to_json
+from docx import Document
+import json
+import re
 
-def download_zip_file(zip_filename):
-    if os.path.exists(zip_filename):
-        with open(zip_filename, 'rb') as f:
-            response = HttpResponse(f.read(), content_type='application/zip')
-            response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
-        # Optionally, delete the zip file after download to save space
-        os.remove(zip_filename)
-        return response
-    else:
-        return JsonResponse({'error': 'Zip file not found'}, status=404)
+def read_docx_content(file):
+    """Đọc nội dung từ tệp .docx."""
+    document = Document(file)  # Mở tệp .docx
+    content = []  # Khởi tạo danh sách để lưu nội dung
+
+    # Lặp qua tất cả các đoạn văn và bảng trong tài liệu
+    for paragraph in document.paragraphs:
+        content.append(paragraph.text.strip())  # Thêm nội dung đoạn văn vào danh sách
+    
+    # Lặp qua tất cả các bảng trong tài liệu
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                content.append(cell.text.strip())  # Thêm nội dung của ô vào danh sách
+
+    # Kết hợp tất cả nội dung thành một chuỗi, mỗi đoạn cách nhau bởi dấu xuống dòng
+    return "\n".join(content)
 
 def word_to_json_view(request):
     if request.method == 'POST':
         form = WordUploadForm(request.POST, request.FILES)
         if form.is_valid():
             json_files = []
-            for word_file in form.cleaned_data['files']:
+            for uploaded_file in form.cleaned_data['files']:
                 try:
-                    json_files.extend(process_word_file(word_file))
+                    # Đọc nội dung file .docx
+                    if uploaded_file.name.endswith('.docx'):
+                        content = read_docx_content(uploaded_file)
+                    
+                    # Gọi hàm word_to_json để chuyển đổi nội dung sang JSON
+                    json_output = word_to_json(content)
+                    print(json_output)
+                    json_filename = f"{os.path.splitext(uploaded_file.name)[0]}.json"
+                    json_files.append((json_filename, json_output))
+                
                 except Exception as e:
-                    print(f"Error processing '{word_file.name}': {e}")
-                    return JsonResponse({'error': f'Error processing {word_file.name}: {str(e)}'}, status=400)
+                    print(f"Lỗi khi xử lý tệp '{uploaded_file.name}': {e}")
 
-            zip_filename = create_zip_from_json_files(json_files)
-            return download_zip_file(zip_filename)
+            # Tạo file zip chứa các file JSON
+            response = HttpResponse(content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="converted_files.zip"'
+            with zipfile.ZipFile(response, 'w') as zip_file:
+                for json_filename, json_string in json_files:
+                    zip_file.writestr(json_filename, json_string)
+            return response
     else:
         form = WordUploadForm()
+
     return render(request, 'tool_word_to_json.html', {'form': form})
 
-def process_word_file(word_file):
-    try:
-        json_output = word_to_json(word_file)  # Assuming word_to_json handles a single file
-        json_filename = f"{word_file.name.split('.')[0]}.json"
-        return [(json_filename, json_output)]
-    except Exception as e:
-        raise Exception(f"Failed to convert {word_file.name}: {str(e)}")
+def view_tools(request):
+    return render(request,'view_tools.html')
+
+def txt_to_json_view(request):
+    """Xử lý việc chuyển đổi văn bản từ textarea sang JSON và trả về file ZIP."""
+    if request.method == 'POST':
+        # Lấy dữ liệu từ textarea
+        texts = request.POST.getlist('texts')  # texts là danh sách các chuỗi từ textarea
+        
+        # Chuyển đổi danh sách các chuỗi thành JSON
+        json_output = txt_to_json(texts, 'default_filename.txt')  # Gọi hàm với texts
+
+        json_filename = 'converted_data.json'
+        json_files = [(json_filename, json_output)]
+
+        # Tạo file zip chứa file JSON
+        response = HttpResponse(content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename="converted_files.zip"'
+        
+        with zipfile.ZipFile(response, 'w') as zip_file:
+            for json_filename, json_string in json_files:
+                zip_file.writestr(json_filename, json_string)
+
+        return response
+
+    return render(request, 'tool_txt_to_json.html')
+
+
+
+

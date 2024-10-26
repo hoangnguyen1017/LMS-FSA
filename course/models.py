@@ -131,7 +131,7 @@ def mark_session_complete(course, user, session):
         )
 
 class UserCourseProgress(models.Model):
-    user = models.ForeignKey('user.User', related_name='course_progress', on_delete=models.CASCADE)  # Thêm related_name
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='course_progress', on_delete=models.CASCADE)  # Thêm related_name
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     last_accessed = models.DateTimeField(auto_now=True)  # Cập nhật thời gian truy cập gần nhất

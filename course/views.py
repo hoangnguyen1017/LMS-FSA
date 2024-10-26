@@ -449,6 +449,19 @@ def course_edit(request, pk):
                     if session_id:
                         Session.objects.filter(id=session_id).delete()
 
+            # Handle reordering of sessions
+            if 'session_order' in request.POST:
+                session_order = request.POST.get('session_order')
+                if session_order:
+                    session_ids = session_order.split(',')
+                    for order, session_id in enumerate(session_ids):
+                        print("Session Order:", session_order)
+                        print("Parsed Session IDs:", session_ids)
+                        Session.objects.filter(id=session_id).update(order=order)
+
+            messages.success(request, 'Course updated successfully.')
+            return redirect('course:course_edit', pk=course.pk)
+
             messages.success(request, 'course updated successfully.')
             return redirect('course:course_edit', pk=course.pk)
         else:
@@ -468,7 +481,7 @@ def course_edit(request, pk):
         'course': course,
         'prerequisites': prerequisites,
         'all_courses': all_courses,
-        'sessions': sessions,  # Pass sessions to template
+        'sessions': sessions.order_by('order'),  # Pass sessions to template
         'topics': topics,
         'tags': tags,
     })
@@ -639,6 +652,7 @@ def reorder_course_materials(request, pk, session_id):
         'materials': materials,
         'selected_session_id': selected_session_id,
     })
+
 def reading_material_detail(request, id):
     # Fetch the reading material by ID or return a 404 if it doesn't exist
     reading_material = get_object_or_404(ReadingMaterial, id=id)
@@ -908,7 +922,7 @@ def course_content_edit(request, pk, session_id):
     # Context to render the template
     context = {
         'course': course,
-        'sessions': sessions,
+        'sessions': sessions.order_by('order'),
         'selected_session': session,
         'reading_materials': reading_materials,
         'material_types': dict(CourseMaterial.MATERIAL_TYPE_CHOICES),

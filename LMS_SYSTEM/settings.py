@@ -24,6 +24,21 @@ LOGIN_REDIRECT_URL = ''
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+
+# STATIC_URL = '/staticfiles/'
+# STATIC_URL for development
+STATIC_URL = '/static/'
+
+# STATICFILES_DIRS is correct - it tells Django where to look for static files
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # Custom static files directory
+]
+
+
 # settings.py
 AUTH_USER_MODEL = 'user.User'  # Change 'user' to the name of your app
 
@@ -43,7 +58,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Set the default from email
 SECRET_KEY = 'django-insecure-h+p6t3%50m)_a15%4&i*q_ule5a_$566#wu=f_5uvlapiqq%5v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 #ALLOWED_HOSTS = ['codinglmsfsa.pythonanywhere.com']
@@ -191,20 +206,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-# STATIC_URL = '/static/'
-STATIC_URL = '/staticfiles/'
-
-# Define the directory where static files will be collected (if you run `collectstatic`)
-STATIC_ROOT = os.path.join(BASE_DIR, STATIC_URL)  # used for production
-
-# Define additional directories to look for static files
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # Custom static files directory
-]
 
 
 # Default primary key field type

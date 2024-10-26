@@ -1,13 +1,41 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}
 
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Export TXT to JSON</h2>
+
+    <!-- Upload Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <form method="post" enctype="multipart/form-data" class="border p-4 rounded shadow-sm bg-light">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-success btn-block mt-4">Upload and Convert</button>
+            </form>
+        </div>
+    </div>
+
+    {% if json_data %}
+    <div class="mt-4">
+        <h3>JSON Data</h3>
+        <div class="json-container">
+            <pre>{{ json_data|safe }}</pre>
+        </div>
+        <div class="text-right mb-4">
+            <a href="{% url 'tools:download_json_file' %}?file_name={{ json_file_name }}" class="btn btn-primary mt-3">Download JSON</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Navigation Tabs -->
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
     <div class="col-md-12">
-        <div class="card card-header title rounded">
+        <div class="card-header title rounded">
             <h1 class="text-center">Convert Text to JSON</h1>
         </div>
-        <div class="card card-body rounded">
+        <div class="card-body rounded">
             <ul class="nav nav-tabs justify-content-center">
                 <li class="nav-item">
                     <a class="nav-link" id="excelTab" href="javascript:void(0)" onclick="showExcel()">Excel to JSON</a>
@@ -16,86 +44,25 @@
                     <a class="nav-link active" id="wordTab" href="javascript:void(0)" onclick="showWord()">TXT to JSON</a>
                 </li>
             </ul>
-            <!-- Dòng chứa ô nhập và nút OK -->
-            <div class="d-flex justify-content-end mb-3" style="align-items: center;">
-                <label for="number_of_textareas" style="margin-right: 10px;">Number of text areas:</label>
+
+            <!-- Textarea Controls -->
+            <div class="d-flex justify-content-end mb-3 align-items-center">
+                <label for="number_of_textareas" class="mr-2">Number of text areas:</label>
                 <input type="number" id="number_of_textareas" min="1" value="1" class="form-control form-control-sm" style="width: 80px;">
                 <button class="btn btn-primary btn-sm ml-2" onclick="createTextAreas()">OK</button>
             </div>
 
-            <!-- Thẻ card chứa các ô text area -->
             <div class="card mt-3 rounded">
-                <div class="card-body" id="textareas_container" style="display: flex; flex-direction: column; align-items: center;">
-                    <!-- Các text area sẽ được tạo ở đây -->
-                </div>
+                <div class="card-body" id="textareas_container"></div>
             </div>
 
-            <!-- Nút để tải file ZIP -->
-            <div class="d-flex justify-content-center mt-3">
-                <button class="btn btn-success" onclick="downloadJSON()">Convert</button>
+            <div class="text-right mt-3">
+                <a href="{% url 'tools:download_zip_file' %}" class="btn btn-primary">Download All as ZIP</a>
             </div>
         </div>
     </div>
 </div>
-<!-- ---------------------- -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-<script>
-    // Function to show Excel content and hide Word content
-function showExcel() {
-    document.getElementById("excelContent").classList.remove("d-none");
-    document.getElementById("wordContent").classList.add("d-none");
-    
-    // Update tab styles to indicate active tab
-    document.getElementById("excelTab").classList.add("active");
-    document.getElementById("wordTab").classList.remove("active");
-}
 
-// Function to show Word content and hide Excel content
-function showWord() {
-    document.getElementById("wordContent").classList.remove("d-none");
-    document.getElementById("excelContent").classList.add("d-none");
-
-    // Update tab styles to indicate active tab
-    document.getElementById("wordTab").classList.add("active");
-    document.getElementById("excelTab").classList.remove("active");
-}
-    function createTextAreas() {
-        const numberOfTextAreas = document.getElementById('number_of_textareas').value;
-        const container = document.getElementById('textareas_container');
-        container.innerHTML = '';  // Clear any existing textareas
-
-        for (let i = 0; i < numberOfTextAreas; i++) {
-            const textarea = document.createElement('textarea');
-            textarea.id = `textarea_${i}`;
-            textarea.rows = 5;
-            textarea.cols = 50;
-            textarea.placeholder = `Enter text for JSON ${i + 1}`;
-            textarea.classList.add('form-control', 'mb-2', 'rounded');  // Thêm lớp 'rounded' vào textarea
-            container.appendChild(textarea);
-        }
-    }
-
-    function downloadJSON() {
-        const numberOfTextAreas = document.getElementById('number_of_textareas').value;
-        const zip = new JSZip();  // Tạo đối tượng zip
-
-        for (let i = 0; i < numberOfTextAreas; i++) {
-            const textarea = document.getElementById(`textarea_${i}`);
-            const textContent = textarea.value;
-            const jsonData = JSON.stringify({ content: textContent }, null, 2);
-
-            // Thêm file JSON vào zip
-            zip.file(`data_${i + 1}.json`, jsonData);
-        }
-
-        // Tạo và tải file ZIP
-        zip.generateAsync({ type: 'blob' }).then(function(content) {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(content);
-            link.download = 'converted_text_to_json.zip';  // Tên file zip
-            link.click();  // Tải file zip về
-        });
-    }
-</script>
+{% include 'toggle_script.html' %}
 
 {% endblock %}

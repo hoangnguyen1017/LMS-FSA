@@ -8,7 +8,7 @@ from course.models import Course
 
 class User(AbstractUser):
     date_joined = models.DateTimeField(auto_now_add=True)
-    training_programs = models.ManyToManyField(TrainingProgram)  
+    training_programs = models.ManyToManyField(TrainingProgram, blank=True)  
     modules = models.ManyToManyField(Module, related_name='assigned_users', blank=True)
 
     groups = models.ManyToManyField(

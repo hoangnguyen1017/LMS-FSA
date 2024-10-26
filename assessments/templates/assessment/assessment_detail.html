@@ -41,7 +41,9 @@
                     <ul class="list-group">
                         {% for exercise in assessment.exercises.all %}
                         <li class="list-group-item">
-                            <a href="{% url 'exercises:exercise_detail' exercise.id %}" target="_blank">{{ forloop.counter }}. {{ exercise.title }}</a>
+                           
+                            <a href="{% url 'exercises:exercise_detail' exercise.id assessment.id %}" target="_blank">{{ exercise.title }}</a>
+                            
                         </li>
                         {% empty %}
                         <li class="list-group-item text-muted">No exercises assigned.</li>

@@ -13,7 +13,8 @@
         <div class="card-body">
             <h2 class="text-center mb-4" style="font-weight: 500;">Create a New Thread</h2>
 
-            <form method="POST" action="">
+            <!-- Set enctype to multipart/form-data to handle file uploads -->
+            <form method="POST" action="" enctype="multipart/form-data">
                 {% csrf_token %}
 
                 <!-- Add form fields with Bootstrap styling -->
@@ -31,6 +32,12 @@
                 <div class="form-group mb-3">
                     <label for="course" class="form-label" style="font-weight: bold;">Course</label>
                     {{ form.course|add_class:"form-control" }}
+                </div>
+
+                <!-- Add image upload field -->
+                <div class="form-group mb-3">
+                    <label for="image" class="form-label" style="font-weight: bold;">Upload Image (optional)</label>
+                    {{ form.image|add_class:"form-control-file" }} <!-- Image upload field -->
                 </div>
 
                 <!-- Customize submit button -->

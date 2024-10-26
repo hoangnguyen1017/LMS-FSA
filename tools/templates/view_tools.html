@@ -3,67 +3,26 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-        <!-- Card Header with two clickable tabs (Excel and Word) -->
         <div class="card">
             <div class="card-header title">
                 <h1 class="text-center">Convert Tools</h1>
             </div>
             <div class="card-body">
-                <!-- Tabs navigation -->
-                <ul class="nav nav-tabs justify-content-center">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="excelTab" href="javascript:void(0)" onclick="showExcel()">Excel to JSON</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="wordTab" href="javascript:void(0)" onclick="showWord()">TXT to JSON</a>
-                    </li>
-                </ul>
-
-                <!-- Tab content -->
-                <div class="tab-content mt-4">
-                    <!-- Excel content -->
-                    <div id="excelContent" class="tab-pane fade show active">
-                        <div class="row text-center">
-                            <div class="col-md-12">
-                                <a href="{% url 'tools:excel_to_json_view' %}" class="text-center btn btn-primary">Convert Excel to JSON</a>
-                            </div>
-                        </div>
+                <div class="row text-center">
+                    
+                    <div class="col-md-6 d-flex justify-content-center align-items-center">
+                        <a href="{% url 'tools:excel_to_json_view' %}" class="tool-link">Excel to JSON</a>
                     </div>
-
-                    <!-- Word content (hidden by default) -->
-                    <div id="wordContent" class="tab-pane fade d-none">
-                        <div class="row text-center">
-                            <div class="col-md-12">
-                                <a href="{% url 'tools:word_to_json_view' %}" class="text-center btn btn-primary">Convert Word to JSON</a>
-                            </div>
-                        </div>
+                    <div class="col-md-6 d-flex justify-content-center align-items-center">
+                        <a href="{% url 'tools:word_to_json_view' %}" class="tool-link">Word to JSON</a>
                     </div>
+                 
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-// Function to show Excel content and hide Word content
-function showExcel() {
-    document.getElementById("excelContent").classList.remove("d-none");
-    document.getElementById("wordContent").classList.add("d-none");
-    
-    // Update tab styles to indicate active tab
-    document.getElementById("excelTab").classList.add("active");
-    document.getElementById("wordTab").classList.remove("active");
-}
-
-// Function to show Word content and hide Excel content
-function showWord() {
-    document.getElementById("wordContent").classList.remove("d-none");
-    document.getElementById("excelContent").classList.add("d-none");
-
-    // Update tab styles to indicate active tab
-    document.getElementById("wordTab").classList.add("active");
-    document.getElementById("excelTab").classList.remove("active");
-}
-</script>
+{% include 'toggle_script.html' %}
 
 {% endblock %}

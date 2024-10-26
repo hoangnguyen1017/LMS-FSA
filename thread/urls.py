@@ -16,7 +16,9 @@ urlpatterns = [
     path('course/<int:course_id>/', views.thread_list, name='thread_list_by_course'),
     path('react/<int:thread_id>/', views.react_to_thread, name='react_to_thread'),
     path('comment/react/<int:comment_id>/',views.react_to_comment, name='react_to_comment'),
+    path('report_dashboard/',views.report_dashboard,name='report_dashboard'),
 ]
+
 
 
 

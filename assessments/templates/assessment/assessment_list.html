@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block extra_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
-{% endblock %}
-
 {% block content %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'assessment.css' %}">
+
 <h2 class="text-center mb-4">Assessments</h2>
+
 <div class="container mt-4">
     <form method="GET" action="{% url 'assessment:assessment_list' %}" class="form-inline justify-content-center mt-3">
         <div class="row w-100"> <!-- Add the row class for proper alignment -->
@@ -44,7 +44,7 @@
                             <div>
                                 <h5 class="card-title">
                                     <span class="description">{{ item.assessment.title }} </span>
-                                    <span class="small-description ">{{ item.assessment.assessment_type }}</span>
+                                    <span class="small-description">{{ item.assessment.assessment_type }}</span>
                                 </h5>
                             </div>
                             <div class="d-flex justify-content-end">
@@ -104,10 +104,11 @@
                     </div>
     
                     <div class="card-footer footer-actions d-flex justify-content-between">
-                        <a href="{% url 'assessment:take_assessment' item.assessment.pk %}" class="btn btn-outline-primary btn-sm">
+                        <a href="{% url 'assessment:take_assessment' item.assessment.pk %}?preview=true" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-circle"></i> Preview
                         </a>
                         
+
                         <a href="{% url 'assessment:invite_candidates' item.assessment.pk %}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-envelope"></i> Send Invitation
                         </a>

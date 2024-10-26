@@ -1,0 +1,73 @@
+<script>
+    function showExcel() {
+        document.getElementById('excel-content').classList.add('show', 'active');
+        document.getElementById('word-content').classList.remove('show', 'active');
+        document.getElementById('excelTab').classList.add('active');
+        document.getElementById('wordTab').classList.remove('active');
+    }
+
+    function showWord() {
+        document.getElementById('word-content').classList.add('show', 'active');
+        document.getElementById('excel-content').classList.remove('show', 'active');
+        document.getElementById('wordTab').classList.add('active');
+        document.getElementById('excelTab').classList.remove('active');
+    }
+
+    function createTextAreas() {
+        const container = document.getElementById('textareas_container');
+        container.innerHTML = ''; // Clear existing text areas
+        const numAreas = document.getElementById('number_of_textareas').value;
+
+        for (let i = 0; i < numAreas; i++) {
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = `Enter text for area ${i + 1}`;
+            textarea.className = 'form-control mb-2';
+            container.appendChild(textarea);
+        }
+    }
+
+    document.getElementById('drop-zone').addEventListener('dragover', function(e) {
+        e.preventDefault(); // Prevent default drag behaviors
+        this.classList.add('drag-over');
+    });
+
+    document.getElementById('drop-zone').addEventListener('dragleave', function() {
+        this.classList.remove('drag-over');
+    });
+
+    document.getElementById('drop-zone').addEventListener('drop', function(e) {
+        e.preventDefault(); // Prevent default behavior
+        this.classList.remove('drag-over');
+
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+
+    function handleFiles(files) {
+        const fileList = document.getElementById('file-list');
+        fileList.innerHTML = ''; // Clear previous list
+
+        for (const file of files) {
+            const li = document.createElement('li');
+            li.textContent = file.name;
+            fileList.appendChild(li);
+        }
+
+        // Show upload button or any further actions
+    }
+</script>
+
+<style>
+    .drag-over {
+        border: 2px dashed #007bff; /* Bootstrap primary color */
+        background-color: #f0f8ff; /* Light blue background */
+    }
+
+    .drop-zone {
+        border: 2px dashed #ccc;
+        border-radius: 4px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+</style>

@@ -2,11 +2,17 @@
 
 {% block content %}
 <style>
-    /* CSS for smaller chart */
+    /* CSS for a larger chart */
     .chart-container {
         width: 100%;
-        max-width: 400px; /* Adjust chart width */
+        max-width: 600px; /* Adjust chart width */
+        height: 400px; /* Set the chart height */
         margin: auto;
+    }
+
+    /* Ensure the canvas takes the full height */
+    canvas {
+        height: 100% !important; 
     }
 </style>
 
@@ -44,7 +50,7 @@
     </li>
 </ul>
 
-<!-- <h1>Enrollment Trends Report</h1> -->
+<h1>Enrollment Trends Report</h1>
 
 <!-- Bootstrap Grid for Chart and Data Table -->
 <div class="row">

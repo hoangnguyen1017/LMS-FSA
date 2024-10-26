@@ -33,6 +33,9 @@ urlpatterns = [
     path('subject/', include('subject.urls')), 
     path('student_materials/', include('student_materials.urls')),
     path('training_program/', include('training_program.urls')),
+
+    #ngattt
+    path('group_enrollment/', include('group_enrollment.urls')),
     
     #group01
     path('user/', include(('user.urls', 'user'), namespace='user')),  # Register user app URLs with a namespace

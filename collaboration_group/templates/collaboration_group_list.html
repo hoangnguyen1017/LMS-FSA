@@ -29,8 +29,10 @@
                         <td>{{ group.created_at|date:"F j, Y" }}</td>
                         <td>
                             {% if user in group.members.all %}
-                                <a href="{% url 'collaboration_group:check_members' group.id %}" class="btn btn-info btn-sm">Check Members</a>
-                                <a href="{% url 'collaboration_group:leave_group' group.id %}" class="btn btn-danger btn-sm">Leave Group</a>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'collaboration_group:check_members' group.id %}" class="btn btn-info btn-sm">Check Members</a>
+                                    <a href="{% url 'collaboration_group:leave_group' group.id %}" class="btn btn-danger btn-sm">Leave Group</a>
+                                </div>
                             {% else %}
                                 <form method="POST" action="{% url 'collaboration_group:join_group' group.id %}" style="display: inline;">
                                     {% csrf_token %}
@@ -38,18 +40,20 @@
                                 </form>
                             {% endif %}
                             {% if user == group.created_by %}
-                                <a href="{% url 'collaboration_group:manage_group' group.id %}" class="btn btn-info btn-sm">Manage Group</a>
+                                <a href="{% url 'collaboration_group:manage_group' group.id %}" class="btn btn-secondary btn-sm">Manage Group</a>
                             {% endif %}
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center">No collaboration groups available.</td>
+                        <td colspan="6" class="text-center">No collaboration groups available.</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <a href="{% url 'collaboration_group:collaboration_group_add' %}" class="btn btn-success">Add New Group</a>
+        <div class="text-center mt-4">
+            <a href="{% url 'collaboration_group:collaboration_group_add' %}" class="btn btn-success btn-lg">Add New Group</a>
+        </div>
     </div>
 {% endblock %}

@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model  # Import for custom user model
+from django.contrib.auth import get_user_model
 from .forms import CollaborationGroupForm, GroupMemberForm
 from .models import CollaborationGroup, GroupMember
 
-User = get_user_model()  # Reference the custom User model
+User = get_user_model()
 
 @login_required
 def collaboration_group_list(request):
@@ -23,11 +23,10 @@ def collaboration_group_list(request):
 def join_group(request, group_id):
     group = get_object_or_404(CollaborationGroup, pk=group_id)
     
-    # Check if the user is already a member
     if not GroupMember.objects.filter(group=group, user=request.user).exists():
         GroupMember.objects.create(group=group, user=request.user)
 
-    return redirect('collaboration_group:check_members', group_id=group.id)  # Redirect back to the group list
+    return redirect('collaboration_group:check_members', group_id=group.id)
 
 @login_required
 def collaboration_group_add(request):
@@ -35,8 +34,9 @@ def collaboration_group_add(request):
         form = CollaborationGroupForm(request.POST)
         if form.is_valid():
             group = form.save(commit=False)
-            group.created_by = request.user  # Set the current user as the creator
+            group.created_by = request.user
             group.save()
+            form.save_m2m()  # Save many-to-many relationships
             return redirect('collaboration_group:collaboration_group_list')
     else:
         form = CollaborationGroupForm()
@@ -45,10 +45,9 @@ def collaboration_group_add(request):
 @login_required
 def collaboration_group_edit(request, pk):
     collaboration_group = get_object_or_404(CollaborationGroup, pk=pk)
-    
-    # Check if the logged-in user is the creator of the group
-    if not (request.user == CollaborationGroup.created_by or request.user.is_superuser):
-        return redirect('collaboration_group:collaboration_group_list')  # Redirect if user is not the creator
+
+    if not (request.user == collaboration_group.created_by or request.user.is_superuser):
+        return redirect('collaboration_group:collaboration_group_list')
     
     if request.method == 'POST':
         form = CollaborationGroupForm(request.POST, instance=collaboration_group)
@@ -63,9 +62,8 @@ def collaboration_group_edit(request, pk):
 def collaboration_group_delete(request, pk):
     collaboration_group = get_object_or_404(CollaborationGroup, pk=pk)
     
-    # Only allow the creator to delete the group
     if collaboration_group.created_by != request.user:
-        return redirect('collaboration_group:collaboration_group_list')  # Redirect if user is not the creator
+        return redirect('collaboration_group:collaboration_group_list')
     
     if request.method == 'POST':
         collaboration_group.delete()
@@ -76,7 +74,6 @@ def collaboration_group_delete(request, pk):
 def manage_group(request, group_id):
     group = get_object_or_404(CollaborationGroup, pk=group_id)
 
-    # Check if the logged-in user is the creator of the group
     if group.created_by != request.user:
         return redirect('collaboration_group:collaboration_group_list')
 
@@ -84,30 +81,28 @@ def manage_group(request, group_id):
     all_users = User.objects.exclude(id__in=members.values_list('user_id', flat=True))
 
     if request.method == 'POST':
-        form = GroupMemberForm(request.POST, user_queryset=all_users)  # Pass user queryset
+        form = GroupMemberForm(request.POST, user_queryset=all_users)
         if form.is_valid():
             user_to_add = form.cleaned_data['user']
-            # Check if the user is already a member of the group
             if not GroupMember.objects.filter(group=group, user=user_to_add).exists():
-                GroupMember.objects.create(group=group, user=user_to_add)  # Create new member
+                GroupMember.objects.create(group=group, user=user_to_add)
             return redirect('collaboration_group:manage_group', group_id=group.id)
     else:
-        form = GroupMemberForm(user_queryset=all_users)  # Pass user queryset on GET
+        form = GroupMemberForm(user_queryset=all_users)
 
     return render(request, 'manage_group.html', {
         'group': group,
         'members': members,
-        'form': form,  # Pass the form instance to the template
+        'form': form,
     })
 
 @login_required
 def remove_member(request, group_id, member_id):
     member = get_object_or_404(GroupMember, pk=member_id, group_id=group_id)
     group = member.group
-    
-    # Only allow the creator of the group to remove members
+
     if group.created_by != request.user:
-        return redirect('collaboration_group:collaboration_group_list')  # Redirect if user is not the creator
+        return redirect('collaboration_group:collaboration_group_list')
     
     member.delete()
     return redirect('collaboration_group:manage_group', group_id=group_id)
@@ -121,4 +116,3 @@ def check_members(request, group_id):
         'group': group,
         'members': members
     })
-

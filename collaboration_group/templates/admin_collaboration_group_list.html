@@ -6,14 +6,17 @@
 
 {% block content %}
     <div class="container mt-5">
-        <h1 class="mb-4">Admin Collaboration Groups</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Admin Collaboration Groups</h1>
+            <a href="{% url 'collaboration_group:collaboration_group_add' %}" class="btn btn-success">Add New Group</a>
+        </div>
 
-        <table class="table table-striped table-bordered">
+        <table class="table table-hover table-bordered shadow-sm">
             <thead class="thead-dark">
                 <tr>
-                    <th>ID</th>
+                    <th>#</th>
                     <th>Group Name</th>
-                    <th>Subject</th>
+                    <th>Courses</th>
                     <th>Created By</th>
                     <th>Date Created</th>
                     <th>Actions</th>
@@ -24,23 +27,33 @@
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>{{ group.group_name }}</td>
-                        <td>{{ group.course }}</td>
-                        <td>{{ group.created_by }}</td>
-                        <td>{{ group.created_at|date:"F j, Y" }}</td>
                         <td>
-                            <a href="{% url 'collaboration_group:manage_group' group.id %}" class="btn btn-info btn-sm">Manage</a>
-                            <a href="{% url 'collaboration_group:collaboration_group_edit' group.id %}" class="btn btn-warning btn-sm">Edit</a>
-                            <a href="{% url 'collaboration_group:collaboration_group_delete' group.id %}" class="btn btn-danger btn-sm">Delete</a>
+                            {% for course in group.courses.all %}
+                                <span class="badge bg-primary">{{ course.name }}</span>
+                            {% empty %}
+                                <span class="text-muted">No courses assigned</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ group.created_by.username }}</td>
+                        <td>{{ group.created_at|date:"F j, Y" }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'collaboration_group:manage_group' group.id %}" class="btn btn-info btn-sm" title="Manage" data-toggle="tooltip">
+                                <i class="fas fa-cog"></i>
+                            </a>
+                            <a href="{% url 'collaboration_group:collaboration_group_edit' group.id %}" class="btn btn-warning btn-sm" title="Edit" data-toggle="tooltip">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'collaboration_group:collaboration_group_delete' group.id %}" class="btn btn-danger btn-sm" title="Delete" data-toggle="tooltip">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center">No collaboration groups available.</td>
+                        <td colspan="6" class="text-center text-muted">No collaboration groups available.</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-
-        <a href="{% url 'collaboration_group:collaboration_group_add' %}" class="btn btn-success">Add New Group</a>
     </div>
 {% endblock %}

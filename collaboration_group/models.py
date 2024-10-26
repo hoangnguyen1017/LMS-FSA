@@ -4,7 +4,8 @@ from course.models import Course
 
 class CollaborationGroup(models.Model):
     group_name = models.CharField(max_length=255)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='collaboration_groups')
+    # course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='collaboration_groups')
+    courses = models.ManyToManyField(Course, related_name='collaboration_groups')  # Change from ForeignKey to ManyToManyField
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='collaboration_groups_created')
 

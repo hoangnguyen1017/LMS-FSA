@@ -620,7 +620,7 @@ def reorder_course_materials(request, pk, session_id):
     course = get_object_or_404(Course, pk=pk)
 
     # Fetch all sessions related to the course
-    sessions = Session.objects.filter(course=course)
+    sessions = Session.objects.filter(course=course).order_by('order')
 
     # Fetch materials for the selected session, defaulting to the first session
     selected_session_id = request.POST.get('session_id') or session_id
@@ -639,7 +639,7 @@ def reorder_course_materials(request, pk, session_id):
             success_message = "Order updated successfully!"
             return render(request, 'material/reorder_course_material.html', {
                 'course': course,
-                'sessions': sessions,
+                'sessions': sessions.order_by('order'),
                 'materials': materials,
                 'selected_session_id': selected_session_id,
                 'success_message': success_message,
@@ -648,7 +648,7 @@ def reorder_course_materials(request, pk, session_id):
     # Pass the course, sessions, and materials to the template
     return render(request, 'material/reorder_course_material.html', {
         'course': course,
-        'sessions': sessions,
+        'sessions': sessions.order_by('order'),
         'materials': materials,
         'selected_session_id': selected_session_id,
     })

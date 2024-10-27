@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>{{ learning_path.title }}</h1>
+    <p>{{ learning_path.description }}</p>
+    <p><strong>Creator:</strong> {{ learning_path.creator }}</p>
+
+    <h2>Courses in this Path</h2>
+    <ul class="list-group">
+        {% for course in learning_path.courses.all %}
+            <li class="list-group-item">{{ course }}</li>
+        {% empty %}
+            <p>No courses in this path.</p>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'learning_path:learning_path_edit' learning_path.pk %}" class="btn btn-warning mt-3">Edit</a>
+    <a href="{% url 'learning_path:learning_path_delete' learning_path.pk %}" class="btn btn-danger mt-3">Delete</a>
+    <a href="{% url 'learning_path:learning_path_list' %}" class="btn btn-secondary mt-3">Back to List</a>
+</div>
+{% endblock %}

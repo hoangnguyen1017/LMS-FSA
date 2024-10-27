@@ -32,22 +32,10 @@
 
         <div class="row">
             {% for certification in certifications %}
-                <div class="col-md-6 mb-4"> <!-- Change from col-md-12 to col-md-6 for two columns -->
-                    <div class="certificate" style="border: 10px solid #6c757d; border-radius: 15px; padding: 30px; background: white; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-                        <h1>Certificate of Completion</h1>
-                        <h2>This certifies that</h2>
-                        <h1>{{ certification.user.username }}</h1>
-                        <h2>has successfully completed the course</h2>
-                        <h2>{{ certification.course.course_name }}</h2>
-                        <p class="mt-4"><strong>Description:</strong> {{ certification.description }}</p>
-                        <p>Awarded on: {{ certification.awarded_date|date:"Y-m-d" }}</p>
-                        <div class="signature">
-                            ______________________
-                            <div class="signature-title">Authorized Signature</div>
-                        </div>
-                        <div class="footer">
-                            <p>&copy; {{ current_year }} Your Organization Name</p>
-                        </div>
+                <div class="col-md-6 mb-4"> <!-- Two columns for certificates -->
+                    <!-- Render the dynamically generated HTML content -->
+                    <div class="certificate-content">
+                        {{ certification.generated_html_content|safe }}
                     </div>
                 </div>
             {% empty %}
@@ -56,6 +44,6 @@
         </div>
         
 
-        <a href="{% url 'certification:certification_list' %}" class="btn btn-secondary mb-3" style="float:right;">Back to Certifications</a>
+        <!-- <a href="{% url 'certification:certification_list' %}" class="btn btn-secondary mb-3" style="float:right;">Back to Certifications</a> -->
     </div>
 {% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>{{ learning_path.title }}</h2>
+    <p>{{ learning_path.description }}</p>
+    <a href="{% url 'learning_path:learning_path_edit' learning_path.pk %}" class="btn btn-warning">Edit</a>
+    <a href="{% url 'learning_path:learning_path_delete' learning_path.pk %}" class="btn btn-danger">Delete</a>
+    <a href="{% url 'learning_path:learning_path_list' %}" class="btn btn-secondary">Back to list</a>
+</div>
+{% endblock %}

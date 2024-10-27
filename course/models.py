@@ -4,6 +4,7 @@ from ckeditor.fields import RichTextField
 from ckeditor_uploader.fields import RichTextUploadingField
 from datetime import datetime
 from django.utils import timezone
+from django.template.loader import render_to_string
 
 class Course(models.Model):
     course_name = models.CharField(max_length=255, unique=True)
@@ -27,7 +28,6 @@ class Course(models.Model):
 
     def check_and_generate_certification(self, user):
         from certification.models import Certification  # Import within the method
-
         # Count total sessions and completed sessions
         total_sessions = self.sessions.count()
         completed_sessions = SessionCompletion.objects.filter(course=self, user=user, completed=True).count()
@@ -35,15 +35,26 @@ class Course(models.Model):
         if total_sessions == completed_sessions:
             # Generate certification if it doesn't exist already
             if not Certification.objects.filter(course=self, user=user).exists():
+                # Define context variables for the template
+                context = {
+                    'recipient_name': user.username,
+                    'course_name': self.course_name,
+                    'description': "Successfully completed the course.",
+                    'awarded_date': timezone.now().strftime('%Y-%m-%d'),
+                    'year': timezone.now().year,
+                }
+
+                # Render the certificate template to a string
+                generated_html_content = render_to_string('certification/certificate_template.html', context)
+
+                # Create and save the certification
                 certification = Certification.objects.create(
                     name=f"{self.course_name} Completion Certificate",
                     course=self,
                     user=user,
                     awarded_date=timezone.now(),
                     awarded=True,
-                    generated_html_content=f"<h2>Certificate of Completion</h2>"
-                                           f"<p>This certifies that {user.username} has completed the course "
-                                           f"{self.course_name} on {datetime.now().strftime('%Y-%m-%d')}.</p>"
+                    generated_html_content=generated_html_content
                 )
                 certification.save()
                 

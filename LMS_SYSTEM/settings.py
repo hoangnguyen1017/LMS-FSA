@@ -101,9 +101,12 @@ INSTALLED_APPS = [
     'main', #for hompage
 
     'exercises', #Binh_Thang
-    'assessments', 'reports', 'group_enrollment', 'mylearning', 'certification', #ngattt
+    #ngattt
+    'assessments', 'reports', 'group_enrollment', 'mylearning', 'certification', 
+    'learning_path',
 
-    'user', 'role', 'department', #group01
+    #group01
+    'user', 'role', 'department', 
 
     #group02
     'course', 'feedback', 'forum', 

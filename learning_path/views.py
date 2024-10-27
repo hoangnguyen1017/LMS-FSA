@@ -1,45 +1,83 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
-from .models import LearningPath
-from .forms import LearningPathForm
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import LearningPath, Step
+from .forms import LearningPathForm, StepForm
 
-# List and Search View
-class LearningPathListView(ListView):
-    model = LearningPath
-    template_name = 'learning_path/learning_path_list.html'
-    context_object_name = 'learning_paths'
-    
-    def get_queryset(self):
-        query = self.request.GET.get('search')
-        if query:
-            return LearningPath.objects.filter(title__icontains=query)
-        return LearningPath.objects.all()
+# Learning Path Views
+def learning_path_list(request):
+    learning_paths = LearningPath.objects.all()
+    return render(request, 'learning_path/list.html', {'learning_paths': learning_paths})
 
-# Create View
-class LearningPathCreateView(CreateView):
-    model = LearningPath
-    form_class = LearningPathForm
-    template_name = 'learning_path/learning_path_form.html'
-    success_url = reverse_lazy('learning_path:learning_path_list')
+def learning_path_add(request):
+    if request.method == 'POST':
+        form = LearningPathForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('learning_path:learning_path_list')
+    else:
+        form = LearningPathForm()
+    return render(request, 'learning_path/form.html', {'form': form})
 
-# Update View
-class LearningPathUpdateView(UpdateView):
-    model = LearningPath
-    form_class = LearningPathForm
-    template_name = 'learning_path/learning_path_form.html'
-    success_url = reverse_lazy('learning_path:learning_path_list')
+def learning_path_edit(request, pk):
+    learning_path = get_object_or_404(LearningPath, pk=pk)
+    if request.method == 'POST':
+        form = LearningPathForm(request.POST, instance=learning_path)
+        if form.is_valid():
+            form.save()
+            return redirect('learning_path:learning_path_list')
+    else:
+        form = LearningPathForm(instance=learning_path)
+    return render(request, 'learning_path/form.html', {'form': form})
+
+def learning_path_delete(request, pk):
+    learning_path = get_object_or_404(LearningPath, pk=pk)
+    if request.method == 'POST':
+        learning_path.delete()
+        return redirect('learning_path:learning_path_list')
+    return render(request, 'learning_path/confirm_delete.html', {'learning_path': learning_path})
+
+# Step Views
+def step_list(request, learning_path_id):
+    learning_path = get_object_or_404(LearningPath, pk=learning_path_id)
+    steps = learning_path.steps.all()
+    return render(request, 'step/list.html', {'steps': steps, 'learning_path': learning_path})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import LearningPath, Step
+from .forms import StepForm
+
+def step_add(request, learning_path_id):
+    learning_path = get_object_or_404(LearningPath, pk=learning_path_id)
+    if request.method == 'POST':
+        form = StepForm(request.POST)
+        if form.is_valid():
+            step = form.save(commit=False)
+            step.learning_path = learning_path  # Assign the learning path to the step
+            step.save()
+            form.save_m2m()  # Save many-to-many relationships for courses
+            return redirect('learning_path:step_list', learning_path_id=learning_path.id)
+    else:
+        form = StepForm()
+    return render(request, 'step/form.html', {'form': form, 'learning_path': learning_path})
 
 
+def step_edit(request, learning_path_id, pk):
+    step = get_object_or_404(Step, pk=pk)
+    if request.method == 'POST':
+        form = StepForm(request.POST, instance=step)
+        if form.is_valid():
+            step = form.save(commit=False)  # Save without committing to handle M2M
+            step.learning_path_id = learning_path_id  # Optional, ensure correct learning path
+            step.save()
+            form.save_m2m()  # Save M2M relationships after saving the instance
+            return redirect('learning_path:step_list', learning_path_id=learning_path_id)
+    else:
+        form = StepForm(instance=step)
+    return render(request, 'step/form.html', {'form': form, 'learning_path': step.learning_path})
 
-class LearningPathDetailView(DetailView):
-    model = LearningPath
-    template_name = 'learning_path/learning_path_detail.html'
-    context_object_name = 'learning_path'
 
-
-# Delete View
-class LearningPathDeleteView(DeleteView):
-    model = LearningPath
-    template_name = 'learning_path/learning_path_confirm_delete.html'
-    success_url = reverse_lazy('learning_path:learning_path_list')
+def step_delete(request, learning_path_id, pk):
+    step = get_object_or_404(Step, pk=pk)
+    if request.method == 'POST':
+        step.delete()
+        return redirect('learning_path:step_list', learning_path_id=learning_path_id)
+    return render(request, 'step/confirm_delete.html', {'step': step})

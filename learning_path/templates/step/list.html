@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+<style>
+    /* styles.css */
+    .custom-img {
+        max-height: 150px; /* Desired height */
+        width: auto; /* Maintain aspect ratio */
+        object-fit: cover; /* Cover the area */
+    }
+
+    .timeline-item {
+        border: 2px solid #007bff; /* Change border color and thickness */
+        border-radius: 0.25rem; /* Rounded corners */
+        padding: 15px; /* Padding inside the border */
+        margin-bottom: 20px; /* Space between steps */
+        background-color: #ffffff; /* White background for each step */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
+    }
+
+    .timeline-item h5 {
+        margin-bottom: 10px; /* Space below the title */
+    }
+
+    .card {
+        border: none; /* Remove default border from cards if necessary */
+    }
+</style>
+
+{% block content %}
+
+<h1>Steps for {{ learning_path.title }}</h1>
+<!-- Container for right-aligning buttons -->
+<div class="text-end mb-3">
+    <a href="{% url 'learning_path:step_add' learning_path.id %}" class="btn btn-primary">Add Step</a>
+    <a href="{% url 'learning_path:learning_path_list' %}" class="btn btn-secondary">Back to Learning Paths</a>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="timeline">
+                {% for step in steps %}
+                    <li class="timeline-item mb-5">
+                        <h5 class="fw-bold">{{ step.title }}</h5>
+                        <p>{{ step.description }}</p>
+
+                        <!-- Courses associated with each step, displayed in three columns -->
+                        <div class="row">
+                            {% for course in step.courses.all %}
+                                <div class="col-md-4 d-flex align-items-center mb-3">
+                                    <!-- Course Image -->
+                                    <div class="card">
+                                        {% if course.image %}
+                                            <img src="{{ course.image.url }}" class="card-img-top img-fluid custom-img" alt="Course image">
+                                        {% else %}
+                                            <img src="{% static 'images/default-course.jpeg' %}" class="card-img-top img-fluid custom-img" alt="Default course image">
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 d-flex flex-column justify-content-center mb-3">
+                                    <!-- Course Name and Description -->
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ course.course_name }}</h5>
+                                        <p class="card-text">{{ course.description|truncatewords:15 }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-center mb-3">
+                                    <!-- Buttons for Edit and Delete -->
+                                    <div class="d-flex flex-column">
+                                        <a href="{% url 'learning_path:step_edit' learning_path.id step.id %}" class="btn btn-secondary mb-2">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <form action="{% url 'learning_path:step_delete' learning_path.id step.id %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-trash-alt"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="text-muted">No courses available for this step.</p>
+                            {% endfor %}
+                        </div>
+                        
+                    </li>
+                {% empty %}
+                    <p>No steps available for this learning path.</p>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

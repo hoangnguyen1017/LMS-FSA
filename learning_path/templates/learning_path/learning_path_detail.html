@@ -2,21 +2,28 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h1>{{ learning_path.title }}</h1>
+    <h2>{{ learning_path.title }}</h2>
     <p>{{ learning_path.description }}</p>
-    <p><strong>Creator:</strong> {{ learning_path.creator }}</p>
 
-    <h2>Courses in this Path</h2>
-    <ul class="list-group">
-        {% for course in learning_path.courses.all %}
-            <li class="list-group-item">{{ course }}</li>
-        {% empty %}
-            <p>No courses in this path.</p>
+    <div class="timeline">
+        {% for step in steps %}
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h5>Step {{ forloop.counter }}: {{ step.title }}</h5>
+                    <p>{{ step.description }}</p>
+                    <div>
+                        <a href="{% url 'learning_path:step_edit' learning_path.pk step.pk %}" class="btn btn-warning">Edit</a>
+                        <form action="{% url 'learning_path:step_delete' learning_path.pk step.pk %}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         {% endfor %}
-    </ul>
+    </div>
 
-    <a href="{% url 'learning_path:learning_path_edit' learning_path.pk %}" class="btn btn-warning mt-3">Edit</a>
-    <a href="{% url 'learning_path:learning_path_delete' learning_path.pk %}" class="btn btn-danger mt-3">Delete</a>
-    <a href="{% url 'learning_path:learning_path_list' %}" class="btn btn-secondary mt-3">Back to List</a>
+    <a href="{% url 'learning_path:step_add' learning_path.pk %}" class="btn btn-primary">Add Step</a>
+    <a href="{% url 'learning_path:learning_path_edit' learning_path.pk %}" class="btn btn-secondary">Edit Learning Path</a>
 </div>
 {% endblock %}

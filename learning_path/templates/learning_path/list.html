@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Learning Paths</h1>
+<a href="{% url 'learning_path:learning_path_add' %}" class="btn btn-primary mb-3">Add Learning Path</a>
+<div class="list-group">
+    {% for learning_path in learning_paths %}
+        <div class="list-group-item">
+            <h5>{{ learning_path.title }}</h5>
+            <p>{{ learning_path.description }}</p>
+            <a href="{% url 'learning_path:step_list' learning_path.id %}" class="btn btn-info">View Steps</a>
+            <a href="{% url 'learning_path:learning_path_edit' learning_path.id %}" class="btn btn-secondary">Edit</a>
+            <form action="{% url 'learning_path:learning_path_delete' learning_path.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+        </div>
+    {% empty %}
+        <p>No learning paths available.</p>
+    {% endfor %}
+</div>
+{% endblock %}

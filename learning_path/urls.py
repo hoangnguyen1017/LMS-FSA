@@ -12,4 +12,10 @@ urlpatterns = [
     path('<int:learning_path_id>/steps/add/', views.step_add, name='step_add'),
     path('<int:learning_path_id>/steps/edit/<int:pk>/', views.step_edit, name='step_edit'),
     path('<int:learning_path_id>/steps/delete/<int:pk>/', views.step_delete, name='step_delete'),
+
+    path('enroll/<int:learning_path_id>/', views.enroll, name='learning_path_enroll'),
+    path('duplicate/<int:learning_path_id>/', views.duplicate, name='learning_path_duplicate'),
+    path('recommend/<int:learning_path_id>/', views.recommend, name='learning_path_recommend'),
 ]
+
+

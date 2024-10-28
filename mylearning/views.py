@@ -2,6 +2,11 @@
 from django.shortcuts import render
 from course.models import Course  # Import the Course model
 from certification.models import Certification  # Import the Certification model
+from learning_path.models import LearningPath
+
+# def my_learning_view(request):
+#     # context setup
+#     return render(request, 'mylearning/my_learning.html')
 
 def index(request):
     # Retrieve all published courses
@@ -30,7 +35,8 @@ def index(request):
     return render(request, 'index.html', {'courses': course_data})
 
 def learning_paths(request):
-    return render(request, 'learningPaths.html')
+    learning_paths = LearningPath.objects.filter(creator=request.user)  # Fetching learning paths for the logged-in user
+    return render(request, 'learningPaths.html', {'learning_paths': learning_paths})
 
 def certification(request):
     # Retrieve certifications for the logged-in user

@@ -6,7 +6,9 @@ class LearningPath(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-
+    recommended_count = models.IntegerField(default=0)  # Added recommended_count field
+    enrolled_users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='enrolled_learning_paths', blank=True)  # Added ManyToManyField for enrolled users
+    
     def __str__(self):
         return self.title
 

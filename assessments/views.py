@@ -69,9 +69,10 @@ def take_assessment(request, assessment_id):
     print("Attempt ID retrieved from session: " + str(attempt_id))
 
     # Handle POST requests for unauthenticated users
-    # email = None
-    email = request.GET.get('email')  # Retrieve email from query parameters
-    print("tai sao lai the" + email)
+    email = None
+    if not request.user.is_authenticated:
+        email = request.GET.get('email')  # Retrieve email from query parameters
+        print("tai sao lai the" + email)
     if not request.user.is_authenticated and request.method == 'POST':
         
         try:

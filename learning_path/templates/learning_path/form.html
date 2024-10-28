@@ -24,7 +24,17 @@
             document.getElementById("{{ form.description.id_for_label }}").classList.add("form-control");
         </script>
     </div>
-    
+
+    <!-- Creator Field -->
+    <div class="form-group">
+        <label for="{{ form.creator.id_for_label }}">Creator</label>
+        {{ form.creator.errors }}
+        {{ form.creator }}  <!-- Dropdown for selecting the creator -->
+        <script>
+            document.getElementById("{{ form.creator.id_for_label }}").classList.add("form-control");
+        </script>
+    </div>
+
     <button type="submit" class="btn btn-primary">Save</button>
     <a href="{% url 'learning_path:learning_path_list' %}" class="btn btn-secondary">Cancel</a>
 </form>

@@ -1,49 +1,37 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}My Learning{% endblock %}
 
 {% block content %}
-    <div class="container bg-body-secondary">
-        <h1>My Learning</h1>
-        <p class="mt-4"><small>87hr 36min watch</small> <i class="fa-solid fa-circle-info"></i> <a href="">View all activity</a></p>
-        <nav class="nav-tabs">
-            <div class="container">
-                <ul class="navbar-nav d-flex flex-row">
-                    <li class="nav-item">
-                        <a href="{% url 'mylearning:index' %}" class="nav-link">All Courses</a>
-                    </li>
-                    <li class="nav-item ms-3">
-                        <a href="{% url 'mylearning:learning_paths' %}" class="nav-link">Learning Paths</a>
-                    </li>
-                    <li class="nav-item ms-3">
-                        <a href="{% url 'mylearning:certification' %}" class="nav-link active">Certification</a>
-                    </li>
-                    <li class="nav-item ms-3">
-                        <a href="{% url 'mylearning:archived' %}" class="nav-link">Archived</a>
-                    </li>
-                    <li class="nav-item ms-3">
-                        <a href="{% url 'mylearning:learning_tools' %}" class="nav-link">Learning Tools</a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-        
-        <h2>Your Certifications</h2>
+<link rel="stylesheet" type="text/css" href="{% static 'mylearning.css' %}">
 
-        <div class="row">
+<div class="container bg-light my-4 p-4 rounded shadow-sm">
+    <h1 class="mb-3">My Learning</h1>
+    <div class="d-flex align-items-center">
+        <p class="me-2 text-muted mb-0">
+            <small>87hr 36min watch</small>
+        </p>
+        <i class="fa-solid fa-circle-info text-muted"></i>
+        <a href="#" class="link-primary ms-2">View all activity</a>
+    </div>
+
+    <!-- Include the tabs here -->
+    {% include "mylearning_tabs.html" %}
+
+</div>
+
+<main class="container">
+    <div class="row">
+        <div class="col-md-12 certification-scroll-container">
             {% for certification in certifications %}
-                <div class="col-md-6 mb-4"> <!-- Two columns for certificates -->
-                    <!-- Render the dynamically generated HTML content -->
-                    <div class="certificate-content">
-                        {{ certification.generated_html_content|safe }}
-                    </div>
+                <div class="certificate-content p-3 border rounded bg-light">
+                    {{ certification.generated_html_content|safe }}
                 </div>
             {% empty %}
                 <p>You have no certifications yet.</p>
             {% endfor %}
         </div>
-        
-
-        <!-- <a href="{% url 'certification:certification_list' %}" class="btn btn-secondary mb-3" style="float:right;">Back to Certifications</a> -->
     </div>
+</main>
+
 {% endblock %}

@@ -238,11 +238,7 @@ def register_user_info(request):
     return render(request, 'register_user_info.html', {'form': user_form})
 
 
-
-
 def login_view(request):
-    selected_role = request.POST.get('role', '')
-
     if request.method == 'POST':
         form = CustomLoginForm(request.POST)
 
@@ -257,17 +253,15 @@ def login_view(request):
                 login(request, user)
 
                 if user.is_superuser:
-                    return redirect('/admin/')  # Chuyển hướng đến admin nếu là superuser
+                    return redirect('main:home')
 
                 user_role = user.profile.role.role_name
 
-                # Kiểm tra xem role đã chọn có khớp với role của người dùng không
-                if user_role == selected_role:
-                    messages.success(request, "Đăng nhập thành công!")
-                    next_url = request.GET.get('next', 'main:home')
-                    return redirect(next_url)
-                else:
-                    messages.error(request, "Vai trò không khớp với vai trò tài khoản của bạn.")
+                # Hiển thị thông báo đăng nhập thành công
+                messages.success(request, "Đăng nhập thành công!")
+                next_url = request.GET.get('next', 'main:home')
+                return redirect(next_url)
+
             else:
                 messages.error(request, "Tên đăng nhập hoặc mật khẩu không hợp lệ.")
         else:
@@ -275,13 +269,9 @@ def login_view(request):
     else:
         form = CustomLoginForm()
 
-    roles = Role.objects.all()
     return render(request, 'login.html', {
         'form': form,
-        'roles': roles,
-        'selected_role': selected_role if not request.user.is_superuser else ''
     })
-
 
 
 def home(request):
@@ -306,6 +296,7 @@ def home(request):
     else:
         modules = all_modules
 
+    # Lọc modules dựa trên truy vấn tìm kiếm
     if query:
         modules = modules.filter(
             Q(module_name__icontains=query) |
@@ -313,10 +304,20 @@ def home(request):
         )
 
     module_groups = ModuleGroup.objects.all()
+    
+    # Nhóm các modules theo module_group
+    grouped_modules = {}
+    for module in modules:
+        group = module.module_group
+        if group not in grouped_modules:
+            grouped_modules[group] = []
+        grouped_modules[group].append(module)
+
     form = ExcelImportForm()
 
     return render(request, 'home.html', {
         'module_groups': module_groups,
-        'modules': modules,
+        'modules': modules,             # Truyền tất cả modules đã lọc đến template
+        'grouped_modules': grouped_modules,  # Truyền dictionary đã nhóm đến template
         'form': form,
     })

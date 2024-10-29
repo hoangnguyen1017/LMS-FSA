@@ -15,16 +15,26 @@
                 {% if module.module_group == group %}
                 <div class="col-md-4 mb-4">
                     <div class="card shadow-sm h-100">
-                        <!-- Bọc nội dung card trong thẻ a để tạo liên kết -->
-                        <a href="{% url module.module_url %}" class="text-decoration-none text-dark">
+                        <!-- Bọc toàn bộ nội dung card trong thẻ a -->
+                        <a href="{% if user.is_authenticated %}{% url module.module_url %}{% else %}{% url 'main:login' %}{% endif %}" class="text-decoration-none text-dark">
                             <div class="card-body text-center d-flex flex-column justify-content-center" style="height: 180px; width: 100%; overflow: hidden;">
                                 <!-- Module Icon -->
                                 <div class="icon mb-3">
-                                    <i class="{{ module.icon }} fa-3x" style="color: #2196F3;"></i> <!-- Thay đổi màu icon -->
+                                    <i class="{{ module.icon }} fa-3x" style="color: #2196F3;"></i>
                                 </div>
 
                                 <!-- Module Name -->
                                 <h5 class="card-title" style="font-size: 1.5rem;">{{ module.module_name }}</h5>
+                                
+                                <!-- Thông điệp cho người dùng chưa đăng nhập -->
+                                <div class="card-footer text-center">
+                                    {% if user.is_authenticated %}
+                                        <span class="text-muted">Welcome, {{ user.username }}!</span>
+                                    {% else %}
+                                        <span class="text-muted">Please <a href="{% url 'main:login' %}">log in</a></span>
+                                    {% endif %}
+                                </div>
+                                
                             </div>
                         </a>
                     </div>

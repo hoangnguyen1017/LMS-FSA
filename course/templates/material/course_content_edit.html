@@ -8,79 +8,90 @@
     <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
 </head>
 <body id="content-edit">
-<div class="content-wrapper">
-    <h1 style=" text-transform: uppercase; margin: 0; color: black; margin-bottom: 20px;  ">Edit Content for {{ course.course_name }}</h1>
-
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        <div class="sub-navbar" style="background-color: #389bb0; padding: 3px; border-radius: 10px;">
-            {% for session in sessions %}
-                <button type="submit" name="session_id" value="{{ session.id }}" class="btn"
-                    style="background-color: transparent;
-                           color: {% if session.id == selected_session.id %} #FFD700 {% else %} white {% endif %};
-                           border: none;
-                           margin-right: 10px;
-                           font-size: 16px;
-                           font-weight: bold;
-                           padding: 10px 15px;">
-                    {{ session.name }}
-                </button>
-            {% endfor %}
+<div class="container mx-auto p-8 bg-white rounded-lg shadow-xl">
+    <h2 class="text-2xl font-semibold text-teal-600 mb-4 main-color-text">Edit {{ course.course_name }}</h2>
+        <div class="tab-container">
+            <div class="tab">
+                <button class="tablinks" onclick="openTab(event, 'Tab1')">Detail</button>
+                <button class="tablinks" onclick="openTab(event, 'Tab2')">Sessions</button>
+                <button class="tablinks" onclick="openTab(event, 'Tab3')">Topic-Tags</button>
+                <button class="tablinks" onclick="openTab(event, 'Tab4')">Course Materials</button>
+            </div>
         </div>
-        <div style="display: flex; margin-top: 20px;">
-            <div style="flex: 2; margin-right: 20px;">
-                <h2 style="margin: 0;  font-size: 27px; margin-bottom: 8px; ">Add New Content</h2>
-                <div id="reading-materials"></div>
-                <button type="button" id="add-reading-material" class="btn btn-secondary" style="margin-bottom: 20px; ">Add New Material</button>
+    <div id="Tab1" class="tabcontent"></div>
+    <div id="Tab2" class="tabcontent"></div>
+    <div id="Tab3" class="tabcontent"></div>
+    <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+    <div id="Tab4" class="tabcontent">
 
-                <h3 style="margin: 0; font-size: 27px; margin-bottom: 8px;">Upload PDF Content</h3>
-                <button type="button" id="toggle-pdf-upload" class="btn btn-info" style="margin-bottom: 10px;">
-                    Upload PDF
-                </button>
-
-                <!-- Hidden PDF upload section -->
-                <div id="pdf-upload" style="display: none;">
-                    <input type="file" name="uploaded_material_file[]" class="form-control" accept="application/pdf" style="margin-bottom: 8px;" multiple>
-                    <select name="uploaded_material_type[]" class="form-control">
-                        <option value="" disabled>Select Material Type</option>
-                        {% for key, value in material_types.items %}
-                            <option value="{{ key }}" {% if value == "Lectures" %} selected {% endif %}>{{ value }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div style="display: flex; align-items: center; margin-top: 30px;">
-                    <button type="submit" class="btn btn-primary" style="background-color: #389bb0; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 20px; margin-right: 10px;">
-                        Save
+            <div class="sub-navbar" style="background-color: #389bb0; padding: 3px; border-radius: 10px;">
+                {% for session in sessions %}
+                    <button type="submit" name="session_id" value="{{ session.id }}" class="btn"
+                        style="background-color: transparent;
+                               color: {% if session.id == selected_session.id %} #FFD700 {% else %} white {% endif %};
+                               border: none;
+                               margin-right: 10px;
+                               font-size: 16px;
+                               font-weight: bold;
+                               padding: 10px 15px;">
+                        {{ session.name }}
                     </button>
-                    <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning" style="background-color: #6c757d; color: white; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 20px;">
-                        Back to Course Edit
-                    </a>
+                {% endfor %}
+            </div>
+            <div style="display: flex; margin-top: 20px;">
+                <div style="flex: 2; margin-right: 20px;">
+                    <h2 style="margin: 0;  font-size: 27px; margin-bottom: 8px; ">Add New Content</h2>
+                    <div id="reading-materials"></div>
+                    <button type="button" id="add-reading-material" class="btn btn-secondary" style="margin-bottom: 20px; ">Add New Material</button>
+
+                    <h3 style="margin: 0; font-size: 27px; margin-bottom: 8px;">Upload PDF Content</h3>
+                    <button type="button" id="toggle-pdf-upload" class="btn btn-info" style="margin-bottom: 10px;">
+                        Upload PDF
+                    </button>
+
+                    <!-- Hidden PDF upload section -->
+                    <div id="pdf-upload" style="display: none;">
+                        <input type="file" name="uploaded_material_file[]" class="form-control" accept="application/pdf" style="margin-bottom: 8px;" multiple>
+                        <select name="uploaded_material_type[]" class="form-control">
+                            <option value="" disabled>Select Material Type</option>
+                            {% for key, value in material_types.items %}
+                                <option value="{{ key }}" {% if value == "Lectures" %} selected {% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Existing Materials Display Section -->
+                <div style="flex: 1; max-width: 500px;">
+                    <h2 style="margin: 0; font-size: 27px; margin-bottom: 8px;">Material</h2>
+                    <div style="background-color: #eaecee; padding: 15px; border-radius: 5px; min-height: 200px;"> <!-- Set a minimum height here -->
+                        <ul style="list-style-type: none; padding: 0; margin: 0;">
+                            {% for reading_material in reading_materials %}
+                                <li style="display: flex; align-items: center; margin-bottom: 12px;">
+                                    <a href="{% url 'course:reading_material_detail' reading_material.id %}" target="_blank" style="font-size: 1em; flex-grow: 1;">{{ reading_material.title }}</a>
+                                    <span style="margin-left: 10px; font-style: italic;">({{ reading_material.material.material_type|capfirst }})</span>
+                                    <a href="{% url 'course:edit_reading_material' course.pk selected_session.id reading_material.id %}"
+                                       class="btn btn-warning"
+                                       style="margin-left: 10px; padding: 5px 10px; font-size: 14px; line-height: 1;">Edit</a>
+
+                                    <input type="checkbox" name="delete_reading_material_{{ reading_material.id }}" style="margin-left: 10px;"> Delete
+                                </li>
+                            {% empty %}
+                                <li>No materials available.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
             </div>
-
-            <!-- Existing Materials Display Section -->
-            <div style="flex: 1; max-width: 500px;">
-                <h2 style="margin: 0; font-size: 27px; margin-bottom: 8px;">Material</h2>
-                <div style="background-color: #eaecee; padding: 15px; border-radius: 5px; min-height: 200px;"> <!-- Set a minimum height here -->
-                    <ul style="list-style-type: none; padding: 0; margin: 0;">
-                        {% for reading_material in reading_materials %}
-                            <li style="display: flex; align-items: center; margin-bottom: 12px;">
-                                <a href="{% url 'course:reading_material_detail' reading_material.id %}" target="_blank" style="font-size: 1em; flex-grow: 1;">{{ reading_material.title }}</a>
-                                <span style="margin-left: 10px; font-style: italic;">({{ reading_material.material.material_type|capfirst }})</span>
-                                <a href="{% url 'course:edit_reading_material' course.pk selected_session.id reading_material.id %}"
-                                   class="btn btn-warning"
-                                   style="margin-left: 10px; padding: 5px 10px; font-size: 14px; line-height: 1;">Edit</a>
-
-                                <input type="checkbox" name="delete_reading_material_{{ reading_material.id }}" style="margin-left: 10px;"> Delete
-                            </li>
-                        {% empty %}
-                            <li>No materials available.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
+        </div>
+        <div style="display: flex; align-items: center; margin-top: 30px;">
+            <button type="submit" class="btn btn-primary" style="background-color: #389bb0; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 20px; margin-right: 10px;">
+                Save Changes
+            </button>
+            <a href="{% url 'course:course_list' %}" class="btn btn-secondary">
+                Return to Course List
+            </a>
         </div>
     </form>
 </div>
@@ -88,6 +99,56 @@
 <script src="{% static 'ckeditor/ckeditor-init.js' %}"></script>
 <script src="https://cdn.ckeditor.com/4.16.0/full/ckeditor.js"></script>
 <script>
+    function openTab(evt, tabName) {
+        // Declare all variables
+        var i, tabcontent, tablinks;
+
+        // Get all elements with class="tabcontent" and hide them
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+
+        // Get all elements with class="tablinks" and remove the class "active"
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+
+        if (tabName === 'Tab1') {
+            // Replace `courseId` and `firstSessionId` with actual values
+            var courseId = {{ course.pk }}; // Use dynamic course ID
+            localStorage.setItem("activeTab", "Tab1");
+            window.location.href = `/course/edit/${courseId}/`;
+        } else if (tabName === 'Tab2') {
+            var courseId = {{ course.pk }}; // Use dynamic course ID
+            localStorage.setItem("activeTab", "Tab2");
+            window.location.href = `/course/edit/${courseId}/`;
+        } else if (tabName === 'Tab3') {
+            var courseId = {{ course.pk }}; // Use dynamic course ID
+            localStorage.setItem("activeTab", "Tab3");
+            window.location.href = `/course/edit/${courseId}/`;
+        } else {
+            // Show the selected tab and add "active" class to the clicked button
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+
+            // Save the selected tab to localStorage
+            localStorage.setItem("activeTab", tabName);
+        }
+    }
+
+    // Retrieve the active tab on page load
+    document.addEventListener("DOMContentLoaded", function() {
+        let savedTab = localStorage.getItem("activeTab") || "Tab4"; // Default to Tab4 if no tab is saved
+        let defaultTabButton = document.querySelector(`.tablinks[onclick="openTab(event, '${savedTab}')"]`);
+
+        // Trigger the click event to apply the active class and display the correct tab
+        if (defaultTabButton) {
+            defaultTabButton.click();
+        }
+    });
+
     let readingMaterialCounter = 1;
 
     function addRMEntry(sessionName) {

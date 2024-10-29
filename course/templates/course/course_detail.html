@@ -10,13 +10,11 @@
 </head>
 <body id="course-detail">
 <div class="background-wrapper" style="background-image: url('{% if course.image %}{{ course.image.url }}{% else %}{% static 'course/images/background_detail.png' %}{% endif %}');">
-    {% if user_type == 'instructor' or user.is_superuser %}
     <div class="container mt-0">
         <a href="{% url 'course:course_list' %}" class="btn btn-secondary" style="margin-top: -60px; font-size: 18px; background-color: #d3d3d3; color: #333;">
             &larr; Back to Course List
         </a>
     </div>
-    {% endif %}
     <div class="container mt-4">
         <div class="course-title-container">
             <h1 class="text-3xl font-bold main-color-text uppercase-title">{{ course.course_name }}</h1>
@@ -352,8 +350,16 @@ $(document).ready(function(){
 
     // Automatically open the last active tab if saved in localStorage
     var activeTab = localStorage.getItem('activeTab') || 'Tab1';
-    document.getElementById(activeTab).style.display = 'block';
-    document.querySelector(`.tablinks[onclick*='${activeTab}']`).classList.add('active');
+    var activeTabElement = document.getElementById(activeTab);
+
+    if (activeTabElement) {
+        activeTabElement.style.display = 'block';
+        document.querySelector(`.tablinks[onclick*='${activeTab}']`).classList.add('active');
+    } else {
+        console.error(`Element with ID ${activeTab} not found. Defaulting to Tab1.`);
+        document.getElementById('Tab1').style.display = 'block';  // Fallback to default tab
+        document.querySelector('.tablinks[onclick*="Tab1"]').classList.add('active');
+    }
 
     if (userType === "student") {
         $('#feedbackCarousel').carousel({

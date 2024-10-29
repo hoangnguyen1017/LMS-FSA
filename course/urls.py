@@ -29,13 +29,11 @@ urlpatterns = [
     # Certificate
     path('<int:pk>/generate-certificate/', views.generate_certificate_png, name='generate_certificate'),
     # Topic URLs
-    path('topics/', views.topic_list, name='topic_list'),
+    path('topics/', views.topic_tag_list, name='topic_tag_list'),
     path('topics/add/', views.topic_add, name='topic_add'),
     path('topics/edit/<int:pk>/', views.topic_edit, name='topic_edit'),
     path('topics/delete/<int:pk>/', views.topic_delete, name='topic_delete'),
 
-    # Tag URLs
-    path('tags/', views.tag_list, name='tag_list'),
     path('tags/add/', views.tag_add, name='tag_add'),
     path('tags/edit/<int:pk>/', views.tag_edit, name='tag_edit'),
     path('tags/delete/<int:pk>/', views.tag_delete, name='tag_delete'),

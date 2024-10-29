@@ -24,6 +24,31 @@ from django.core.files.storage import default_storage
 import random
 
 
+from django.http import HttpResponseRedirect
+
+
+@login_required
+def complete_session(request, course_id, session_id):
+    course = get_object_or_404(Course, id=course_id)
+    session = get_object_or_404(Session, id=session_id)
+
+    # Assuming session completion logic is handled here
+    session_completion, created = SessionCompletion.objects.get_or_create(
+        course=course,
+        user=request.user,
+        session=session,
+        defaults={'completed': True}
+    )
+
+    if created or not session_completion.completed:
+        session_completion.completed = True
+        session_completion.save()
+        # Check for course completion and generate certification
+        course.check_and_generate_certification(request.user)
+
+    return HttpResponseRedirect(reverse('course:course_detail', args=[course.id]))
+
+
 def export_course(request):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=lms_course.xlsx'
@@ -351,6 +376,10 @@ def course_add(request):
 def course_edit(request, pk):
     course = get_object_or_404(Course, pk=pk)
     all_courses = Course.objects.exclude(id=course.id)
+    sessions = Session.objects.filter(course=course).order_by('order')
+
+    # Get the first session ID if there are sessions, otherwise set it to None
+    first_session_id = sessions.first().id if sessions.exists() else None
 
     if request.method == 'POST':
         course_form = CourseForm(request.POST, request.FILES, instance=course)
@@ -381,8 +410,9 @@ def course_edit(request, pk):
                     print("Deleting old image:", course.image.path)
                     default_storage.delete(course.image.path)  # Delete from storage
                     course.image.delete()  # Remove the model reference
-                    course.save()  # Save after deletion
-                    print("Image deleted successfully.")
+
+            course.save()  # Save after deletion
+            print("Image deleted successfully.")
 
             # Handle tag deletion
             current_tags = list(course.tags.all())
@@ -484,6 +514,7 @@ def course_edit(request, pk):
         'sessions': sessions.order_by('order'),  # Pass sessions to template
         'topics': topics,
         'tags': tags,
+        'first_session_id': first_session_id,
     })
 
 def course_delete(request, pk):
@@ -975,10 +1006,11 @@ def generate_certificate_png(request, pk):
     return render(request, 'course/certificate_template.html', context)
 
 # Views for Topics
-def topic_list(request):
+def topic_tag_list(request):
     module_groups = ModuleGroup.objects.all()
     topics = Topic.objects.all()
-    return render(request, 'topic-tag/topic_list.html', {'module_groups': module_groups, 'topics': topics})
+    tags = Tag.objects.all()
+    return render(request, 'topic-tag/topic_tag_list.html', {'module_groups': module_groups, 'tags': tags, 'topics': topics})
 
 def topic_add(request):
     if request.method == 'POST':
@@ -986,7 +1018,7 @@ def topic_add(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Topic added successfully.')
-            return redirect('course:topic_list')
+            return redirect('course:topic_tag_list')
     else:
         form = TopicForm()
     return render(request, 'topic-tag/topic_form.html', {'form': form, 'title': 'Add Topic'})
@@ -998,7 +1030,7 @@ def topic_edit(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Topic updated successfully.')
-            return redirect('course:topic_list')
+            return redirect('course:topic_tag_list')
     else:
         form = TopicForm(instance=topic)
     return render(request, 'topic-tag/topic_form.html', {'form': form, 'title': 'Edit Topic'})
@@ -1008,15 +1040,9 @@ def topic_delete(request, pk):
     if request.method == 'POST':
         topic.delete()
         messages.success(request, 'Topic deleted successfully.')
-        return redirect('course:topic_list')
+        return redirect('course:topic_tag_list')
     return render(request, 'topic-tag/topic_confirm_delete.html', {'object': topic, 'title': 'Delete Topic'})
 
-
-# Views for Tags
-def tag_list(request):
-    module_groups = ModuleGroup.objects.all()
-    tags = Tag.objects.all()
-    return render(request, 'topic-tag/tag_list.html', {'tags': tags, 'module_groups': module_groups,})
 
 def tag_add(request):
     if request.method == 'POST':
@@ -1024,10 +1050,11 @@ def tag_add(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Tag added successfully.')
-            return redirect('course:tag_list')
+            return redirect('course:topic_tag_list')
     else:
         form = TagForm()
-    return render(request, 'topic-tag/tag_form.html', {'form': form, 'title': 'Add Tag'})
+        topics = Topic.objects.all()
+    return render(request, 'topic-tag/tag_form.html', {'form': form, 'title': 'Add Tag', 'topics': topics})
 
 def tag_edit(request, pk):
     tag = get_object_or_404(Tag, pk=pk)
@@ -1036,7 +1063,7 @@ def tag_edit(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Tag updated successfully.')
-            return redirect('course:tag_list')
+            return redirect('course:topic_tag_list')
     else:
         form = TagForm(instance=tag)
     return render(request, 'topic-tag/tag_form.html', {'form': form, 'title': 'Edit Tag'})
@@ -1046,5 +1073,5 @@ def tag_delete(request, pk):
     if request.method == 'POST':
         tag.delete()
         messages.success(request, 'Tag deleted successfully.')
-        return redirect('course:tag_list')
+        return redirect('course:topic_tag_list')
     return render(request, 'topic-tag/tag_confirm_delete.html', {'object': tag, 'title': 'Delete Tag'})

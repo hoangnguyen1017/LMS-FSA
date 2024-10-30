@@ -6,6 +6,7 @@ from django.conf import settings  # Để lấy email mặc định từ setting
 from role.models import Role
 from user.models import Profile
 import random
+from django.contrib.auth import authenticate
 
 class EmailForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Nhập email'}))
@@ -59,8 +60,7 @@ class PasswordResetForm(forms.Form):
 
         if password and confirm_password and password != confirm_password:
             raise forms.ValidationError("Password and Confirm password is not match.")
-from django import forms
-from django.contrib.auth import authenticate
+
 
 class CustomLoginForm(forms.Form):
     username = forms.CharField(
@@ -89,5 +89,3 @@ class CustomLoginForm(forms.Form):
             if user is None:
                 raise forms.ValidationError("Invalid login credentials.")
         return cleaned_data
-
-

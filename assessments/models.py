@@ -113,16 +113,6 @@ class UserAnswer(models.Model):
     def __str__(self):
         return f"Answer for {self.question} in {self.assessment}"
 
-
-class UserSubmission(models.Model):
-    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    code = models.TextField()
-    score = models.IntegerField(null=True, blank=True)
-
-    def __str__(self):
-        return f"Submission for {self.exercise.title} in {self.assessment}"
-
 class StudentAssessmentAttempt(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     email = models.EmailField(blank=True, null=True, verbose_name="Email Address")  # Optional email for anonymous users
@@ -135,8 +125,11 @@ class StudentAssessmentAttempt(models.Model):
 
     # Additional fields to track user answers and submissions
     user_answers = models.ManyToManyField(UserAnswer, related_name='attempts', blank=True)
-    user_submissions = models.ManyToManyField(UserSubmission, related_name='attempts', blank=True)
+    user_submissions = models.ManyToManyField('exercises.Submission', related_name='attempts', blank=True)
 
+    is_proctored = models.BooleanField(default=False)
+    proctoring_data = models.JSONField(null=True, default=dict)
+    
     # Timestamps and User relations
     attempt_date = models.DateTimeField(auto_now_add=True)
 

@@ -39,6 +39,7 @@ urlpatterns = [
     path('mylearning/', include('mylearning.urls')),
     path('certification/', include('certification.urls')),
     path('learning_path/', include('learning_path.urls')),
+    path('backup/', include('backup.urls')),
     
     #group01
     path('user/', include(('user.urls', 'user'), namespace='user')),  # Register user app URLs with a namespace
@@ -52,8 +53,8 @@ urlpatterns = [
 
     #group03
     path('quiz/', include('quiz.urls')),  
-    path('std_quiz/', include('std_quiz.urls')),
-    path('course_Truong/', include('course_Truong.urls')),
+    # path('std_quiz/', include('std_quiz.urls')),
+    # path('course_Truong/', include('course_Truong.urls')),
     path('tools/', include('tools.urls')),
     
 
@@ -65,17 +66,17 @@ urlpatterns = [
 
     #group05
     path('activity/', include('activity.urls', namespace='activity')),  # Ensure this line exists
-    path('certificate/', include('certificate.urls')),
     path('ai_insights', include('ai_insights.urls')),
     path('analytics_report', include('analytics_report.urls')),
-    path('assignment', include('assignment.urls')),
+    # path('certificate/', include('certificate.urls')),
+    # path('assignment', include('assignment.urls')),
     # path('course_completion', include('course_completion.urls')),
 
-    path('performance_analytics', include('performance_analytics.urls')),
+    # path('performance_analytics', include('performance_analytics.urls')),
     path('progress_notification', include('progress_notification.urls')),
-    path('student_performance', include('student_performance.urls')),
+    # path('student_performance', include('student_performance.urls')),
     path('user_progress', include('user_progress.urls')),
-    path('user_summary', include('user_summary.urls')),
+    # path('user_summary', include('user_summary.urls')),
     path('book', include('book.urls')),
 
 

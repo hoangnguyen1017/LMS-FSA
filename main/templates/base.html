@@ -4,97 +4,189 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Learning Management System{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Font Awesome CSS -->
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-    <!-- Font Awesome for Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+    
+    <style>
+        /* Full height sidebar with scrolling */
+        #sidebar {
+            height: 100vh;
+            overflow-y: auto;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #343a40; /* Dark background for sidebar */
+        }
+
+        /* Adjust main content margin to account for fixed sidebar */
+        .main-content {
+            margin-left: 250px; /* Sidebar width */
+            padding-right: 15px; /* Optional right padding */
+        }
+
+        /* Navbar styles */
+        .navbar {
+            z-index: 1030; /* Ensure navbar is above sidebar */
+            width: 100%; /* Full width */
+            position: fixed; /* Fix navbar to the top */
+            top: 0;
+        }
+
+        /* Active and hover states */
+        .nav-link.active {
+            background-color: #007bff; /* Active menu background */
+            color: #fff; /* Active text color */
+        }
+
+        .nav-link:hover {
+            background-color: #0056b3; /* Hover background */
+            color: #fff; /* Hover text color */
+        }
+
+        /* Divider styles */
+        .divider {
+            border-top: 1px solid #495057; /* Light gray line */
+            margin: 0.5rem 0; /* Add margin around the divider */
+        }
+    </style>
     {% block extra_css %}{% endblock %}
-</head> 
+</head>
 <body>
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="{% url 'main:home' %}">FSA</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav mr-auto">
-                {% if user.is_authenticated and user.is_superuser %}
-                {% for group in module_groups %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="{{ group.id }}" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            {{ group.group_name }}
-                        </a>
-                        <div class="dropdown-menu" aria-labelledby="{{ group.id }}">
-                            {% for module in group.modules.all %}
-                                <a class="dropdown-item" href="{% url module.module_url %}"> <i class="{{ module.icon }}"></i> &nbsp;{{ module.module_name }}</a>
-                            {% endfor %}
-                        </div>
-                    </li>
-                {% endfor %}    
-            </ul>
-                {% endif %}
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto" style="margin-left: auto;">
                 {% if request.user.is_authenticated %}
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
-                        <i class="fas fa-user-shield"></i> Admin Django &nbsp;&nbsp;&nbsp;|
-                    </a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {% if request.user.profile.profile_picture_url %}
-                        <img src="{{ request.user.profile.profile_picture_url }}" alt="Profile Picture" class="rounded-circle" width="30" height="30" style="margin-right: 5px;">
-                        {% endif %}
-                        {{ request.user.get_full_name|default:request.user.username }}
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="{% url 'user:user_detail' request.user.id %}">Profile</a>
-                        <div class="dropdown-divider"></div>
-                        <form action="{% url 'main:logout' %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="dropdown-item">Logout</button>
-                        </form>
-                    </div>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
+                            <i class="fas fa-user-shield"></i> Admin Django
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if request.user.profile.profile_picture_url %}
+                                <img src="{{ request.user.profile.profile_picture_url }}" alt="Profile Picture" class="rounded-circle" width="30" height="30">
+                            {% endif %}
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{% url 'user:user_detail' request.user.id %}">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{% url 'main:logout' %}" method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'main:register_email' %}">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'main:login' %}">Login</a></li>
+                {% endif %}
             </ul>
-        {% else %}
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'main:register_email' %}">Register</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'main:login' %}">Login</a>
-                </li>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav id="sidebar" class="col-md-3 col-lg-2 sidebar d-flex flex-column vh-100" style="margin-top: 56px;">
+        <div class="position-sticky pt-3">
+            <ul class="nav flex-column">
+                {% if user.is_authenticated %}
+                    {% for group in module_groups %}
+                        <li class="nav-item">
+                            
+                            <a class="nav-link text-light d-flex align-items-center" href="#group-{{ group.id }}" 
+                                data-bs-toggle="collapse" role="button"
+                                aria-expanded="{% if group.modules.all.0.module_url == active_module_url %}true{% else %}false{% endif %}" 
+                                aria-controls="group-{{ group.id }}">
+                                
+                                <!-- Icon to indicate expandable group -->
+                                <i class="fas fa-caret-right me-2" id="icon-{{ group.id }}"></i>
+                                
+                                <!-- Group name -->
+                                {{ group.group_name }}
+                            </a>
+                            <div id="group-{{ group.id }}" class="collapse {% if group.modules.all.0.module_url == active_module_url %}show{% endif %}">
+                                <ul class="nav flex-column ms-3">
+                                    {% for module in group.modules.all %}
+                                        <li class="nav-item">
+                                            <a class="nav-link text-light {% if module.module_url == active_module_url %}active{% endif %}" 
+                                               href="{% url module.module_url %}">
+                                                <i class="{{ module.icon }}"></i> {{ module.module_name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </li>
+                        <div class="divider"></div> <!-- Divider between groups -->
+                    {% endfor %}
+                {% endif %}
             </ul>
-        {% endif %}
-        </nav>
-    </div>
-    <div class="container-fluid mt-4">
-        {% block content %}{% endblock %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container mt-5 pt-3">
+            {% block content %}{% endblock %}
+        </div>
     </div>
 
-    <!-- JavaScript Libraries -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Use the slim version only if you don't need AJAX -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.2/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            document.querySelectorAll('.dropdown-item:contains("Logout")').forEach(function(logoutButton) {
-                logoutButton.addEventListener("click", function(event) {
-                    event.preventDefault();
-                    fetch("{% url 'main:logout' %}", {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": "{{ csrf_token }}"
+        document.addEventListener("DOMContentLoaded", function () {
+            
+            // Add active class to clicked sidebar links
+            document.querySelectorAll('.nav-link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    document.querySelectorAll('.nav-link').forEach(function (el) {
+                        el.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+    
+            // Ensure only one collapse element is expanded at a time
+            document.querySelectorAll('.collapse').forEach(function (collapseElement) {
+                collapseElement.addEventListener('show.bs.collapse', function () {
+                    // Close all other collapse elements
+                    document.querySelectorAll('.collapse').forEach(function (el) {
+                        if (el !== collapseElement) {
+                            el.classList.remove('show');
                         }
                     });
                 });
             });
+    
+            // Automatically open the correct group based on the current URL
+            const currentURL = window.location.pathname;
+            document.querySelectorAll('.collapse').forEach(function (collapseElement) {
+                const moduleLinks = collapseElement.querySelectorAll('.nav-link');
+    
+                moduleLinks.forEach(function (moduleLink) {
+                    if (moduleLink.getAttribute('href') === currentURL) {
+                        moduleLink.classList.add('active');
+                        collapseElement.classList.add('show');
+                    }
+                });
+            });
         });
     </script>
+    
+
 
     {% block extra_js %}{% endblock %}
 </body>

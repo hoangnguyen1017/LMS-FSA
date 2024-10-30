@@ -28,7 +28,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-
 # STATIC_URL = '/staticfiles/'
 # STATIC_URL for development
 STATIC_URL = '/static/'
@@ -93,7 +92,6 @@ INSTALLED_APPS = [
     'ckeditor_uploader',  #Optional: if you want to allow image uploads
     'widget_tweaks',
 
-    
     'module_group',
     'training_program',
     'subject', 'student_materials', #for FSA subject
@@ -103,7 +101,7 @@ INSTALLED_APPS = [
     'exercises', #Binh_Thang
     #ngattt
     'assessments', 'reports', 'group_enrollment', 'mylearning', 'certification', 
-    'learning_path',
+    'learning_path', 'backup',
 
     #group01
     'user', 'role', 'department', 
@@ -112,15 +110,15 @@ INSTALLED_APPS = [
     'course', 'feedback', 'forum', 
 
     #group03
-    'quiz', 'std_quiz', 'course_Truong', 'tools', # 'std_course',
+    'quiz', 'tools', # 'std_course', 'course_Truong', 'std_quiz', 
 
     #group04
     'chat', 'chatapp', 'thread', 'collaboration_group', 
 
     #group05 
-    'activity', 'ai_insights', 'analytics_report', 'assignment', 'certificate', #'course_completion',  
-    'performance_analytics', 'progress_notification', 'student_performance', 
-    'user_progress', 'user_summary', 'book'
+    'activity', 'ai_insights', 'analytics_report', 'assignment', #'course_completion', 'certificate', 'user_summary', 'performance_analytics', 'student_performance', 
+    'progress_notification', 
+    'user_progress',  'book'
 ]
 
 MIDDLEWARE = [

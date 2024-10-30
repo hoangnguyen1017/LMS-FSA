@@ -24,11 +24,21 @@ class ActivityTrackingMiddleware:
         # Log activity if the user is authenticated
         if request.user.is_authenticated:
             current_url = resolve(request.path_info).url_name
-            UserActivityLog.objects.create(
-                user=request.user,
-                activity_type='page_visit',  # Use an appropriate activity type
-                activity_details=f"Accessed {current_url}",
-                activity_timestamp=timezone.now()  # This can be omitted since `auto_now_add` is used
-            )
+            
+            # Check if the user has already accessed the activity page
+            if current_url == 'activity_view':  # Replace with the actual URL name for activity view
+                if not request.session.get('activity_page_accessed', False):
+                    # Log the activity
+                    UserActivityLog.objects.create(
+                        user=request.user,
+                        activity_type='page_visit',
+                        activity_details=f"Accessed {current_url}",
+                        activity_timestamp=timezone.now()
+                    )
+                    # Set the flag in the session to True
+                    request.session['activity_page_accessed'] = True
+            else:
+                # Reset the flag if they navigate away from the activity page
+                request.session['activity_page_accessed'] = False
 
         return response

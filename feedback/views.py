@@ -8,6 +8,22 @@ from module_group.models import ModuleGroup, Module
 from django.contrib import messages
 from django.core.paginator import Paginator
 
+'''def feedback_list(request):
+    module_groups = ModuleGroup.objects.all()
+    modules = Module.objects.all()
+    instructor_feedbacks = InstructorFeedback.objects.all()
+    course_feedbacks = CourseFeedback.objects.all()
+    training_feedbacks = TrainingProgramFeedback.objects.all()
+
+    return render(request, 'feedback_list.html', {
+        'instructor_feedbacks': instructor_feedbacks,
+        'course_feedbacks': course_feedbacks,
+        'training_feedbacks': training_feedbacks,
+        'module_groups': module_groups,
+        'modules': modules
+    })'''
+
+
 def feedback_list(request):
     module_groups = ModuleGroup.objects.all()
     modules = Module.objects.all()

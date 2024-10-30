@@ -1,111 +1,181 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from import_export import resources, fields
+from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import User, Profile, Role
+from .models import User, Profile, Role, Student
 from .forms import UserForm, UserEditForm
-from .widgets import PasswordWidget
+
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin
+from .models import User, Profile, Role, Student
+
+#Resource cho User
 class UserProfileResource(resources.ModelResource):
+    student_code = resources.Field()
+    password = resources.Field(column_name='password')  # Thêm trường password
+
     class Meta:
         model = User
+        exclude = ('id',)  # Bỏ qua trường id trong import
+        import_id_fields = ['username']  # Sử dụng username để xác định người dùng
+        skip_unchanged = True
+        report_skipped = True
         fields = (
-            'id',
             'username',
             'first_name',
             'last_name',
             'email',
-            'profile__role__role_name',  # Profile Role
-            'profile__bio',               # Profile Bio
-            'profile__profile_picture_url',  # Profile Picture
-            'profile__interests',          # Interests
-            'profile__learning_style',     # Learning Style
-            'profile__preferred_language', # Preferred Language
+            'password',  # Bao gồm mật khẩu trong export/import
+            'profile__role__role_name',
+            'profile__profile_picture_url',
+            'profile__bio',
+            'profile__interests',
+            'profile__learning_style',
+            'profile__preferred_language',
+            'student_code',
         )
+
+    def dehydrate_student_code(self, user):
+        # Kiểm tra xem user có mối quan hệ với Student không và trả về student_code
+        try:
+            return user.student.student_code
+        except Student.DoesNotExist:
+            return ''
+
+    def dehydrate_password(self, user):
+        # Xuất mật khẩu (hashed)
+        return user.password
+
+    def export(self, queryset=None, *args, **kwargs):
+        # Lọc ra các user không phải là superuser
+        queryset = queryset.filter(is_superuser=False)
+        return super().export(queryset, *args, **kwargs)
 
     def before_import_row(self, row, **kwargs):
-        # Lấy thông tin user từ file import
         username = row.get('username')
-        email = row.get('email')
-        first_name = row.get('first_name')
-        last_name = row.get('last_name')
+        if not username:
+            return
 
-        # Tìm hoặc tạo mới User
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={'email': email, 'first_name': first_name, 'last_name': last_name}
-        )
+        try:
+            user = User.objects.get(username=username)
+            # Nếu người dùng đã có mật khẩu, giữ nguyên
+            row['password'] = user.password if user.password else '123@'  # Nếu không có thì đặt mật khẩu mặc định
+        except User.DoesNotExist:
+            # Người dùng mới thì gán mật khẩu mặc định
+            row['password'] = '123@'
 
-        # Nếu user đã tồn tại, cập nhật các thông tin (email, first_name, last_name)
-        if not created:
-            user.email = email if email else user.email
-            user.first_name = first_name if first_name else user.first_name
-            user.last_name = last_name if last_name else user.last_name
+    def after_import(self, dataset, result, **kwargs):
+        for row in dataset.dict:
+            username = row.get('username')
+            student_code = row.get('student_code')
+
+            if not username:
+                print("Missing username. Skipping this entry.")
+                continue
+            
+            # Tìm User theo username hoặc tạo mới
+            user, created = User.objects.get_or_create(username=username)
+
+            # Nếu user là superuser, bỏ qua
+            if user.is_superuser:
+                print(f"Skipping superuser with username {username}.")
+                continue
+
+            # Nếu có mật khẩu trong dữ liệu nhập, thiết lập mật khẩu
+            password = row.get('password')
+            if password:
+                # Nếu mật khẩu đã được mã hóa, chỉ cần gán trực tiếp
+                if password.startswith('pbkdf2_sha256$'):
+                    user.password = password
+                else:
+                    user.set_password(password)
+            # Gán mật khẩu mặc định nếu người dùng chưa có mật khẩu
+            if created or (not user.password):  # Người dùng mới hoặc không có mật khẩu
+                user.set_password('123@')  # Mật khẩu mặc định
+
+            # Cập nhật các trường thông tin khác
+            user.first_name = row.get('first_name', user.first_name)
+            user.last_name = row.get('last_name', user.last_name)
+            user.email = row.get('email', user.email)
             user.save()
 
-        # Xử lý thông tin Profile liên kết với User
-        profile, profile_created = Profile.objects.get_or_create(user=user)
+            # Lấy hoặc tạo Role
+            role_name = row.get('profile__role__role_name') or "N/A"
+            role, created = Role.objects.get_or_create(role_name=role_name)
 
-        # Kiểm tra và gán Role nếu có trong file import
-        role_name = row.get('profile__role__role_name')
-        if role_name:
-            role, role_created = Role.objects.get_or_create(role_name=role_name)
-            profile.role = role
-        
-        # Cập nhật các thông tin khác cho Profile
-        profile.bio = row.get('profile__bio') if row.get('profile__bio') else profile.bio
-        profile.profile_picture_url = row.get('profile__profile_picture_url') if row.get('profile__profile_picture_url') else profile.profile_picture_url
-        profile.interests = row.get('profile__interests') if row.get('profile__interests') else profile.interests
-        profile.learning_style = row.get('profile__learning_style') if row.get('profile__learning_style') else profile.learning_style
-        profile.preferred_language = row.get('profile__preferred_language') if row.get('profile__preferred_language') else profile.preferred_language
-        
-        # Lưu Profile sau khi cập nhật
-        profile.save()
+            # Cập nhật hoặc tạo Profile
+            profile_data = {
+                'role': role,
+                'profile_picture_url': row.get('profile__profile_picture_url'),
+                'bio': row.get('profile__bio'),
+                'interests': row.get('profile__interests'),
+                'learning_style': row.get('profile__learning_style'),
+                'preferred_language': row.get('profile__preferred_language'),
+            }
+            Profile.objects.update_or_create(user=user, defaults={k: v for k, v in profile_data.items() if v is not None})
 
-        # Gán ID cho row để tiếp tục quá trình import
-        row['id'] = user.id
+            # Nếu vai trò là "student", thêm vào bảng Student với student_code
+            if role_name.lower() == 'student':
+                Student.objects.update_or_create(user=user, defaults={'student_code': student_code})
 
 class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = True
-    verbose_name_plural = 'Profile'
+    verbose_name_plural = 'Profiles'
 
-class CustomUserAdmin(ImportExportModelAdmin, BaseUserAdmin):
-    resource_class = UserProfileResource
-    list_display = ('username', 'first_name', 'last_name', 'email', 'get_role', 'is_staff', 'is_active', 'date_joined')
-    list_filter = ('is_staff', 'is_active', 'is_superuser', 'groups')
-    readonly_fields = ('date_joined',)
+# # Cập nhật CustomUserAdmin
+# from import_export.results import RowResult
+# class CustomUserAdmin(ImportExportModelAdmin, BaseUserAdmin):
+#     resource_class = UserProfileResource
+#     def _create_log_entries(self, result, request):
+#         # Kiểm tra xem result có phải là một đối tượng hợp lệ và có thuộc tính totals
+#         if isinstance(result, RowResult):
+#             # Đảm bảo rằng trường 'skip' tồn tại trong kết quả
+#             if 'skip' not in result.totals:
+#                 result.totals['skip'] = 0  # Gán giá trị mặc định là 0 nếu không có
+#         else:
+#             print("Result is not a valid RowResult object.")
+#             return
 
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        ('Personal Info', {'fields': ('first_name', 'last_name', 'email')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Modules', {'fields': ('modules',)}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
-    )
+#         # Gọi phương thức gốc của ImportExportModelAdmin
+#         super()._create_log_entries(result, request)
 
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'is_staff', 'is_active', 'modules')}
-        ),
-    )
-    filter_horizontal = ('groups', 'user_permissions', 'modules')
 
-    search_fields = ('username', 'email', 'first_name', 'last_name')
-    ordering = ('username',)
-    inlines = [ProfileInline]
+#     list_display = ('username', 'first_name', 'last_name', 'email', 'get_role', 'is_staff', 'is_active', 'date_joined')
+#     list_filter = ('is_staff', 'is_active', 'is_superuser', 'groups')
+#     readonly_fields = ('date_joined',)
 
-    def get_role(self, obj):
-        return obj.profile.role.role_name if hasattr(obj, 'profile') and obj.profile.role else 'No Role'
-    get_role.short_description = 'Role'
+#     fieldsets = (
+#         (None, {'fields': ('username', 'password')}),  # Ensure 'password' field is handled properly
+#         ('Personal Info', {'fields': ('first_name', 'last_name', 'email')}),
+#         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+#         ('Modules', {'fields': ('modules',)}),
+#         ('Important dates', {'fields': ('last_login', 'date_joined')}), 
+#     )
 
-if User in admin.site._registry:
-    admin.site.unregister(User)
+#     add_fieldsets = (
+#         (None, {
+#             'classes': ('wide',),
+#             'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'is_staff', 'is_active', 'modules')},
+#         ),
+#     )
+#     filter_horizontal = ('groups', 'user_permissions', 'modules')
 
-admin.site.register(User, CustomUserAdmin)
+#     search_fields = ('username', 'email', 'first_name', 'last_name')
+#     ordering = ('username',)
+#     inlines = [ProfileInline]
 
-from import_export import resources
-from .models import Student
+#     def get_role(self, obj):
+#         return obj.profile.role.role_name if hasattr(obj, 'profile') and obj.profile.role else 'No Role'
+#     get_role.short_description = 'Role'
+
+# if User in admin.site._registry:
+#     admin.site.unregister(User)
+
+# admin.site.register(User, CustomUserAdmin)
+
 
 class StudentResource(resources.ModelResource):
     class Meta:
@@ -114,13 +184,13 @@ class StudentResource(resources.ModelResource):
         export_order = ('id', 'student_code', 'user__username', 'user__first_name', 'user__last_name', 'user__email', 'enrolled_courses')
 
 class StudentAdmin(ImportExportModelAdmin):
-    resource_class = StudentResource
+    model = Student
     list_display = ('student_code', 'user', 'enrolled_courses_display')
-    search_fields = ('student_code', 'user__username', 'user__email', 'user__first_name', 'user__last_name')
-    inlines = [ProfileInline]
+    search_fields = ('student_code', 'user__username', 'user__email')
 
     def enrolled_courses_display(self, obj):
-        return ", ".join(course.course_name for course in obj.enrolled_courses.all())  
+        return ", ".join(course.course_name for course in obj.enrolled_courses.all())
     enrolled_courses_display.short_description = 'Enrolled Courses'
 
 admin.site.register(Student, StudentAdmin)
+admin.site.register(User)

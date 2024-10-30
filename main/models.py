@@ -15,6 +15,7 @@ class Registration(models.Model):
 
 
 class CustomUser(AbstractUser):
+    is_created_by_createsuperuser = models.BooleanField(default=False)
     full_name = models.CharField(max_length=255, blank=True, default='')
     random_code = models.CharField(max_length=10, blank=True, null=True)
 

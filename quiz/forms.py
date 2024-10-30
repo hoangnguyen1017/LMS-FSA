@@ -1,5 +1,6 @@
 from django import forms
 from .models import Quiz, Question, AnswerOption, StudentAnswer
+from .fields import MultipleFilesField
 
 class QuizForm(forms.ModelForm):
     class Meta:
@@ -53,3 +54,6 @@ class QuizAnswerForm(forms.Form):
                     widget=forms.Textarea(attrs={'rows': 4, 'cols': 40}),
                     required=True
                 )
+
+class ExcelUploadForm(forms.Form):
+    files = MultipleFilesField(required=True)

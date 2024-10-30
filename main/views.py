@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .forms import RegistrationForm, CustomLoginForm
+from .forms import RegistrationForm, CustomLoginForm, EmailForm, ConfirmationCodeForm
 from django.contrib.auth import authenticate, login
 from user.models import User, Profile, Role
 from module_group.models import Module, ModuleGroup
@@ -14,8 +14,9 @@ from django.utils import timezone
 from datetime import timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import json
+import random
 from django.core.cache import cache
+from django.conf import settings
 
 def password_reset_request(request):
     if request.method == 'POST':
@@ -146,17 +147,98 @@ def password_reset_form(request):
     
     return render(request, 'password_reset.html', {'form': form, 'current_step': 'reset'})
 
-def register_view(request):
+
+def register_email(request):
     if request.method == 'POST':
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
+        email_form = EmailForm(request.POST)
+        if email_form.is_valid():
+            email = email_form.cleaned_data['email']
+            confirmation_code = random.randint(1000, 9999)  # Tạo mã xác thực
+            request.session['confirmation_code'] = confirmation_code
+            request.session['email'] = email
+            
+            # Gửi mã xác thực qua email
+            send_mail(
+                'Account Registration Successful',
+                f'Hello,\n\n'
+                f'You have successfully registered an account on the system.\n\n'
+                f'Your confirmation code is: {confirmation_code}',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            return redirect('main:register_confirmation_code')
+    else:
+        email_form = EmailForm()
+    
+    return render(request, 'register_email.html', {'form': email_form})
+
+def user_exists(email):
+    return User.objects.filter(email=email).exists()
+
+def register_confirmation_code(request):
+    if request.method == 'POST':
+        confirmation_code_form = ConfirmationCodeForm(request.POST)
+        if confirmation_code_form.is_valid():
+            code = confirmation_code_form.cleaned_data['confirmation_code']
+            if code == str(request.session.get('confirmation_code')):
+                # Lấy email từ session
+                email = request.session.get('email')
+
+                # Kiểm tra xem người dùng đã tồn tại chưa
+                if user_exists(email):
+                    messages.error(request, "Email này đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác!")
+                    return redirect('main:register_email')
+
+                # Lưu email vào session để sử dụng sau
+                request.session['email_verified'] = email
+
+                messages.success(request, "Xác thực email thành công! Vui lòng điền thông tin đăng ký.")
+                return redirect('main:register_user_info')  # Chuyển hướng đến thông tin người dùng
+            else:
+                messages.error(request, "Mã xác thực không hợp lệ.")
+    else:
+        confirmation_code_form = ConfirmationCodeForm()
+    
+    return render(request, 'register_confirmation_code.html', {'form': confirmation_code_form})
+
+def register_user_info(request):
+    if request.method == 'POST':
+        user_form = RegistrationForm(request.POST)
+        if user_form.is_valid():
+            email = request.session.get('email_verified')
+            
+            # Kiểm tra xem người dùng đã tồn tại chưa
+            if user_exists(email):
+                messages.error(request, "Người dùng đã tồn tại với email này!")
+                return redirect('main:register_email')
+
+            user = user_form.save(commit=False)  # Không lưu ngay
+            user.email = email  # Lưu email vào user
+            user.set_password(user_form.cleaned_data.get('password1'))  # Lưu mật khẩu đã mã hóa
+            user.save()  # Lưu user
+            
+            # Tạo Profile cho user
+            profile = Profile.objects.create(user=user)  # Chỉ tạo Profile
+            
+            # Gán vai trò mặc định là User
+            default_role = Role.objects.get(role_name='Student')  # Thay 'User' bằng tên vai trò đúng nếu cần
+            profile.role = default_role
+            profile.email_verified = True  # Đánh dấu email là đã xác thực
+            profile.save()  # Lưu Profile với vai trò mặc định
+
+            # Lưu user_id vào session
+            request.session['user_id'] = user.id  # Lưu ID người dùng vào session
+            
+            messages.success(request, "Đăng ký thành công!")
             return redirect('main:login')
     else:
-        form = RegistrationForm()
+        user_form = RegistrationForm()
+    
+    return render(request, 'register_user_info.html', {'form': user_form})
 
-    return render(request, 'register.html', {'form': form})
+
+
 
 def login_view(request):
     selected_role = request.POST.get('role', '')
@@ -171,22 +253,25 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
 
             if user is not None:
+                # Đăng nhập người dùng
+                login(request, user)
+
                 if user.is_superuser:
-                    login(request, user)
-                    return redirect('/admin/')
+                    return redirect('/admin/')  # Chuyển hướng đến admin nếu là superuser
+
                 user_role = user.profile.role.role_name
 
+                # Kiểm tra xem role đã chọn có khớp với role của người dùng không
                 if user_role == selected_role:
-                    login(request, user)
-                    messages.success(request, "Login successful!")
+                    messages.success(request, "Đăng nhập thành công!")
                     next_url = request.GET.get('next', 'main:home')
                     return redirect(next_url)
                 else:
-                    messages.error(request, "Role does not match your account's role.")
+                    messages.error(request, "Vai trò không khớp với vai trò tài khoản của bạn.")
             else:
-                messages.error(request, "Invalid username or password.")
+                messages.error(request, "Tên đăng nhập hoặc mật khẩu không hợp lệ.")
         else:
-            messages.error(request, "Form is not valid.")
+            messages.error(request, "Mẫu không hợp lệ.")
     else:
         form = CustomLoginForm()
 
@@ -196,6 +281,8 @@ def login_view(request):
         'roles': roles,
         'selected_role': selected_role if not request.user.is_superuser else ''
     })
+
+
 
 def home(request):
     query = request.GET.get('q')

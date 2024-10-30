@@ -170,3 +170,44 @@ h1 {
 .dropdown-item i {
     margin-right: 5px; /* Khoảng cách giữa biểu tượng và chữ */
 }
+
+
+.card-title-description {
+    display: inline-block; /* Điều chỉnh chiều rộng của ô title */
+    font-size: 24px; /* Kích thước chữ tiêu đề */
+    text-align: center; /* Căn giữa nội dung bên trong */
+}
+
+.small-description-question {
+    background-color: transparent; /* Bỏ màu nền để không gây rối mắt */
+    padding: 0; /* Bỏ khoảng cách bên trong */
+    font-size: 1.0em; /* kích thước chữ */
+    margin-left: 0; /* Bỏ khoảng cách bên trái để tạo sự liên kết */
+    margin-top: 5px; /* Khoảng cách phía trên */
+    color: #333; /* Màu chữ tối hơn để dễ đọc */
+    font-weight: bold; /* In đậm để tạo sự chú ý */
+}
+
+
+
+/* Định kiểu cho phần mô tả */
+.description-question {
+    background-color: transparent; /* Bỏ màu nền để không gây rối mắt */
+    padding: 0; /* Bỏ khoảng cách bên trong */
+    font-size: 2.5em; /* kích thước chữ */
+    margin-left: 0; /* Bỏ khoảng cách bên trái để tạo sự liên kết */
+    margin-top: 5px; /* Khoảng cách phía trên */
+    color: #333; /* Màu chữ tối hơn để dễ đọc */
+    font-weight: bold; /* In đậm để tạo sự chú ý */
+}
+
+
+.custom-search-btn {
+    padding: 5px 10px; /* Điều chỉnh padding cho nút */
+    font-size: 0.875rem; /* Điều chỉnh kích thước font */
+}
+
+.small-heading {
+    font-size: 0.5em; /* Thay đổi kích thước chữ */
+    font-weight: bold; /* Nếu bạn muốn giữ độ đậm */
+}

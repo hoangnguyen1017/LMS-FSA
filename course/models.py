@@ -1,46 +1,28 @@
 from django.db import models
+from user.models import User
 from ckeditor.fields import RichTextField
 from ckeditor_uploader.fields import RichTextUploadingField
-from django.db import models
-from unidecode import unidecode
-from django.conf import settings
+
 
 class Course(models.Model):
-    course_name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, unique=True)
     course_code = models.CharField(max_length=20, unique=True, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
-    creator = models.ForeignKey('user.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_courses')
-    instructor = models.ForeignKey('user.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='taught_courses')
+    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_courses')
+    instructor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='taught_courses')
     published = models.BooleanField(default=True)
     prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='is_prerequisite_for')
-    tags = models.ManyToManyField('Tag', blank=True, related_name='courses')
-    image = models.ImageField(upload_to='course_images/', null=True, blank=True)
+    tags = models.TextField(blank=True)  # mới thêm
 
     def __str__(self):
-        return self.course_name
+        return self.name
 
     def get_completion_percent(self, user):
         total_sessions = self.sessions.count()
         completed_sessions = SessionCompletion.objects.filter(session__course=self, user=user, completed=True).count()
         return (completed_sessions / total_sessions) * 100 if total_sessions > 0 else 0
 
-class Topic(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-
-    def __str__(self):
-        return self.name
-
-
-class Tag(models.Model):
-    name = models.CharField(max_length=255)
-    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='tag_set')  # Change 'tags' to 'tag_set'
-
-    class Meta:
-        unique_together = ('name', 'topic')
-
-    def __str__(self):
-        return self.name
 
 class Session(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sessions', null=True)
@@ -51,7 +33,7 @@ class Session(models.Model):
         return self.name
 
 class Enrollment(models.Model):
-    student = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     date_enrolled = models.DateTimeField(auto_now_add=True)
 
@@ -61,18 +43,17 @@ class Enrollment(models.Model):
     def __str__(self):
         return f"{self.student} enrolled in {self.course}"
 
-class CourseMaterial(models.Model):
-    MATERIAL_TYPE_CHOICES = [
-        ('assignments', 'Assignments'),
-        ('labs', 'Labs'),
-        ('lectures', 'Lectures'),
-        ('references', 'References'),  # New material type
-    ]
+
+class ReadingMaterial(models.Model):
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='materials', null=True)
-    material_id = models.PositiveIntegerField()  # Make sure this uniquely identifies the material
-    material_type = models.CharField(max_length=20, choices=MATERIAL_TYPE_CHOICES)
-    order = models.PositiveIntegerField()  # Order of appearance
+    content = RichTextUploadingField()  # Use RichTextUploadingField for HTML content with file upload capability
     title = models.CharField(max_length=255)
+    material_type = models.CharField(max_length=50, default='reading', editable=False)  # Add material_type as a database field
+    order = models.PositiveIntegerField()  # Order of appearance
+
+    def save(self, *args, **kwargs):
+        self.material_type = 'reading'  # Automatically set the material type before saving
+        super().save(*args, **kwargs)  # Call the parent class's save method
 
     def __str__(self):
         return f'session id: {self.session.id}   title: {self.title}'
@@ -80,19 +61,11 @@ class CourseMaterial(models.Model):
     class Meta:
         ordering = ['order']
 
-class ReadingMaterial(models.Model):
-    material = models.ForeignKey(CourseMaterial, on_delete=models.CASCADE, related_name='materials', null=True)
-    content = RichTextUploadingField()  # Use RichTextUploadingField for HTML content with file upload capability
-    title = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.title
-
 
 class Completion(models.Model):
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
-    user = models.ForeignKey('user.User', on_delete=models.CASCADE, null=True, blank=True)
-    material = models.ForeignKey(CourseMaterial, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    material = models.ForeignKey(ReadingMaterial, on_delete=models.CASCADE, null=True, blank=True)
     completed = models.BooleanField(default=False)
 
     class Meta:
@@ -104,7 +77,7 @@ class Completion(models.Model):
 
 class SessionCompletion(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    user = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
 
@@ -130,92 +103,3 @@ def mark_session_complete(course, user, session):
             session=session,
             defaults={'completed': True}
         )
-
-class UserCourseProgress(models.Model):
-    user = models.ForeignKey('user.User', on_delete=models.CASCADE)  # String reference to avoid circular import
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    last_accessed = models.DateTimeField(auto_now=True)  # Updated to reflect last accessed time
-
-    class Meta:
-        unique_together = ('user', 'course')
-
-    def __str__(self):
-        return f"{self.user} - {self.course} - {self.progress_percentage}%"
-    
-class Sub_Course(models.Model):
-    title = models.CharField(max_length=255)
-    order = models.IntegerField()
-
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sub_courses')
-
-    class Meta:
-        unique_together = ('course', 'order')
-    
-    def __str__(self):
-        return self.title
-    
-
-class Module(models.Model):
-    title = models.CharField(max_length=255)
-    order = models.IntegerField()
-
-    created_by = models.ForeignKey('user.User', on_delete= models.SET_NULL, null=True, related_name="module_created")
-    sub_course = models.ForeignKey(Sub_Course, on_delete=models.CASCADE, related_name='modules')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        unique_together = ('order', 'sub_course')
-
-    def __str__(self):
-        return self.title
-
-class Sub_Module(models.Model):
-    title = models.CharField(max_length=255)
-    html_content = models.TextField(blank=True, null=True)
-    video_url = models.TextField(blank=True, null=True)
-
-    order = models.IntegerField()
-
-    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='sub_modules')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        unique_together = ('order', 'module')
-
-    def __str__(self):
-        return self.title
-
-
-class Image(models.Model):
-    image = models.ImageField(upload_to='images/')
-
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="images")
-
-    def delete(self, *args, **kwargs):
-        try:
-            self.image.delete()
-        except PermissionError:
-            print('Error!')
-
-        super().delete(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        if self.image:
-            name, ext = os.path.splitext(self.image.name)
-            new_filename = f"{unidecode(name)}{ext}"
-            self.image.name = new_filename
-
-        super().save(*args, **kwargs)
-
-        
-class Enrolled_Course(models.Model):
-    user = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='enrolled_courses')
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrolled_users')
-
-    class Meta:
-        unique_together = ('user', 'course')

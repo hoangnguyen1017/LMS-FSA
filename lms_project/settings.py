@@ -11,10 +11,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -23,15 +23,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-%9tkr6=2x0koih$(9^sggb-z)ub@g$37t*57u7eymim46k+9)w'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['*']
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'  # or 'bootstrap5'
 
+# Cấu hình để chuyển hướng sau khi đăng nhập thành công
+LOGIN_REDIRECT_URL = '/home/'
 
-# Application definition
+# Cấu hình để chuyển hướng sau khi đăng xuất thành công
+LOGOUT_REDIRECT_URL = '/'
+
+AUTH_USER_MODEL = 'user.User'
+
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# # Giữ session với mỗi request để tránh mất session
+# SESSION_SAVE_EVERY_REQUEST = True
+
+
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'main/static'),  # Thêm đường dẫn đến thư mục static của ứng dụng
+]
+
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -52,12 +71,16 @@ INSTALLED_APPS = [
     'subject',
     'training_program_subjects',
     'category',
-    'question',
-    # 'quiz',
+    # 'question',
+    'quiz',
     'user_module',
+    'course',
+    'import_export',
+    'activity',
+    'feedback',
+    'widget_tweaks',
+    # 'std_quiz'
 ]
-
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -90,6 +113,9 @@ TEMPLATES = [
 WSGI_APPLICATION = 'lms_project.wsgi.application'
 
 
+
+
+
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -119,21 +145,23 @@ WSGI_APPLICATION = 'lms_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'hcmuafdb',
-        'USER': 'ngattt',
-        'PASSWORD': 'fsa@123456',
-        'HOST': 'hcmuafserver.database.windows.net',
-        'PORT': '1433',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 18 for SQL Server',
-            'encrypt': True,
-            'trustServerCertificate': False,
-        },
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'group01',
+        'USER': 'root',
+        'PASSWORD': 'Tranleduy2003@',
+        'HOST': 'localhost', 
+        'PORT': '3306',
     }
 }
 
-
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'nguyenvinhkhang26042003@gmail.com'  # Thay bằng email của bạn
+EMAIL_HOST_PASSWORD = 'bnti zhff goch tkzc'  # Thay bằng mật khẩu email của bạn
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
 
 # //Driver={ODBC Driver 18 for SQL Server};Server=tcp:hcmuafserver.database.windows.net,1433;Database=hcmuafdb;Uid=ngattt;Pwd={your_password_here};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;
 
@@ -179,9 +207,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 
-USE_I18N = True
+USE_L10N = True
 
 USE_TZ = True
 
@@ -195,3 +223,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

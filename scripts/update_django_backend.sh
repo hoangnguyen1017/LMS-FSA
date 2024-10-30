@@ -6,7 +6,16 @@ TARGET_DIR="django_backend"
 rm -rf "$TARGET_DIR"
 git checkout main .
 # Danh sách các thư mục cần loại trừ
-EXCLUSIVE=(".git" ".gitignore" ".venv" ".env" "model_api" "nginx_service" "Docker-compose.yaml" "scripts" )
+EXCLUSIVE=(
+  ".git"
+  ".gitignore"
+  ".venv"
+  ".env"
+  "model_api"
+  "nginx_service"
+  "Docker-compose.yaml"
+  "scripts" 
+)
 
 # Tạo thư mục đích nếu chưa tồn tại
 mkdir -p "$TARGET_DIR"

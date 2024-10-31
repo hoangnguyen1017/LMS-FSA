@@ -10,13 +10,18 @@
         <!-- Tag fields container -->
         <div id="tag-fields">
             <div class="tag-field mb-3">
-                {{ form.name.label_tag }}
-                {{ form.name|add_class:"form-control" }}
+                <label for="id_name">Tag Name</label>
+                <input type="text" name="tags[]" placeholder="Enter tag name" class="form-control" required>
             </div>
 
             <div class="mb-3">
-                {{ form.topic.label_tag }}
-                {{ form.topic|add_class:"form-control" }}
+                <label for="id_topic">Topic</label>
+                <select name="topics[]" class="form-control" required>
+                    <option value="">Select a Topic</option>
+                    {% for topic in topics %}
+                        <option value="{{ topic.id }}">{{ topic.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
 
@@ -34,36 +39,35 @@
 </div>
 
 <script>
-// Convert topics from Django into a JavaScript array
-const topics = [
-    {% for topic in topics %}
-        { id: "{{ topic.id }}", name: "{{ topic.name }}" },
-    {% endfor %}
-];
+    // Convert topics from Django into a JavaScript array
+    const topics = [
+        {% for topic in topics %}
+            { id: "{{ topic.id }}", name: "{{ topic.name }}" },
+        {% endfor %}
+    ];
 
-document.addEventListener('DOMContentLoaded', function() {
-    const addTagBtn = document.getElementById('add-tag-btn');
-    const tagFieldsContainer = document.getElementById('tag-fields');
+    // Thêm sự kiện cho nút Add Another Tag để thêm các trường nhập liệu mới
+    document.getElementById('add-tag-btn').addEventListener('click', function() {
+        const tagFieldsContainer = document.getElementById('tag-fields');
 
-    addTagBtn.addEventListener('click', function() {
+        // Tạo phần tử div mới chứa các trường nhập cho tag
         const newTagField = document.createElement('div');
-        newTagField.classList.add('tag-field', 'mb-3');
+        newTagField.classList.add('mb-3');
 
-        // Create new tag input fields and topic dropdown
+        // HTML cho các trường nhập liệu mới (tên tag và dropdown chọn topic)
         newTagField.innerHTML = `
-            <label for="id_name">Tag Name</label>
-            <input type="text" name="name" class="form-control" required>
+            <label>Tag Name</label>
+            <input type="text" name="tags[]" placeholder="Enter tag name" class="form-control mb-2" required>
 
-            <label for="id_topic">Topic</label>
-            <select name="topic" class="form-control">
+            <label>Topic</label>
+            <select name="topics[]" class="form-control" required>
                 <option value="">Select a Topic</option>
                 ${topics.map(topic => `<option value="${topic.id}">${topic.name}</option>`).join('')}
             </select>
         `;
 
-        // Append the new tag input fields to the container
+        // Thêm trường nhập mới vào container
         tagFieldsContainer.appendChild(newTagField);
     });
-});
 </script>
 {% endblock %}

@@ -143,34 +143,113 @@
             max-width: 100%;
         }
     }
+
+    .rating-summary {
+        display: flex;
+        align-items: flex-start;
+        gap: 2rem;
+    }
+
+    .rating-distribution { /*31/10*/
+        flex: 1;
+        max-width: 300px;
+        margin-left: 30rem;
+        margin-top: 10px;
+    }
+
+    .rating-row {
+        display: flex;
+        align-items: center;
+        width: 350px;
+        margin-bottom: 0.1rem;
+        font-size: 0.775rem;
+    }
+
+    .rating-label {
+        display: flex;
+        justify-content: flex-end;
+        width: 70px;
+        text-align: left;
+        margin-left: 0.5rem;
+    }
+
+
+    .rating-bar-wrapper {
+        flex: 1;
+        background-color: #ccc;
+        height: 6px;
+        border-radius: 6px;
+        overflow: hidden;
+        margin: 0 0.5rem;
+    }
+
+    .rating-bar {
+        height: 100%;
+        background-color: #515151;
+        border-radius: 4px;
+        transition: width 0.04s ease;
+    }
+
+    @media (max-width: 580px) {
+        .rating-summary {
+            flex-direction: column;
+        }
+
+        .rating-distribution {
+            max-width: 100%;
+            margin-left: 0;
+            margin-top: 1rem;
+            margin-left: 30px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <!-- Course title and Go to Content button -->
-    <div class="course-title-container">
+    <div class="course-title-container align-items-center">
         <h1 class="text-2xl font-bold">{{ course.course_name }}</h1>
-        <div class="star-rating">
-            <div class="back-stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-            </div>
-            <div class="front-stars" style="width: {{ course_average_rating_star }}%;">
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
+        <div class="rating-summary">
+            <div class="star-rating">
+                <div class="back-stars">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="front-stars" style="width: {{ course_average_rating_star }}%;">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
             </div>
         </div>
+        <div class="rating-distribution"> <!-- 31/10-->
+            {% for rating in rating_distribution %}
+            <div class="rating-row">
+                <span class="rating-label">
+                    {% with ''|center:rating.rating as range %}
+                        {% for _ in range %}
+                            <i class="fas fa-star" style="color: gold; font-size: 0.8rem;"></i>
+                        {% endfor %}
+                    {% endwith %}
+                </span>
+                <div class="rating-bar-wrapper">
+                    <div class="rating-bar" style="width: {{ rating.percentage }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
-    <div>
+    <div class="button-container" style="display: flex; align-items: center; gap: 730px;">
         <a href="{% url 'course:course_detail' course.pk %}" class="btn btn-primary mt-2">Go to Course</a>
+        <span> {{ total_feedbacks}} feedbacks </span>
     </div>
+
 
     <hr width="100%" size = "2">
 

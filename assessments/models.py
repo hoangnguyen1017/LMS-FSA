@@ -107,7 +107,8 @@ class InvitedCandidate(models.Model):
 class UserAnswer(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    selected_option = models.ForeignKey(AnswerOption, on_delete=models.SET_NULL, null=True, blank=True)
+    # selected_option = models.ForeignKey(AnswerOption, on_delete=models.SET_NULL, null=True, blank=True)
+    selected_options = models.ManyToManyField(AnswerOption, blank=True)
     text_response = models.TextField(null=True, blank=True)
 
     def __str__(self):

@@ -31,12 +31,12 @@
                             <ul class="list-group">
                                 {% for option in answer.question.answer_options.all %}
                                     <li class="list-group-item 
-                                        {% if option == answer.selected_option %}
+                                        {% if option in answer.selected_options.all %}
                                             {% if option.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}
                                         {% endif %}
                                     ">
                                         - {{ option.option_text }} 
-                                        {% if option == answer.selected_option %}
+                                        {% if option in answer.selected_options.all %}
                                             {% if option.is_correct %}
                                                 <span class="badge bg-success">Your Answer: Correct</span>
                                             {% else %}
@@ -48,7 +48,7 @@
                                     </li>
                                 {% endfor %}
                             </ul>
-                            {% if not answer.selected_option and answer.question.question_type == 'MCQ' %}
+                            {% if not answer.selected_options.exists and answer.question.question_type == 'MCQ' %}
                                 <strong>Text Response:</strong> {{ answer.text_response|default:"No text response." }}
                             {% endif %}
                         </li>

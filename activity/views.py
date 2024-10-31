@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.utils.dateparse import parse_date
 from datetime import datetime
 from django.utils import timezone
+from module_group.models import ModuleGroup
 
 @login_required
 def activity_view(request):
@@ -65,8 +66,10 @@ def activity_view(request):
     # Calculate the start index for the current page
     activity_logs_page.start_index = (activity_logs_page.number - 1) * page_size + 1
 
+    module_groups = ModuleGroup.objects.all()
     # Render the template with context data
     return render(request, 'activity.html', {
+        'module_groups': module_groups,
         'activity_logs': activity_logs_page,
         'search_query': search_query,
         'from_date': from_date,

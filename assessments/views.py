@@ -256,8 +256,6 @@ def invite_candidates(request, pk):
         'assessment': assessment,
     })
 
-
-
 def take_assessment(request, assessment_id):
     assessment = get_object_or_404(Assessment, id=assessment_id)
     questions = assessment.questions.all()
@@ -293,9 +291,7 @@ def take_assessment(request, assessment_id):
             })
 
     if request.method == 'POST':
-        print('come to post to see email')
         email = request.POST.get('email')  # Get the email from the form data
-        print(email)
         # Start a new attempt if it doesn't exist in the session
         if attempt_id:
             attempt = get_object_or_404(StudentAssessmentAttempt, id=attempt_id)
@@ -315,19 +311,31 @@ def take_assessment(request, assessment_id):
 
         # Process each question
         for question in questions:
-            selected_option_id = request.POST.get(f'question_{question.id}')
-            selected_option = AnswerOption.objects.get(id=int(selected_option_id)) if selected_option_id else None
+            # Fetch all selected option IDs for the question (adjust if using checkboxes or other multi-select elements)
+            selected_option_ids = request.POST.getlist(f'question_{question.id}')
+            text_response = request.POST.get(f'text_response_{question.id}')
 
-            # Save the answer selected by the user
-            UserAnswer.objects.create(
+            # Initialize selected_options as an empty list to store AnswerOption instances
+            selected_options = []
+
+            # Populate selected_options with AnswerOption instances if IDs are valid
+            if selected_option_ids:
+                selected_options = AnswerOption.objects.filter(id__in=selected_option_ids)
+
+            # Create a UserAnswer instance for the question, excluding selected_options for now
+            student_answer = UserAnswer.objects.create(
                 assessment=assessment,
                 question=question,
-                selected_option=selected_option,
+                text_response=text_response  # Keep text_response field
             )
 
-            # Tally correct answers for quiz scoring
-            if selected_option and selected_option.is_correct:
-                correct_answers += 1
+            # Set the selected options using the ManyToManyField's set method
+            student_answer.selected_options.set(selected_options)
+
+            # Optional: Count correct answers if selected options are supposed to be evaluated for correctness
+            correct_answers += sum(1 for option in selected_options if option.is_correct)
+
+        total_quiz_score = (total_marks / total_questions) * correct_answers
 
         # Calculate and save exercise scores
         total_exercise_score = sum(
@@ -336,6 +344,10 @@ def take_assessment(request, assessment_id):
             if submission.score is not None
         )
 
+        attempt.score_quiz = total_quiz_score
+        attempt.score_ass = total_exercise_score
+        attempt.save()
+        attempt_id = attempt.id  # Store the attempt_id after saving the attempt
         # Redirect to the results page with attempt details
         if email:  # Check if email is provided
             return redirect(
@@ -360,72 +372,6 @@ def take_assessment(request, assessment_id):
         'is_preview': False,
         'anonymous': not request.user.is_authenticated,
         'email': email,
-        'attempt_id': attempt_id  # This will be None for GET request
-    })
-
-
-
-@login_required
-def take_assessment11(request, assessment_id):
-    assessment = get_object_or_404(Assessment, id=assessment_id)
-    questions = assessment.questions.all()  # Get all questions in the assessment
-    exercises = assessment.exercises.all()  # Assuming you have a related exercise model
-    total_marks = assessment.total_score
-    total_questions = questions.count()   # Count all questions 
-    attempt_id = None  # Initialize as None
-    
-    if request.method == 'POST':
-        with transaction.atomic():
-            attempt = StudentAssessmentAttempt.objects.create(user=request.user, assessment=assessment, score_quiz=0.0, score_ass=0.0)
-
-            correct_answers = 0
-            
-            # Process questions
-            for question in questions:
-                selected_option_id = request.POST.get(f'question_{question.id}')
-                text_response = request.POST.get(f'text_response_{question.id}')
-                selected_option = None
-
-                if selected_option_id and selected_option_id.isdigit():
-                    selected_option = AnswerOption.objects.get(id=int(selected_option_id))
-
-                # Save the student's answer
-                UserAnswer.objects.create(
-                    attempt=attempt,
-                    question=question,
-                    selected_option=selected_option,
-                    text_response=text_response 
-                )
-
-                if selected_option and selected_option.is_correct:
-                    correct_answers += 1
-
-            # Process exercises
-            for exercise in exercises:
-                exercise_response = request.POST.get(f'exercise_{exercise.id}')
-                
-                # Create a UserSubmission object for each exercise response
-                if exercise_response:  # Check if there is a response for the exercise
-                    Submission.objects.create(
-                        exercise=exercise,
-                        user=request.user,  # Assuming you're getting the logged-in user from the request
-                        code=exercise_response  # Store the response in the code field
-                    )
-
-            final_score = (total_marks / total_questions) * correct_answers
-
-            attempt.score_quiz = final_score
-            attempt.score_ass = final_score
-            attempt.save()
-            attempt_id = attempt.id  # Store the attempt_id after saving the attempt
-
-            return redirect('assessment:assessment_result', assessment_id=assessment.id, attempt_id=attempt_id)
-
-    # Render the assessment page with questions and exercises
-    return render(request, 'assessment/take_assessment.html', {
-        'assessment': assessment,
-        'questions': questions,
-        'exercises': exercises,
         'attempt_id': attempt_id  # This will be None for GET request
     })
 
@@ -649,7 +595,7 @@ def assessment_edit(request, pk):
             assessment.save()
 
             messages.success(request, 'The assessment has been successfully saved.')
-            return redirect('assessment:assessment_edit', pk=pk)  # Redirect to the same edit page to see the message
+            return redirect('assessment:assessment_list') 
 
     else:
         form = AssessmentForm(instance=assessment)

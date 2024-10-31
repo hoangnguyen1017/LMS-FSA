@@ -5,7 +5,7 @@ from django.shortcuts import render
 def book_search_view(request):
     query = request.GET.get('q', '')
     book_type = request.GET.get('book_type', 'free')
-    books_per_page = 5 
+    books_per_page = 4 
 
     books = []
     total_items = 0
@@ -87,4 +87,3 @@ def book_detail_view(request, book_id):
     response = requests.get(f'https://www.googleapis.com/books/v1/volumes/{book_id}')
     book = response.json() if response.status_code == 200 else None
     return render(request, 'book_detail.html', {'book': book})
-

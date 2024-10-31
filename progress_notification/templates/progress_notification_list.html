@@ -37,11 +37,10 @@
                 <td>{{ notification.course }}</td>
                 <td>{{ notification.notification_message }}</td>
                 <td>
-                    <a href="{% url 'progress_notification:progress_notification_detail' notification.id %}" class="btn btn-info btn-sm">Details</a>
-                    <a href="{% url 'progress_notification:progress_notification_edit' notification.id %}" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="{% url 'progress_notification:progress_notification_delete' notification.id %}" class="btn btn-danger btn-sm">Delete</a>
-
-                </td>
+                  <a title="Details" href="{% url 'progress_notification:progress_notification_detail' notification.id %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-info-circle"></i></a>
+                  <a title="Edit"  href="{% url 'progress_notification:progress_notification_edit' notification.id %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-edit"></i></a>
+                  <a title="Delete" href="{% url 'progress_notification:progress_notification_delete' notification.id %}" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash-alt"></i></a>
+              </td>
             </tr>
             {% endfor %}
         </tbody>

@@ -118,9 +118,16 @@ INSTALLED_APPS = [
     'chat', 'chatapp', 'thread', 'collaboration_group', 
 
     #group05 
-    'activity', 'ai_insights', 'analytics_report', 'assignment', 'certificate', #'course_completion',  
-    'performance_analytics', 'progress_notification', 'student_performance', 
-    'user_progress', 'user_summary', 'book'
+    'activity', 'analytics_report', 'book', 'progress_notification',
+    'achievement', # -- add this app
+    # ''' Delete theses apps
+    
+    # user_progress', 'user_summary' ,'performance_analytics', 'ai_insights' , 
+    # 'certificate', 'student_performance', 'course_completion','assignment',
+    
+    # '''
+
+
 ]
 
 MIDDLEWARE = [

@@ -2,7 +2,9 @@ from django.db import models
 from django.conf import settings
 from ckeditor.fields import RichTextField
 from ckeditor_uploader.fields import RichTextUploadingField
-
+from datetime import datetime
+from django.utils import timezone
+from django.template.loader import render_to_string
 
 class Course(models.Model):
     course_name = models.CharField(max_length=255, unique=True)
@@ -23,6 +25,38 @@ class Course(models.Model):
         total_sessions = self.sessions.count()
         completed_sessions = SessionCompletion.objects.filter(session__course=self, user=user, completed=True).count()
         return (completed_sessions / total_sessions) * 100 if total_sessions > 0 else 0
+
+    def check_and_generate_certification(self, user):
+        from certification.models import Certification  # Import within the method
+        # Count total sessions and completed sessions
+        total_sessions = self.sessions.count()
+        completed_sessions = SessionCompletion.objects.filter(course=self, user=user, completed=True).count()
+
+        if total_sessions == completed_sessions:
+            # Generate certification if it doesn't exist already
+            if not Certification.objects.filter(course=self, user=user).exists():
+                # Define context variables for the template
+                context = {
+                    'recipient_name': user.username,
+                    'course_name': self.course_name,
+                    'description': "Successfully completed the course.",
+                    'awarded_date': timezone.now().strftime('%Y-%m-%d'),
+                    'year': timezone.now().year,
+                }
+
+                # Render the certificate template to a string
+                generated_html_content = render_to_string('certification/certificate_template.html', context)
+
+                # Create and save the certification
+                certification = Certification.objects.create(
+                    name=f"{self.course_name} Completion Certificate",
+                    course=self,
+                    user=user,
+                    awarded_date=timezone.now(),
+                    awarded=True,
+                    generated_html_content=generated_html_content
+                )
+                certification.save()
 
 class Topic(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -66,6 +100,7 @@ class CourseMaterial(models.Model):
         ('labs', 'Labs'),
         ('lectures', 'Lectures'),
         ('references', 'References'),  # New material type
+        ('assessments', 'Assessments'),
     ]
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='materials', null=True)
     material_id = models.PositiveIntegerField()  # Make sure this uniquely identifies the material
@@ -113,7 +148,6 @@ class SessionCompletion(models.Model):
     def __str__(self):
         return f"{self.user} completed session: {self.session.name}"
 
-
 def mark_session_complete(course, user, session):
     # Count the total materials in the session
     total_materials = session.materials.count()
@@ -125,13 +159,34 @@ def mark_session_complete(course, user, session):
     if total_materials == completed_materials:
         # Mark the session as complete in the SessionCompletion model
         SessionCompletion.objects.update_or_create(
+            course=course,
             user=user,
             session=session,
             defaults={'completed': True}
         )
 
+        # After marking session complete, check if the course is fully complete
+        course.check_and_generate_certification(user)
+
+
+# def mark_session_complete(course, user, session):
+#     # Count the total materials in the session
+#     total_materials = session.materials.count()
+
+#     # Count completed materials by checking the Completion model
+#     completed_materials = Completion.objects.filter(session=session, user=user, completed=True).count()
+
+#     # Check if all materials are completed
+#     if total_materials == completed_materials:
+#         # Mark the session as complete in the SessionCompletion model
+#         SessionCompletion.objects.update_or_create(
+#             user=user,
+#             session=session,
+#             defaults={'completed': True}
+#         )
+
 class UserCourseProgress(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='course_progress', on_delete=models.CASCADE)  # Thêm related_name
+    user = models.ForeignKey('user.User', related_name='course_progress', on_delete=models.CASCADE)  # Thêm related_name
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     last_accessed = models.DateTimeField(auto_now=True)  # Cập nhật thời gian truy cập gần nhất

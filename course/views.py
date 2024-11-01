@@ -22,8 +22,7 @@ import numpy as np
 import fitz
 from django.core.files.storage import default_storage
 import random
-
-
+from assessments.models import Assessment
 from django.http import HttpResponseRedirect
 
 
@@ -722,10 +721,13 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
 
         if form.is_valid():
             reading_material = form.save()
+            course_material = CourseMaterial.objects.get(material_id=reading_material.id)
+            course_material.title=reading_material.title
             # Update the material_type if it has been changed
             if selected_material_type and selected_material_type != course_material.material_type:
                 course_material.material_type = selected_material_type
                 course_material.save()
+            course_material.save()
 
             messages.success(request, 'Reading material updated successfully.')
             return redirect('course:course_content_edit', pk=pk, session_id=session_id)
@@ -775,6 +777,7 @@ def course_content(request, pk, session_id):
 
     content_type = None
     preview_content = None
+    assessment = None
 
     if current_material:
         if current_material.material_type == 'assignments':
@@ -793,6 +796,10 @@ def course_content(request, pk, session_id):
             reading = ReadingMaterial.objects.get(material_id=current_material.id)
             preview_content = reading.content
             content_type = 'references'
+        elif current_material.material_type == 'assessments':
+            assessment = Assessment.objects.get(id=current_material.material_id)
+            preview_content = None
+            content_type = 'assessments'
 
     completion_status = Completion.objects.filter(
         session=current_session,
@@ -830,6 +837,7 @@ def course_content(request, pk, session_id):
         'completion_percent': completion_percent,
         'certificate_url': certificate_url,
         'next_session': next_session,
+        'assessment': assessment,
     }
 
     return render(request, 'course/course_content.html', context)
@@ -900,16 +908,24 @@ def course_content_edit(request, pk, session_id):
     # Fetch materials associated with the selected session
     materials = CourseMaterial.objects.filter(session=session)
     reading_materials = ReadingMaterial.objects.filter(material__in=materials)
+    current_assessments = CourseMaterial.objects.filter(session=session, material_type='assessments')
+    assessments = Assessment.objects.filter(course=course)
+
+    selected_assessment_id = request.POST.get('assessment_id') if request.method == 'POST' else None
+    selected_assessment = Assessment.objects.filter(id=selected_assessment_id).first() if selected_assessment_id else None
 
     if request.method == 'POST':
         # Process reading materials for deletion using marked_for_deletion
         marked_ids = request.POST.get('marked_for_deletion', '').split(',')
         for material_id in marked_ids:
-            if material_id:  # Ensure the ID is not empty
+            if material_id:  # Ensure material_id is not empty
                 try:
-                    reading_material = ReadingMaterial.objects.get(id=material_id)
-                    reading_material.delete()
-                except ReadingMaterial.DoesNotExist:
+                    course_material = CourseMaterial.objects.get(material_id=material_id)
+                    if course_material.material_type != 'assessments':
+                        reading_material = ReadingMaterial.objects.get(id=material_id)
+                        reading_material.delete()
+                    course_material.delete()
+                except (ReadingMaterial.DoesNotExist, CourseMaterial.DoesNotExist):
                     continue  # Handle if the material doesn't exist
 
         # Handle uploaded PDF
@@ -961,6 +977,18 @@ def course_content_edit(request, pk, session_id):
                 reading_material.material = course_material
                 reading_material.save()
 
+        # Save selected assessment
+        assessment_id = request.POST.get('assessment_id')
+        if assessment_id:
+            assessment = get_object_or_404(Assessment, id=assessment_id)
+            CourseMaterial.objects.create(
+                session=session,
+                material_id=assessment.id,
+                material_type='assessments',
+                title=assessment.title,
+                order=CourseMaterial.objects.filter(session=session).count() + 1
+            )
+
         messages.success(request, 'Course content updated successfully.')
         return redirect(reverse('course:course_content_edit', args=[course.pk, session.id]))
 
@@ -971,6 +999,9 @@ def course_content_edit(request, pk, session_id):
         'selected_session': session,
         'reading_materials': reading_materials,
         'material_types': dict(CourseMaterial.MATERIAL_TYPE_CHOICES),
+        'assessments': assessments,
+        'selected_assessment': selected_assessment,
+        'current_assessments': current_assessments,
     }
 
     return render(request, 'material/course_content_edit.html', context)

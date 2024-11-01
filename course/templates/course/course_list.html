@@ -129,7 +129,7 @@
                                                 {% if course.image %}
                                                     <img src="{{ course.image.url }}" alt="{{ course.course_name }}" class="course-image">
                                                 {% else %}
-                                                    <img src="{% static 'default_course_image.jpg' %}" alt="Default Image" class="course-image">
+                                                    <img src="{% static 'course/images/chotbg.png' %}" alt="Default Image" class="course-image">
                                                 {% endif %}
                                                 <a href="{% url 'course:course_detail' course.id %}" class="card-link">
                                                 <h5 class="card-title">{{ course.course_name }}</h5>

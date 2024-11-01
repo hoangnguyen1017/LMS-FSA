@@ -78,6 +78,15 @@
                                     <span style="margin-left: 10px; color: #389bb0;">Reorder Material</span>
                                 </a>
                             </div>
+                            <!-- Nút Select assessment -->
+                            <div class="form-group">
+                                <select name="assessment_id" id="assessment-select" class="form-control" style="margin-bottom: 20px;">
+                                    <option value="" selected>Select Assessment</option>
+                                    {% for assessment in assessments %}
+                                        <option value="{{ assessment.id }}">{{ assessment.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
 
                         <hr style="margin: 20px 0; border: none; border-top: 3px solid #000;">
@@ -102,6 +111,23 @@
                                 </div>
                             {% empty %}
                                 <div class="material-item">No materials available.</div>
+                            {% endfor %}
+                            <!-- Display the selected assessment if it exists -->
+                            {% for assessment in current_assessments %}
+                                <div class="material-item">
+                                    <div class="material-info">
+                                        <span class="index-number">{{ forloop.counter }}.</span>
+                                        <a href="#" class="title" data-id="{{ assessment.id }}">{{ assessment.title }}</a>
+                                    <span class="material-type">({{ assessment.material_type|capfirst }})</span>
+                                    </div>
+                                    <div class="material-actions">
+                                        <span class="trash-can" style="cursor: pointer; color: gray; margin-left: 10px;" data-id="{{ assessment.material_id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="material-item">No assessments available.</div>
                             {% endfor %}
                         </div>
 

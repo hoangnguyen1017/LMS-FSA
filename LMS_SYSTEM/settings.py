@@ -119,7 +119,7 @@ INSTALLED_APPS = [
 
     #group05 
     'activity', 'analytics_report', 'book', 'progress_notification',
-    'achievement', # -- add this app
+    'achievement', 'quiz_bank',# -- add this app
     # ''' Delete theses apps
     
     # user_progress', 'user_summary' ,'performance_analytics', 'ai_insights' , 

@@ -69,7 +69,8 @@ urlpatterns = [
     path('progress_notification', include('progress_notification.urls')),
     path('book/', include('book.urls')),
     path('achievement/',include('achievement.urls')),
-
+    path('quiz_bank/', include('quiz_bank.urls')),
+    
     # path('certificate/', include('certificate.urls')),
     # path('ai_insights', include('ai_insights.urls')),
     # path('assignment', include('assignment.urls')),

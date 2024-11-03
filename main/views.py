@@ -17,7 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 import random
 from django.core.cache import cache
 from django.conf import settings
-
+from .module_utils import get_grouped_modules
 def password_reset_request(request):
     if request.method == 'POST':
         form = PasswordResetRequestForm(request.POST)
@@ -64,7 +64,7 @@ def get_remaining_time(created_at, expiration_duration_minutes):
 
 def password_reset_code(request):
     created_at = request.session.get('code_created_at')
-    expiration_duration_minutes = 0.5  
+    expiration_duration_minutes = 3
 
     
     remaining_time, minutes, seconds = get_remaining_time(created_at, expiration_duration_minutes)
@@ -274,50 +274,28 @@ def login_view(request):
     })
 
 
+@login_required
 def home(request):
+    roles = Role.objects.all() 
     query = request.GET.get('q')
-    all_modules = Module.objects.all()
+    temporary_role_id = request.session.get('temporary_role')
 
-    if request.user.is_authenticated:
-        try:
-            user_profile = getattr(request.user, 'profile', None)
-            user_role = getattr(user_profile, 'role', None)
-
-            if request.user.is_superuser:
-                modules = all_modules
-            elif user_role:
-                modules = all_modules.filter(role_modules=user_role).distinct()
-            else:
-                messages.error(request, "Invalid role or no modules available for this role.")
-                modules = Module.objects.none()
-        except AttributeError:
-            messages.error(request, "User profile not found.")
-            modules = Module.objects.none()
-    else:
-        modules = all_modules
+    module_groups, grouped_modules = get_grouped_modules(request.user, temporary_role_id)
 
     # Lọc modules dựa trên truy vấn tìm kiếm
     if query:
-        modules = modules.filter(
-            Q(module_name__icontains=query) |
-            Q(module_group__group_name__icontains=query)
-        )
-
-    module_groups = ModuleGroup.objects.all()
-    
-    # Nhóm các modules theo module_group
-    grouped_modules = {}
-    for module in modules:
-        group = module.module_group
-        if group not in grouped_modules:
-            grouped_modules[group] = []
-        grouped_modules[group].append(module)
+        modules = [module for modules in grouped_modules.values() for module in modules]
+        modules = [module for module in modules if query.lower() in module.module_name.lower() or query.lower() in module.module_group.group_name.lower()]
+    else:
+        modules = [module for modules in grouped_modules.values() for module in modules]
 
     form = ExcelImportForm()
 
     return render(request, 'home.html', {
         'module_groups': module_groups,
-        'modules': modules,             # Truyền tất cả modules đã lọc đến template
-        'grouped_modules': grouped_modules,  # Truyền dictionary đã nhóm đến template
+        'modules': modules,
+        'grouped_modules': grouped_modules,
         'form': form,
+        'roles': roles,
+        'temporary_role': temporary_role_id,
     })

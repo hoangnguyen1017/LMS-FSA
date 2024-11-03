@@ -3,9 +3,9 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    
-    <h1 class="mb-4 text-center">Learning Management System </h1>
+<div class="content" style="margin-left">
+
+    <h1>Learning Management System</h1>
     {% for group in module_groups %}
     <div class="mb-5">
         <h2 class="text-primary mb-3">{{ group.name }}</h2>  
@@ -13,9 +13,10 @@
         <div class="row">
             {% for module in modules %}
                 {% if module.module_group == group %}
-                <div class="col-md-4 mb-4">
+                <!-- Sử dụng các lớp responsive của Bootstrap -->
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
                     <div class="card shadow-sm h-100">
-                        <!-- Bọc toàn bộ nội dung card trong thẻ a -->
+                        <!-- Liên kết đến module -->
                         <a href="{% if user.is_authenticated %}{% url module.module_url %}{% else %}{% url 'main:login' %}{% endif %}" class="text-decoration-none text-dark">
                             <div class="card-body text-center d-flex flex-column justify-content-center" style="height: 180px; width: 100%; overflow: hidden;">
                                 <!-- Module Icon -->
@@ -50,12 +51,12 @@
 {% block extra_css %}
 <style>
     .card {
-        transition: transform 0.2s, box-shadow 0.2s; /* Thay đổi thời gian cho các hiệu ứng */
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .card:hover {
-        transform: scale(1.03); /* Phóng to thẻ một chút */
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Thêm bóng đổ khi hover */
+        transform: scale(1.03);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
 </style>
 {% endblock %}

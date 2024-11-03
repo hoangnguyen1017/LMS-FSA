@@ -22,12 +22,15 @@ from import_export.formats.base_formats import XLSX
 from .admin import UserProfileResource
 from tablib import Dataset
 from io import StringIO
-
-
+from django.utils import timezone
+from datetime import timedelta
+from module_group.models import ModuleGroup
+from main.module_utils import get_grouped_modules
 @login_required
 def user_list(request):
     is_superuser = request.user.is_superuser
-
+    module_groups = ModuleGroup.objects.all()  # Thay đổi theo cách bạn lấy dữ liệu
+    grouped_modules = {group: group.modules.all() for group in module_groups}
     # Kiểm tra xem người dùng có profile hay không, nếu không là superuser thì hiện thông báo lỗi
     if not is_superuser and (not hasattr(request.user, 'profile') or request.user.profile is None):
         messages.error(request, "Bạn không có quyền.")
@@ -77,7 +80,7 @@ def user_list(request):
         users = paginator.page(1)
     except EmptyPage:
         users = paginator.page(paginator.num_pages)
-
+    module_groups, grouped_modules = get_grouped_modules(request.user, request.session.get('temporary_role'))
     return render(request, 'user_list.html', {
         'users': users,
         'query': query,
@@ -91,7 +94,11 @@ def user_list(request):
         'can_delete_user': can_delete_user,
         'can_import_users': can_import_users,
         'can_export_users': can_export_users,
-        'page_obj': users  # Thêm dòng này để truyền `page_obj` cho template
+        'page_obj': users,
+        'module_groups': module_groups,
+        'grouped_modules': grouped_modules,
+        'module_groups': module_groups,
+        'grouped_modules': grouped_modules
     
     })
 
@@ -133,20 +140,21 @@ def student_list(request):
 
 @login_required
 def user_detail(request, pk):
+    # Lấy user theo pk (không thay đổi ngữ cảnh)
     user = get_object_or_404(User, pk=pk)
     is_superuser = request.user.is_superuser
 
-    # Kiểm tra profile của người dùng
-    if not is_superuser and (not hasattr(request.user, 'profile') or request.user.profile is None):
-        messages.error(request, "Bạn không có quyền.")  # Thông báo lỗi
-        return redirect('user:user_list')  # Chuyển hướng đến danh sách người dùng
+    # Kiểm tra nếu user hiện tại không phải là superuser và không có quyền truy cập
+    if not is_superuser:
+        # Kiểm tra nếu user không có profile hoặc không có quyền "can_detail_user"
+        if not hasattr(request.user, 'profile') or not request.user.profile:
+            messages.error(request, "Bạn không có quyền.")
+            return redirect('user:user_list')
 
-    # Lấy quyền hạn của người dùng
-    user_role_permissions = request.user.profile.role.permissions.values_list('codename', flat=True) if not is_superuser else []
-
-    if 'can_detail_user' not in user_role_permissions and not is_superuser:
-        messages.error(request, "Bạn không có quyền.")  # Thông báo lỗi
-        return redirect('user:user_list')  # Chuyển hướng đến danh sách người dùng
+        user_role_permissions = request.user.profile.role.permissions.values_list('codename', flat=True)
+        if 'can_detail_user' not in user_role_permissions:
+            messages.error(request, "Bạn không có quyền.")
+            return redirect('user:user_list')
 
     # Fetch learning progress
     course_progress = UserCourseProgress.objects.filter(user=user)
@@ -165,28 +173,27 @@ def user_detail(request, pk):
     role = getattr(user.profile.role, 'role_name', None) if hasattr(user, 'profile') else None
     is_student = role == 'Student'
     student_code = "N/A"
-    quiz_results = []  # List to hold quiz results
+    quiz_results = []
 
     # Fetch and order user activity logs
-    activity_logs = UserActivityLog.objects.filter(user=user).order_by('-activity_timestamp')
+    two_days_ago = timezone.now() - timedelta(days=2)
+    activity_logs = UserActivityLog.objects.filter(user=user, activity_timestamp__gte=two_days_ago).order_by('-activity_timestamp')
 
     # Phân trang cho nhật ký hoạt động
-    paginator = Paginator(activity_logs, 5)  # Hiển thị 5 nhật ký mỗi trang
+    paginator = Paginator(activity_logs, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     if is_student:
-        # Fetch student code and quiz results
         try:
             student = Student.objects.get(user=user)
             student_code = student.student_code if student.student_code else "N/A"
-            quiz_results = StudentQuizAttempt.objects.filter(user=user).select_related('quiz')  # Use 'user' instead of 'student'
+            quiz_results = StudentQuizAttempt.objects.filter(user=user).select_related('quiz')
         except Student.DoesNotExist:
             student_code = "N/A"
 
-    # Check if the user is a superuser
-    is_superuser = request.user.is_authenticated and request.user.is_superuser
-
+    # Kiểm tra nếu user hiện tại là superuser
+    
     return render(request, 'user_detail.html', {
         'user': user,
         'courses_with_progress': courses_with_progress,
@@ -195,10 +202,10 @@ def user_detail(request, pk):
         'is_superuser': is_superuser,
         'student_code': student_code,
         'quiz_results': quiz_results,
-        'activity_logs': activity_logs,  # Thêm lại activity_logs
-        'page_obj': page_obj,  # Sử dụng page_obj cho phân trang
-    })
+        'activity_logs': activity_logs,
+        'page_obj': page_obj,
 
+    })
 
 @login_required
 def user_add(request):
@@ -264,13 +271,11 @@ def user_edit(request, pk):
 
     # Kiểm tra profile của người dùng
     if not is_superuser and (not hasattr(request.user, 'profile') or request.user.profile is None):
-        messages.error(request, "Bạn không có quyền.")  # Thông báo lỗi
-        return redirect('user:user_list')  # Chuyển hướng đến danh sách người dùng
-    
-    # Lấy quyền hạn của người dùng
+        messages.error(request, "Bạn không có quyền.")
+        return redirect('user:user_list')
+
     user_role_permissions = request.user.profile.role.permissions.values_list('codename', flat=True) if not is_superuser else []
 
-    # Kiểm tra quyền chỉnh sửa người dùng
     if 'can_edit_user' not in user_role_permissions and request.user.pk != user.pk and not request.user.is_superuser:
         messages.error(request, "Bạn không có quyền chỉnh sửa người dùng này.")
         return redirect('user:user_list')
@@ -293,12 +298,10 @@ def user_edit(request, pk):
             user = form.save(commit=False)
             user.save()
 
-            # Lấy giá trị mới của role và cập nhật nếu thay đổi
             new_role = form.cleaned_data.get('role')
             if new_role and new_role != old_role:
                 profile.role = new_role
 
-            # Cập nhật profile dựa trên dữ liệu form
             profile.profile_picture_url = form.cleaned_data.get('profile_picture_url', profile.profile_picture_url)
             profile.bio = form.cleaned_data.get('bio', profile.bio)
             profile.interests = form.cleaned_data.get('interests', profile.interests)
@@ -313,7 +316,6 @@ def user_edit(request, pk):
                 student.save()
                 profile.student = student
             else:
-                # Nếu vai trò không phải là Student, xóa thông tin student nếu có
                 try:
                     student = Student.objects.get(user=user)
                     student.delete()
@@ -323,7 +325,6 @@ def user_edit(request, pk):
             
             profile.save()
 
-            # Cập nhật thông tin session cho người dùng hiện tại
             if request.user.pk == user.pk:
                 request.session['username'] = user.username
                 request.session['full_name'] = f"{user.first_name} {user.last_name}"
@@ -349,16 +350,15 @@ def user_edit(request, pk):
     form.fields['profile_picture_url'].initial = profile.profile_picture_url
     form.fields['role'].initial = profile.role
 
-        # Nếu người dùng không phải là superuser hoặc Manager, đặt thuộc tính readonly cho trường 'role'
+    # Nếu người dùng không phải là superuser hoặc Manager, đặt thuộc tính readonly cho trường 'role'
     if not (request.user.is_superuser or request.user.profile.role.role_name == 'Manager'):
         form.fields['role'].widget.attrs['readonly'] = True
 
-    if profile.role.role_name == 'Student':
-        form.fields['student_code'].initial = student_code
-    else:
-        form.fields['student_code'].widget = forms.HiddenInput()
+    # Hiển thị trường student_code không bị ẩn
+    form.fields['student_code'].initial = student_code if profile.role.role_name == 'Student' else ''
 
     return render(request, 'user_form.html', {'form': form, 'user': user})
+
 
 
 @login_required

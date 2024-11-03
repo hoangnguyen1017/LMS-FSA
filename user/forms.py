@@ -1,7 +1,8 @@
 from django import forms
 from role.models import Role
-from user.models import Profile, User, Student, UserCourseProgress
-from training_program_subjects.models import TrainingProgram
+from user.models import Profile, User, Student
+from course.models import UserCourseProgress
+from training_program.models import TrainingProgram
 
 
 class UserForm(forms.ModelForm):

@@ -80,7 +80,7 @@ INSTALLED_APPS = [
     'exercises', #Binh_Thang
     'assessments', #Cuong
 
-    'user', 'role', 'department', #group01
+    'user', 'role', 'department','team', #group01
 
     #group02
     'course', 'feedback', 'forum', 

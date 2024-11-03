@@ -11,8 +11,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .models import User, Profile, Role, Student
 
-# Resource cho User
-# Resource cho User
+#Resource cho User
 class UserProfileResource(resources.ModelResource):
     student_code = resources.Field()
     password = resources.Field(column_name='password')  # Thêm trường password

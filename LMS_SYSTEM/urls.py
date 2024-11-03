@@ -38,6 +38,7 @@ urlpatterns = [
     path('user/', include(('user.urls', 'user'), namespace='user')),  # Register user app URLs with a namespace
     path('role/', include(('role.urls', 'user'))),
     path('department/', include('department.urls')),
+    path('team/', include('team.urls')),
     #group02
     path('course/', include('course.urls')),
     path('feedback/', include('feedback.urls', namespace='feedback')),

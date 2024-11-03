@@ -8,7 +8,7 @@ from course.models import Course
 
 class User(AbstractUser):
     date_joined = models.DateTimeField(auto_now_add=True)
-    training_programs = models.ManyToManyField(TrainingProgram)  
+    training_programs = models.ManyToManyField(TrainingProgram, blank=True)  
     modules = models.ManyToManyField(Module, related_name='assigned_users', blank=True)
 
     groups = models.ManyToManyField(
@@ -29,7 +29,7 @@ class User(AbstractUser):
 
 
 class Student(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    user = models.OneToOneField('user.User', on_delete=models.CASCADE, primary_key=True)
     student_code = models.CharField(max_length=20, unique=True, null=True, blank=True)
     enrolled_courses = models.ManyToManyField(Course, blank=True) 
     
@@ -38,7 +38,7 @@ class Student(models.Model):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)  
+    user = models.OneToOneField('user.User', on_delete=models.CASCADE, null=True, blank=True)  
     email_verified = models.BooleanField(default=False)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
     profile_picture_url = models.URLField(max_length=10000, null=True, blank=True)
@@ -51,15 +51,5 @@ class Profile(models.Model):
         return f"{self.user.username if self.user else self.student.username} - {self.role.role_name if self.role else 'No Role'}"
 
 
-class UserCourseProgress(models.Model):
-    user = models.ForeignKey(User, related_name='course_progress', on_delete=models.CASCADE)  # Thêm related_name
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    last_accessed = models.DateTimeField(auto_now=True)  # Cập nhật thời gian truy cập gần nhất
 
-    class Meta:
-        unique_together = ('user', 'course')
-
-    def __str__(self):
-        return f"{self.user} - {self.course} - {self.progress_percentage}%"
     

@@ -6,6 +6,8 @@
 {% block content %}
 <head>
     <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body id="content-edit" >
@@ -79,13 +81,22 @@
                                 </a>
                             </div>
                             <!-- Nút Select assessment -->
-                            <div class="form-group">
-                                <select name="assessment_id" id="assessment-select" class="form-control" style="margin-bottom: 20px;">
-                                    <option value="" selected>Select Assessment</option>
-                                    {% for assessment in assessments %}
-                                        <option value="{{ assessment.id }}">{{ assessment.title }}</option>
-                                    {% endfor %}
-                                </select>
+                            <div class="form-group" style="flex: 1; margin-bottom: 20px;">
+                                <h3 style="color: #389bb0; margin-bottom: 10px;">Assessment</h3>
+                                <div class="mb-4">
+                                    {% if assessments %}
+                                        <select name="assessment_id[]" id="assessment-select" class="select2" multiple style="width: 100%;">
+                                            {% for assessment in assessments %}
+                                                <option value="{{ assessment.id }}">
+                                                    {{ assessment.title }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <p class="text-muted">No assessments.</p>
+                                    {% endif %}
+                                </div>
+                                <input type="hidden" name="deleted_assessment_ids" id="deleted-assessment-ids">
                             </div>
                         </div>
 
@@ -173,10 +184,16 @@
             </div>
         </form>
     </div>
+</body>
+{% endblock %}
 
-
+{% block extra_js %}
 <script src="{% static 'ckeditor/ckeditor-init.js' %}"></script>
 <script src="https://cdn.ckeditor.com/4.16.0/full/ckeditor.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script>
     document.getElementById('scroll-left').addEventListener('click', function() {
         const container = document.getElementById('session-buttons-container');
@@ -461,7 +478,48 @@
             contentDisplay.style.display = 'none'; // Hide content display only if there's no content
         }
     }
+    $(document).ready(function() {
+        $('.select2').select2({
+            placeholder: "Select assessments",
+            allowClear: true,
+            width: '100%'
+        });
 
+        // Add this function to refresh the assessment list after deletion
+        function refreshAssessmentList() {
+            $.ajax({
+                url: window.location.href,
+                method: 'GET',
+                success: function(response) {
+                    // Extract the new assessment options from the response
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(response, 'text/html');
+                    const newOptions = doc.querySelector('#assessment-select').innerHTML;
+
+                    // Update the select element with new options
+                    $('#assessment-select').html(newOptions);
+                    $('#assessment-select').trigger('change'); // Refresh Select2
+                }
+            });
+        }
+
+        // Update the trash can click handler for assessments
+        $('.trash-can').on('click', function() {
+            const materialId = $(this).data('id');
+            const materialType = $(this).closest('.material-item').find('.material-type').text();
+
+            if (materialType.includes('Assessments')) {
+                // Add the assessment ID to deleted_assessment_ids
+                const currentDeleted = $('#deleted-assessment-ids').val();
+                $('#deleted-assessment-ids').val(currentDeleted ? `${currentDeleted},${materialId}` : materialId);
+
+                // Remove the material item from display
+                $(this).closest('.material-item').remove();
+
+                // Refresh the assessment select list
+                refreshAssessmentList();
+            }
+        });
+    });
 </script>
-</body>
 {% endblock %}

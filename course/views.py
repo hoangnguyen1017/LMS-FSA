@@ -911,8 +911,14 @@ def course_content_edit(request, pk, session_id):
     current_assessments = CourseMaterial.objects.filter(session=session, material_type='assessments')
     assessments = Assessment.objects.filter(course=course)
 
-    selected_assessment_id = request.POST.get('assessment_id') if request.method == 'POST' else None
-    selected_assessment = Assessment.objects.filter(id=selected_assessment_id).first() if selected_assessment_id else None
+    selected_assessment_ids = request.POST.getlist('assessment_id[]') if request.method == 'POST' else []
+    # selected_assessment = Assessment.objects.filter(id=selected_assessment_id).first() if selected_assessment_id else None
+
+    # Get current session's assessments
+    current_assessment_ids = set(current_assessments.values_list('material_id', flat=True))
+
+    # Filter out already selected assessments from the available assessments
+    available_assessments = Assessment.objects.filter(course=course).exclude(id__in=current_assessment_ids)
 
     if request.method == 'POST':
         # Process reading materials for deletion using marked_for_deletion
@@ -978,16 +984,16 @@ def course_content_edit(request, pk, session_id):
                 reading_material.save()
 
         # Save selected assessment
-        assessment_id = request.POST.get('assessment_id')
-        if assessment_id:
-            assessment = get_object_or_404(Assessment, id=assessment_id)
-            CourseMaterial.objects.create(
-                session=session,
-                material_id=assessment.id,
-                material_type='assessments',
-                title=assessment.title,
-                order=CourseMaterial.objects.filter(session=session).count() + 1
-            )
+        for assessment_id in selected_assessment_ids:
+            assessment = Assessment.objects.filter(id=assessment_id).first()
+            if assessment:
+                CourseMaterial.objects.create(
+                    session=session,
+                    material_id=assessment.id,
+                    material_type='assessments',
+                    title=assessment.title,
+                    order=CourseMaterial.objects.filter(session=session).count() + 1
+                )
 
         messages.success(request, 'Course content updated successfully.')
         return redirect(reverse('course:course_content_edit', args=[course.pk, session.id]))
@@ -999,8 +1005,8 @@ def course_content_edit(request, pk, session_id):
         'selected_session': session,
         'reading_materials': reading_materials,
         'material_types': dict(CourseMaterial.MATERIAL_TYPE_CHOICES),
-        'assessments': assessments,
-        'selected_assessment': selected_assessment,
+        'assessments': available_assessments,  # Changed to available_assessments
+        'selected_assessment_ids': selected_assessment_ids,
         'current_assessments': current_assessments,
     }
 

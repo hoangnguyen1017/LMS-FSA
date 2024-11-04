@@ -102,11 +102,12 @@ class PerformanceAnalytics(models.Model):
             completed_assessments = highest_attempts.filter().count()
             # print('count:',completed_assessments)
             total_score = highest_attempts.aggregate(models.Sum('score_ass'))['score_ass__sum'] or 0
-            self.average_score = round(total_score / completed_assessments, 3) if completed_assessments > 0 else 0
-            self.completion_rate = round((completed_assessments / total_assessments) * 100, 2)
-        else:
-            self.average_score = 0.0
-            self.completion_rate = 0.0
+            try:
+                self.average_score = round(total_score / completed_assessments, 3) if completed_assessments > 0 else 0
+                self.completion_rate = round((completed_assessments / total_assessments) * 100, 2)
+            except:       
+                self.average_score = 0.0
+                self.completion_rate = 0.0
         self.save()
     
     class Meta:
@@ -130,12 +131,15 @@ def update_performance_analytics(sender, instance, **kwargs):
 @receiver(post_delete, sender=Assessment)
 def update_performance_analytics(sender, instance, **kwargs):
         students = User.objects.filter(id__in=StudentAssessmentAttempt.objects.filter(assessment__course=instance.course).values('user'))
-        for student in students:
-            performance = PerformanceAnalytics.objects.get(
-                user=student,
-                course=instance.course
-            )
-            performance.update_performance()
+        try:
+            for student in students:
+                performance,created = PerformanceAnalytics.objects.get_or_create(
+                    user=student,
+                    course=instance.course
+                )
+                performance.update_performance()
+        except PerformanceAnalytics.DoesNotExist:
+            ValueError('No performance found')
 
 
 @receiver(post_save, sender=Enrollment)

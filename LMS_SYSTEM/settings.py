@@ -12,6 +12,13 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file
+load_dotenv()
+
+# Now you can access environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -101,10 +108,10 @@ INSTALLED_APPS = [
     'exercises', #Binh_Thang
     #ngattt
     'assessments', 'reports', 'group_enrollment', 'mylearning', 'certification', 
-    'learning_path', 'backup',
+    'learning_path', 'backup', 'student_portal', #'quiz_generator',
 
     #group01
-    'user', 'role', 'department', 
+    'user', 'role', 'department', 'team',
 
     #group02
     'course', 'feedback', 'forum', 
@@ -117,10 +124,8 @@ INSTALLED_APPS = [
 
     #group05 
     'activity', 'analytics_report', 'book', 'progress_notification',
-    'achievement', # -- add this app
+    'achievement', 'quiz_bank', # -- add this app
 
-    # user_progress', 'user_summary' ,'performance_analytics', 'ai_insights' , 
-    # 'certificate', 'student_performance', 'course_completion','assignment',
 ]
 
 MIDDLEWARE = [

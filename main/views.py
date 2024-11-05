@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .forms import RegistrationForm, CustomLoginForm, EmailForm, ConfirmationCodeForm
 from django.contrib.auth import authenticate, login
 from user.models import User, Profile, Role
@@ -17,6 +17,131 @@ from django.views.decorators.csrf import csrf_exempt
 import random
 from django.core.cache import cache
 from django.conf import settings
+from course.models import Course  
+from .module_utils import get_grouped_modules
+
+@login_required
+def home(request):
+    roles = Role.objects.all() 
+    query = request.GET.get('q')
+    temporary_role_id = request.session.get('temporary_role')
+
+    module_groups, grouped_modules = get_grouped_modules(request.user, temporary_role_id)
+
+    # Lọc modules dựa trên truy vấn tìm kiếm
+    if query:
+        modules = [module for modules in grouped_modules.values() for module in modules]
+        modules = [module for module in modules if query.lower() in module.module_name.lower() or query.lower() in module.module_group.group_name.lower()]
+    else:
+        modules = [module for modules in grouped_modules.values() for module in modules]
+    return render(request, 'home.html', {
+        'module_groups': module_groups,
+        'modules': modules,
+        'grouped_modules': grouped_modules,
+        'roles': roles,
+        'temporary_role': temporary_role_id,
+    })
+
+def home_module(request):
+    roles = Role.objects.all() 
+    query = request.GET.get('q')
+    temporary_role_id = request.session.get('temporary_role')
+
+    module_groups, grouped_modules = get_grouped_modules(request.user, temporary_role_id)
+
+    # Lọc modules dựa trên truy vấn tìm kiếm
+    if query:
+        modules = [module for modules in grouped_modules.values() for module in modules]
+        modules = [module for module in modules if query.lower() in module.module_name.lower() or query.lower() in module.module_group.group_name.lower()]
+    else:
+        modules = [module for modules in grouped_modules.values() for module in modules]
+
+    form = ExcelImportForm()
+
+    return render(request, 'home.html', {
+        'module_groups': module_groups,
+        'modules': modules,
+        'grouped_modules': grouped_modules,
+        'form': form,
+        'roles': roles,
+        'temporary_role': temporary_role_id,
+    })
+
+
+from course.models import Course 
+def home_course(request):
+    query = request.GET.get('q')
+    module_groups = ModuleGroup.objects.all()
+    
+    # Get all courses for the authenticated user
+    if request.user.is_authenticated:
+        enrolled_courses = request.user.enrollments.select_related('course').all()
+        for enrollment in enrolled_courses:
+            # Calculate completion percentage for each course
+            enrollment.completion_percent = enrollment.course.get_completion_percent(request.user)
+    else:
+        enrolled_courses = Course.objects.none()
+
+    # Apply search query if present
+    if query:
+        enrolled_courses = enrolled_courses.filter(
+            Q(course__course_name__icontains=query) |
+            Q(course__description__icontains=query)
+        )
+
+    # Get the active module URL name
+    active_module_url = request.resolver_match.url_name
+
+    return render(request, 'home.html', {
+        'courses': enrolled_courses,
+        'active_module_url': active_module_url,
+        'module_groups': module_groups
+    })
+
+
+
+# def home(request):
+#     query = request.GET.get('q')
+#     all_modules = Module.objects.all()
+#     module_groups = ModuleGroup.objects.all()
+
+#     # Filter modules based on user role
+#     if request.user.is_authenticated:
+#         user_role = getattr(request.user.profile, 'role', None) if hasattr(request.user, 'profile') else None
+        
+#         if request.user.is_superuser:
+#             filtered_modules = all_modules
+#         elif user_role:
+#             # Only include modules assigned to this user's role
+#             filtered_modules = all_modules.filter(role_modules=user_role).distinct()
+#         else:
+#             messages.error(request, "Invalid role or no modules available for this role.")
+#             filtered_modules = Module.objects.none()
+#     else:
+#         filtered_modules = Module.objects.none()
+
+#     # Filter module groups based on filtered modules
+#     module_groups_with_access = module_groups.filter(modules__in=filtered_modules).distinct()
+
+#     # Apply search query if present
+#     if query:
+#         filtered_modules = filtered_modules.filter(
+#             Q(module_name__icontains=query) |
+#             Q(module_group__group_name__icontains=query)
+#         )
+
+#     # form = ExcelImportForm()  # Assuming this form is already defined elsewhere
+
+#     # Get the active module URL name
+#     active_module_url = request.resolver_match.url_name
+
+#     return render(request, 'home.html', {
+#         'module_groups': module_groups_with_access,
+#         'modules': filtered_modules,
+#         # 'form': form,
+#         'active_module_url': active_module_url,  # Pass the active module URL
+#     })
+
 
 def password_reset_request(request):
     if request.method == 'POST':
@@ -273,47 +398,7 @@ def login_view(request):
         'form': form,
     })
 
-def home(request):
-    query = request.GET.get('q')
-    all_modules = Module.objects.all()
-    module_groups = ModuleGroup.objects.all()
 
-    # Filter modules based on user role
-    if request.user.is_authenticated:
-        user_role = getattr(request.user.profile, 'role', None) if hasattr(request.user, 'profile') else None
-        
-        if request.user.is_superuser:
-            filtered_modules = all_modules
-        elif user_role:
-            # Only include modules assigned to this user's role
-            filtered_modules = all_modules.filter(role_modules=user_role).distinct()
-        else:
-            messages.error(request, "Invalid role or no modules available for this role.")
-            filtered_modules = Module.objects.none()
-    else:
-        filtered_modules = Module.objects.none()
-
-    # Filter module groups based on filtered modules
-    module_groups_with_access = module_groups.filter(modules__in=filtered_modules).distinct()
-
-    # Apply search query if present
-    if query:
-        filtered_modules = filtered_modules.filter(
-            Q(module_name__icontains=query) |
-            Q(module_group__group_name__icontains=query)
-        )
-
-    form = ExcelImportForm()  # Assuming this form is already defined elsewhere
-
-    # Get the active module URL name
-    active_module_url = request.resolver_match.url_name
-
-    return render(request, 'home.html', {
-        'module_groups': module_groups_with_access,
-        'modules': filtered_modules,
-        'form': form,
-        'active_module_url': active_module_url,  # Pass the active module URL
-    })
 
 
 

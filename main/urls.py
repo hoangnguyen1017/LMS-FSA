@@ -7,6 +7,8 @@ app_name = 'main'
 
 urlpatterns = [
     path('home/', views.home, name='home'),
+    path('home_module/', views.home_module, name='home_module'),
+    path('home_course/', views.home_course, name='home_course'),
     path('', views.home, name='home'),  
     path('logout/', LogoutView.as_view(next_page='main:home'), name='logout'),
     path('accounts/login/', views.login_view, name='login'),

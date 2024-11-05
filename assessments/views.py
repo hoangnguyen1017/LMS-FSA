@@ -571,23 +571,28 @@ def assessment_edit(request, pk):
     
     # Fetch selected exercises and questions for the assessment
     selected_exercises = assessment.exercises.values_list('id', flat=True)
+    print("selected_exercise is:  {selected_exercises}")
     # selected_questions = assessment.questions.values_list('id', flat=True)
     selected_question_ids = assessment.questions.values_list('id', flat=True)
+    print("selected_question_ids is:  {selected_question_ids}")
     selected_questions = Question.objects.filter(id__in=selected_question_ids)  # Fetching the actual Question objects
-    
+    print(f"selected_questions is: {selected_questions}")
     # selected_questions = assessment.questions.all()  # Fetching selected Question objects
     if request.method == "POST":
         form = AssessmentForm(request.POST, instance=assessment)
         
         if form.is_valid():
             form.save()
-
+            print("-----------------")
             # Update associated exercises
             selected_exercise_ids = request.POST.getlist('exercises')
+            print(f"form after póst.getlist exercise {selected_exercise_ids}")
             assessment.exercises.set(selected_exercise_ids)  # Update the associated exercises
-            
+            print(f"assessment is:  {assessment}")
+            print(f"assessment is:  { assessment.exercises}")
             # Update associated questions from the selected questions in the HTML
             selected_question_ids = request.POST.get('selected_questions', '').split(',')
+            print(f"selected_question_ids is {selected_question_ids}")
             selected_question_ids = [q_id for q_id in selected_question_ids if q_id]  # Filter out empty strings
             
             assessment.questions.set(selected_question_ids)  # Update the associated questions

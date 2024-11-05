@@ -24,29 +24,41 @@ class DepartmentResource(resources.ModelResource):
         widget=ForeignKeyWidget(Location, 'name')
     )
     address = fields.Field(
-        column_name='address',  # Tên cột trong file Excel cho địa chỉ
-        attribute='location__address',  # Lấy địa chỉ từ bảng Location
+        column_name='address',
+        attribute='location__address',
     )
 
     class Meta:
         model = Department
-        fields = ('name', 'location', 'address', 'users', 'courses')  # Bỏ id ở đây
-        import_id_fields = ()  # Không có trường id trong import
-        export_order = ('name', 'location', 'address', 'users', 'courses')
         skip_unchanged = True
         report_skipped = True
+        fields = ('name', 'location', 'address', 'users', 'courses')
+        import_id_fields = ('name',)
+        export_order = ('name', 'location', 'address', 'users', 'courses')
+        
 
     def before_import_row(self, row, **kwargs):
         location_name = row['location__name']
-        address = row.get('address', '')  # Lấy địa chỉ từ file Excel nếu có
+        address = row.get('address', '')
         location, created = Location.objects.get_or_create(name=location_name)
         
-        # Cập nhật địa chỉ nếu không tồn tại
         if created or (address and location.address != address):
             location.address = address
             location.save()
-        
-        row['location'] = location.id  # Gán ID của Location cho row
+
+        row['location'] = location.id
+
+    def skip_row(self, instance, original, row, import_validation, **kwargs):
+        """
+        So sánh dữ liệu mới và dữ liệu cũ, nếu không có sự thay đổi thì bỏ qua dòng này.
+        """
+        if instance.name == original.name and \
+           instance.location == original.location and \
+           instance.users == original.users and \
+           instance.courses == original.courses:
+            return True 
+
+        return False
 
 # Tạo DepartmentAdmin với tính năng ImportExport
 class DepartmentAdmin(ImportExportModelAdmin):

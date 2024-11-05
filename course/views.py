@@ -26,6 +26,7 @@ from assessments.models import Assessment
 from django.http import HttpResponseRedirect
 from department.models import Department
 
+
 @login_required
 def complete_session(request, course_id, session_id):
     course = get_object_or_404(Course, id=course_id)
@@ -257,6 +258,7 @@ def course_unenroll(request, pk):
 
     # Render confirmation page
     return render(request, 'course/course_unenroll.html', {'course': course})
+
 
 def course_list(request):
     user_departments = Department.objects.filter(users=request.user)
@@ -701,21 +703,6 @@ def reorder_course_materials(request, pk, session_id):
         'selected_session_id': selected_session_id,  # Retain the session
     })
 
-def reading_material_detail(request, id):
-    reading_material = get_object_or_404(ReadingMaterial, id=id)
-
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        # Handle AJAX request
-        data = {
-            'title': reading_material.title,
-            'content': reading_material.content,  # Replace with your actual content field
-        }
-        return JsonResponse(data)
-
-    # Render normal detail page if not AJAX
-    return render(request, 'material/reading_material_detail.html', {'reading_material': reading_material})
-
-
 def edit_reading_material(request, pk, session_id, reading_material_id):
     # Retrieve the course
     course = get_object_or_404(Course, pk=pk)
@@ -762,8 +749,10 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
     }
 
     return render(request, 'material/edit_reading_material.html', context)
+
 @login_required
 def course_content(request, pk, session_id):
+    module_groups = ModuleGroup.objects.all()
     course = get_object_or_404(Course, pk=pk)
     sessions = Session.objects.filter(course=course).order_by('order')
 
@@ -778,7 +767,8 @@ def course_content(request, pk, session_id):
     current_material = None
     if file_id and file_type:
         try:
-            current_material = CourseMaterial.objects.get(id=file_id, material_type=file_type, session=current_session)
+            current_material = CourseMaterial.objects.get(id=file_id, material_type=file_type,
+                                                          session=current_session)
         except CourseMaterial.DoesNotExist:
             current_material = materials.first() if materials.exists() else None
     else:
@@ -788,7 +778,8 @@ def course_content(request, pk, session_id):
     next_session = None
 
     if not next_material:
-        next_session = Session.objects.filter(course=course, order__gt=current_session.order).order_by('order').first()
+        next_session = Session.objects.filter(course=course, order__gt=current_session.order).order_by(
+            'order').first()
         if next_session:
             next_material = CourseMaterial.objects.filter(session=next_session).order_by('order').first()
 
@@ -855,6 +846,7 @@ def course_content(request, pk, session_id):
         'certificate_url': certificate_url,
         'next_session': next_session,
         'assessment': assessment,
+        'modules_groups': module_groups
     }
 
     return render(request, 'course/course_content.html', context)

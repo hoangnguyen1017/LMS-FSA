@@ -258,11 +258,8 @@ def course_unenroll(request, pk):
     # Render confirmation page
     return render(request, 'course/course_unenroll.html', {'course': course})
 
-
 def course_list(request):
-    User = get_user_model()
-    user = User.objects.get(pk=request.user.pk)
-    user_departments = Department.objects.filter(users=user)
+    user_departments = Department.objects.filter(users=request.user)
 
     if request.user.is_superuser:
         # Superuser can see all courses
@@ -704,7 +701,6 @@ def reorder_course_materials(request, pk, session_id):
         'selected_session_id': selected_session_id,  # Retain the session
     })
 
-
 def reading_material_detail(request, id):
     reading_material = get_object_or_404(ReadingMaterial, id=id)
 
@@ -742,10 +738,13 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
 
         if form.is_valid():
             reading_material = form.save()
+            course_material = CourseMaterial.objects.get(material_id=reading_material.id)
+            course_material.title=reading_material.title
             # Update the material_type if it has been changed
             if selected_material_type and selected_material_type != course_material.material_type:
                 course_material.material_type = selected_material_type
                 course_material.save()
+            course_material.save()
 
             messages.success(request, 'Reading material updated successfully.')
             return redirect('course:course_content_edit', pk=pk, session_id=session_id)
@@ -763,10 +762,8 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
     }
 
     return render(request, 'material/edit_reading_material.html', context)
-
 @login_required
 def course_content(request, pk, session_id):
-    module_groups = ModuleGroup.objects.all()
     course = get_object_or_404(Course, pk=pk)
     sessions = Session.objects.filter(course=course).order_by('order')
 
@@ -781,8 +778,7 @@ def course_content(request, pk, session_id):
     current_material = None
     if file_id and file_type:
         try:
-            current_material = CourseMaterial.objects.get(id=file_id, material_type=file_type,
-                                                          session=current_session)
+            current_material = CourseMaterial.objects.get(id=file_id, material_type=file_type, session=current_session)
         except CourseMaterial.DoesNotExist:
             current_material = materials.first() if materials.exists() else None
     else:
@@ -792,8 +788,7 @@ def course_content(request, pk, session_id):
     next_session = None
 
     if not next_material:
-        next_session = Session.objects.filter(course=course, order__gt=current_session.order).order_by(
-            'order').first()
+        next_session = Session.objects.filter(course=course, order__gt=current_session.order).order_by('order').first()
         if next_session:
             next_material = CourseMaterial.objects.filter(session=next_session).order_by('order').first()
 
@@ -860,7 +855,6 @@ def course_content(request, pk, session_id):
         'certificate_url': certificate_url,
         'next_session': next_session,
         'assessment': assessment,
-        'modules_groups': module_groups
     }
 
     return render(request, 'course/course_content.html', context)

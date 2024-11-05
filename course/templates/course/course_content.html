@@ -7,31 +7,49 @@
 {% block content %}
 <head>
     <link rel="stylesheet" href="{% static 'course/course.css' %}">
+    <style>
+        .nav-tabs .nav-link {
+            border: none;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-tabs .nav-link.active {
+            border-bottom: 2px solid #007bff; /* Bootstrap primary color */
+        }
+    </style>
 </head>
 
 <div class="container-fluid" id="course-content">
     <div class="row">
         <div class="col-md-2 sidebar">
             <div class="course-title h4">{{ course.course_name }}</div>
-            <button class="btn btn-outline-secondary dropdown-btn w-100" type="button" data-toggle="collapse" data-target="#session-menu" aria-expanded="false" aria-controls="session-menu">
-                SESSIONS <i class="fas fa-chevron-down"></i>
-            </button>
-            <div class="collapse" id="session-menu">
-                <ul class="list-group">
-                    {% for session in sessions %}
-                    <li class="list-group-item">
-                        <a href="{% url 'course:course_content' course.pk session.id %}" class="{% if session.id == current_session.id %}section_active{% endif %}">
-                            {{ session.name }}
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <button id="message-btn" class="btn btn-outline-secondary w-100 mt-2">MESSAGE</button>
-            <div class="message-content" style="display: none;"></div>
         </div>
 
         <div class="col-md-10 content"> <!-- Added content div -->
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs" id="session-tabs" role="tablist">
+                {% for session in sessions %}
+                <li class="nav-item">
+                    <a class="nav-link {% if session.id == current_session.id %}active{% endif %}" id="tab-{{ session.id }}" href="{% url 'course:course_content' course.pk session.id %}">
+                        {{ session.name }}
+                    </a>
+                </li>
+                {% endfor %}
+                <li class="nav-item">
+                    <a class="nav-link {% if current_material == null %}active{% endif %}" id="message-tab" href="#" role="tab" aria-controls="message-content" aria-selected="true">MESSAGE</a>
+                </li>
+            </ul>
+
+            <div class="message-content" id="message-content" style="display: none; margin-top: 20px;">
+                <h3>Course Completion Progress</h3>
+                <p>{{ completion_percent|floatformat:0 }}% completed</p>
+                {% if certificate_url %}
+                <div class="mt-3">
+                    <button id="view-certificate" class="btn btn-primary">View Certificate</button>
+                    <a href="{{ certificate_url }}" class="btn btn-success" download>Download Certificate</a>
+                </div>
+                {% endif %}
+            </div>
+
 
             <div class="materials-list mb-4 border rounded p-3" style="max-height: 70vh; overflow-y: auto;">
                 <div class="section-title h5">{{ current_session.name }}</div>
@@ -63,17 +81,6 @@
                 </ul>
             </div>
 
-            <div class="message-content" id="course-completion-progress" style="display: none;">
-                <h3>Course Completion Progress</h3>
-                <p>{{ completion_percent|floatformat:0 }}% completed</p>
-                {% if certificate_url %}
-                <div class="mt-3">
-                    <button id="view-certificate" class="btn btn-primary">View Certificate</button>
-                    <a href="{{ certificate_url }}" class="btn btn-success" download>Download Certificate</a>
-                </div>
-                {% endif %}
-            </div>
-
             {% if current_material %}
             <div class="mt-3" id="action-buttons"> <!-- Add an ID for easy manipulation -->
                 <button id="complete-btn" class="btn {% if completion_status %}btn-secondary{% else %}btn-success{% endif %}" data-course-id="{{ course.pk }}" data-file-id="{{ current_material.id }}">
@@ -86,7 +93,6 @@
                 {% endif %}
 
                 <a href="{% url 'course:course_detail' course.id %}" class="btn btn-outline-secondary" style="background-color: gray;">Back to Course Detail</a>
-
             </div>
             {% endif %}
         </div>
@@ -99,10 +105,10 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Ensure the session menu is visible by default
-    $('#session-menu').show();
-    // Toggle dropdown visibility
-    $('.dropdown-btn').click(function() {
+    // Ensure the session tabs are visible
+    // $('#session-tabs').show();
+
+    $('.materials-list').click(function() {
         $('#session-menu').toggle(); // Toggle materials list
         $('.message-content').hide(); // Hide Course Completion Progress
         $('.materials-list').show(); // Show materials list
@@ -110,12 +116,22 @@ $(document).ready(function() {
     });
 
     // Toggle visibility for Message content
-    $('#message-btn').click(function() {
+    $('#message-tab').click(function() {
         $('#session-menu').hide(); // Hide materials list
         $('.materials-list').hide(); // Hide materials list
         $('.message-content').toggle(); // Toggle Course Completion Progress
         $('#action-buttons').hide(); // Hide action buttons
     });
+
+    // // Toggle message content on tab click
+    // $('#message-tab').click(function(e) {
+    //     e.preventDefault(); // Prevent default link behavior
+    //     // $('.message-content').hide(); // Hide Course Completion Progress
+    //     // $('.materials-list').show(); // Show materials list
+    //     $('.message-content').toggle(); // Toggle visibility of the message content
+    //     $('.nav-link').removeClass('active'); // Remove active class from all tabs
+    //     $(this).addClass('active'); // Add active class to the clicked tab
+    // });
 
     // Certificate functionality
     $('#view-certificate').click(function() {
@@ -155,6 +171,7 @@ $(document).ready(function() {
             }
         });
     });
+
     // Add iframe resizing logic here
     $('iframe').css({
         'width': '65rem',

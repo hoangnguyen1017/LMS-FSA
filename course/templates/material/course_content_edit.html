@@ -93,7 +93,7 @@
                                             {% endfor %}
                                         </select>
                                     {% else %}
-                                        <p class="text-muted">No assessments.</p>
+                                        <p class="text-muted">All assessments have been assigned to this session.</p>
                                     {% endif %}
                                 </div>
                                 <input type="hidden" name="deleted_assessment_ids" id="deleted-assessment-ids">
@@ -115,7 +115,7 @@
                                         <a href="{% url 'course:edit_reading_material' course.pk selected_session.id reading_material.id %}" class="btn btn-warning" style="padding: 5px 10px; font-size: 14px; line-height: 1;">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <span class="trash-can" style="cursor: pointer; color: gray; margin-left: 10px;" data-id="{{ reading_material.id }}">
+                                        <span class="trash-can" style="cursor: pointer; color: gray; margin-left: 10px;" data-id="{{ reading_material.id }}" data-type="{{ reading_material.material.material_type }}">
                                             <i class="fas fa-trash"></i>
                                         </span>
                                     </div>
@@ -132,7 +132,7 @@
                                     <span class="material-type">({{ assessment.material_type|capfirst }})</span>
                                     </div>
                                     <div class="material-actions">
-                                        <span class="trash-can" style="cursor: pointer; color: gray; margin-left: 10px;" data-id="{{ assessment.material_id }}">
+                                        <span class="trash-can" style="cursor: pointer; color: gray; margin-left: 10px;" data-id="{{ assessment.material_id }}" data-type="{{ assessment.material_type }}">
                                             <i class="fas fa-trash"></i>
                                         </span>
                                     </div>
@@ -189,7 +189,7 @@
 
 {% block extra_js %}
 <script src="{% static 'ckeditor/ckeditor-init.js' %}"></script>
-<script src="https://cdn.ckeditor.com/4.16.0/full/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
@@ -244,7 +244,18 @@
     let readingMaterialCounter = 1;
     let markedForDeletion = []; // Array to keep track of marked materials
 
+    function clearReadingMaterials() {
+        const readingMaterialsContainer = document.getElementById('reading-materials');
+        readingMaterialsContainer.innerHTML = '';
+    }
+
+    function clearUploadedPdfs() {
+        const uploadedPdfsContainer = document.getElementById('uploaded-pdfs');
+        uploadedPdfsContainer.innerHTML = '';
+    }
+
     function addRMEntry(sessionName) {
+        clearUploadedPdfs();
         clearContentPreview(); // Clear content display when adding new material
         const container = document.getElementById('reading-materials');
         const newEntry = document.createElement('div');
@@ -279,7 +290,35 @@
     function initializeCKEditor(textarea) {
         CKEDITOR.replace(textarea, {
             height: 300,
+            versionCheck: false,
         });
+    }
+
+    function addPDFEntry() {
+        clearReadingMaterials();
+        clearContentPreview(); // Clear content display when adding new material
+        const container = document.getElementById('uploaded-pdfs');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'pdf-upload-entry';
+        newEntry.style.display = 'flex';
+        newEntry.style.alignItems = 'flex-start';
+        newEntry.style.fontSize = '36px';
+        newEntry.style.fontWeight = 'bold';
+        newEntry.innerHTML = `
+            <div style="flex-grow: 1; margin-bottom: 5px;">
+                <input type="file" name="uploaded_material_file[]" class="form-control" accept="application/pdf" style="margin-bottom: 5px;" multiple>
+                <select name="uploaded_material_type[]" class="form-control" style="margin-bottom: 5px;">
+                    <option value="" disabled>Select Material Type</option>
+                    {% for key, value in material_types.items %}
+                        <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <span class="delete-pdf-upload" style="cursor: pointer; color: red; margin-left: 10px;">&times;</span>
+        `;
+
+        container.appendChild(newEntry);
+        attachDeletePDFButton(newEntry.querySelector('.delete-pdf-upload'));
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -312,36 +351,39 @@
     function attachTrashcanAction(button) {
         button.addEventListener('click', function(event) {
             const materialId = event.currentTarget.getAttribute('data-id');
+            const materialType = event.currentTarget.getAttribute('data-type');
 
-            // Toggle the color
+            // Toggle the color for visual feedback
             toggleTrashcanColor(event);
 
             // Mark or unmark the material for deletion
-            if (markedForDeletion.includes(materialId)) {
-                markedForDeletion = markedForDeletion.filter(id => id !== materialId);
+            const itemKey = `${materialId}:${materialType}`;
+            if (markedForDeletion.includes(itemKey)) {
+                markedForDeletion = markedForDeletion.filter(item => item !== itemKey);
             } else {
-                markedForDeletion.push(materialId);
+                markedForDeletion.push(itemKey);
             }
 
-            // Update the hidden input with the marked IDs
+            // Update the hidden input with the marked items
             document.getElementById('marked-for-deletion').value = markedForDeletion.join(',');
         });
     }
 
     function deleteMarkedMaterials() {
         const idsToDelete = document.getElementById('marked-for-deletion').value.split(',');
-        idsToDelete.forEach(materialId => {
-            fetch(`/reading-material/delete/${materialId}/`, {
+        idsToDelete.forEach(item => {
+            const [materialId, materialType] = item.split(':');
+            fetch(`/course-material/delete/${materialId}/${materialType}/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}' // Ensure CSRF protection
+                    'X-CSRFToken': '{{ csrf_token }}'
                 },
                 body: JSON.stringify({}),
             })
             .then(response => {
                 if (response.ok) {
-                    const entry = document.querySelector(`.trash-can[data-id="${materialId}"]`).closest('li');
+                    const entry = document.querySelector(`.trash-can[data-id="${materialId}"][data-type="${materialType}"]`).closest('li');
                     entry.parentNode.removeChild(entry);
                 } else {
                     console.error('Failed to delete material.');
@@ -355,32 +397,6 @@
     document.querySelector('form').addEventListener('submit', function(event) {
         deleteMarkedMaterials();
     });
-
-    function addPDFEntry() {
-        clearContentPreview(); // Clear content display when adding new material
-        const container = document.getElementById('uploaded-pdfs');
-        const newEntry = document.createElement('div');
-        newEntry.className = 'pdf-upload-entry';
-        newEntry.style.display = 'flex';
-        newEntry.style.alignItems = 'flex-start';
-        newEntry.style.fontSize = '36px';
-        newEntry.style.fontWeight = 'bold';
-        newEntry.innerHTML = `
-            <div style="flex-grow: 1; margin-bottom: 5px;">
-                <input type="file" name="uploaded_material_file[]" class="form-control" accept="application/pdf" style="margin-bottom: 5px;" multiple>
-                <select name="uploaded_material_type[]" class="form-control" style="margin-bottom: 5px;">
-                    <option value="" disabled>Select Material Type</option>
-                    {% for key, value in material_types.items %}
-                        <option value="{{ key }}">{{ value }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <span class="delete-pdf-upload" style="cursor: pointer; color: red; margin-left: 10px;">&times;</span>
-        `;
-
-        container.appendChild(newEntry);
-        attachDeletePDFButton(newEntry.querySelector('.delete-pdf-upload'));
-    }
 
     function attachDeletePDFButton(button) {
         button.addEventListener('click', function() {
@@ -437,7 +453,6 @@
 
 
     document.addEventListener('DOMContentLoaded', function() {
-// Attach click event to each material title link
         document.querySelectorAll('.material-item .title').forEach(materialLink => {
             materialLink.addEventListener('click', function(event) {
                 event.preventDefault(); // Prevent the default link behavior

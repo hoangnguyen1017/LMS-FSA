@@ -5,7 +5,7 @@ from .forms import ForumQuestionForm, ForumCommentForm, ReplyForm, ReportForm
 from course.models import Course
 from django.core.paginator import Paginator
 from module_group.models import ModuleGroup, Module
-from django.contrib.auth.models import User
+from user.models import User
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile

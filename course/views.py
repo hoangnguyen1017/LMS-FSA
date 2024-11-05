@@ -24,7 +24,7 @@ from django.core.files.storage import default_storage
 import random
 from assessments.models import Assessment
 from django.http import HttpResponseRedirect
-
+from department.models import Department
 
 @login_required
 def complete_session(request, course_id, session_id):
@@ -258,7 +258,12 @@ def course_unenroll(request, pk):
     # Render confirmation page
     return render(request, 'course/course_unenroll.html', {'course': course})
 
+
 def course_list(request):
+    User = get_user_model()
+    user = User.objects.get(pk=request.user.pk)
+    user_departments = Department.objects.filter(users=user)
+
     if request.user.is_superuser:
         # Superuser can see all courses
         courses = Course.objects.all()
@@ -268,7 +273,11 @@ def course_list(request):
             Q(published=True) | Q(instructor=request.user)
         )
     else:
-        courses = Course.objects.filter(published=True)  # Other users see only published courses
+        # courses = Course.objects.filter(published=True)  # Other users see only published courses
+        department_courses = Course.objects.filter(department__in=user_departments, published=True)
+        no_department_courses = Course.objects.filter(department__isnull=True, published=True)
+        courses = department_courses | no_department_courses  # Combine both querysets
+        courses = courses.distinct()
 
     module_groups = ModuleGroup.objects.all()
     enrollments = Enrollment.objects.filter(student=request.user)
@@ -305,7 +314,7 @@ def course_list(request):
     current_recommended_page = recommended_page_obj.number if recommended_page_obj else 1
 
     # Pagination for main courses
-    paginator = Paginator(courses, 3)  # Show 10 courses per page
+    paginator = Paginator(courses, 9)  # Show 10 courses per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -491,8 +500,6 @@ def course_edit(request, pk):
             messages.success(request, 'Course updated successfully.')
             return redirect('course:course_edit', pk=course.pk)
 
-            messages.success(request, 'course updated successfully.')
-            return redirect('course:course_edit', pk=course.pk)
         else:
             print("Form is not valid")
             print(course_form.errors)
@@ -528,6 +535,16 @@ def course_detail(request, pk):
     # Get the course based on the primary key (pk)
     course = get_object_or_404(Course, pk=pk)
 
+    if request.user.is_superuser:
+        can_enroll = True
+    else:
+        user_departments = Department.objects.filter(users=request.user)
+        course_departments = Department.objects.filter(courses=course)
+
+        can_enroll = (
+            course_departments.filter(id__in=user_departments).exists() or
+            not course_departments.exists()
+        )
     # Get related documents and videos
     is_enrolled = Enrollment.objects.filter(student=request.user, course=course).exists()
     users_enrolled_count = Enrollment.objects.filter(course=course).count()
@@ -595,6 +612,7 @@ def course_detail(request, pk):
         'user_type': user_type,
         'user_progress': user_progress,
         'random_tags': random_tags,
+        'can_enroll': can_enroll,
     }
 
     return render(request, 'course/course_detail.html', context)
@@ -648,39 +666,42 @@ def course_search(request):
 def reorder_course_materials(request, pk, session_id):
     # Fetch the course
     course = get_object_or_404(Course, pk=pk)
-
     # Fetch all sessions related to the course
     sessions = Session.objects.filter(course=course).order_by('order')
+    selected_session_id = session_id
+    if request.method == 'POST':
+        selected_session_id = request.POST.get('session_id')
 
-    # Fetch materials for the selected session, defaulting to the first session
-    selected_session_id = request.POST.get('session_id') or session_id
+    # Fetch the selected session (or default to the first session if none is selected)
     session = get_object_or_404(Session, id=selected_session_id)
+
+    # Fetch materials for the selected session, ordered by the 'order' field
     materials = CourseMaterial.objects.filter(session=session).order_by('order')
 
-    if request.method == 'POST':
+    if request.method == 'POST' and 'order' in request.POST:
         # Check if the request is for reordering materials
-        if 'order' in request.POST:
-            for material in materials:
-                new_order = request.POST.get(f'order_{material.id}')
-                if new_order:
-                    material.order = int(new_order)  # Convert to integer
-                    material.save()
+        for material in materials:
+            new_order = request.POST.get(f'order_{material.id}')
+            if new_order:
+                material.order = int(new_order)  # Convert to integer
+                material.save()
+        materials = CourseMaterial.objects.filter(session=session).order_by('order')
+        # After updating, send a success message and reload the page with the updated order
+        success_message = "Order updated successfully!"
+        return render(request, 'material/reorder_course_material.html', {
+            'course': course,
+            'sessions': sessions,
+            'materials': materials,
+            'selected_session_id': selected_session_id,  # Ensure selected session is retained
+            'success_message': success_message,
+        })
 
-            success_message = "Order updated successfully!"
-            return render(request, 'material/reorder_course_material.html', {
-                'course': course,
-                'sessions': sessions,
-                'materials': materials,
-                'selected_session_id': selected_session_id,
-                'success_message': success_message,
-            })
-
-    # Pass the course, sessions, and materials to the template
+    # If the form was not submitted or POST method is not used, render the page with existing data
     return render(request, 'material/reorder_course_material.html', {
         'course': course,
         'sessions': sessions,
         'materials': materials,
-        'selected_session_id': selected_session_id,
+        'selected_session_id': selected_session_id,  # Retain the session
     })
 
 
@@ -721,13 +742,10 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
 
         if form.is_valid():
             reading_material = form.save()
-            course_material = CourseMaterial.objects.get(material_id=reading_material.id)
-            course_material.title=reading_material.title
             # Update the material_type if it has been changed
             if selected_material_type and selected_material_type != course_material.material_type:
                 course_material.material_type = selected_material_type
                 course_material.save()
-            course_material.save()
 
             messages.success(request, 'Reading material updated successfully.')
             return redirect('course:course_content_edit', pk=pk, session_id=session_id)
@@ -745,8 +763,10 @@ def edit_reading_material(request, pk, session_id, reading_material_id):
     }
 
     return render(request, 'material/edit_reading_material.html', context)
+
 @login_required
 def course_content(request, pk, session_id):
+    module_groups = ModuleGroup.objects.all()
     course = get_object_or_404(Course, pk=pk)
     sessions = Session.objects.filter(course=course).order_by('order')
 
@@ -761,7 +781,8 @@ def course_content(request, pk, session_id):
     current_material = None
     if file_id and file_type:
         try:
-            current_material = CourseMaterial.objects.get(id=file_id, material_type=file_type, session=current_session)
+            current_material = CourseMaterial.objects.get(id=file_id, material_type=file_type,
+                                                          session=current_session)
         except CourseMaterial.DoesNotExist:
             current_material = materials.first() if materials.exists() else None
     else:
@@ -771,7 +792,8 @@ def course_content(request, pk, session_id):
     next_session = None
 
     if not next_material:
-        next_session = Session.objects.filter(course=course, order__gt=current_session.order).order_by('order').first()
+        next_session = Session.objects.filter(course=course, order__gt=current_session.order).order_by(
+            'order').first()
         if next_session:
             next_material = CourseMaterial.objects.filter(session=next_session).order_by('order').first()
 
@@ -838,6 +860,7 @@ def course_content(request, pk, session_id):
         'certificate_url': certificate_url,
         'next_session': next_session,
         'assessment': assessment,
+        'modules_groups': module_groups
     }
 
     return render(request, 'course/course_content.html', context)
@@ -906,8 +929,8 @@ def course_content_edit(request, pk, session_id):
     session = get_object_or_404(Session, id=selected_session_id)
 
     # Fetch materials associated with the selected session
-    materials = CourseMaterial.objects.filter(session=session)
-    reading_materials = ReadingMaterial.objects.filter(material__in=materials)
+    materials = CourseMaterial.objects.filter(session=session).order_by('order')
+    reading_materials = ReadingMaterial.objects.filter(material__in=materials).order_by('material__order')
     current_assessments = CourseMaterial.objects.filter(session=session, material_type='assessments')
     assessments = Assessment.objects.filter(course=course)
 
@@ -921,18 +944,22 @@ def course_content_edit(request, pk, session_id):
     available_assessments = Assessment.objects.filter(course=course).exclude(id__in=current_assessment_ids)
 
     if request.method == 'POST':
-        # Process reading materials for deletion using marked_for_deletion
-        marked_ids = request.POST.get('marked_for_deletion', '').split(',')
-        for material_id in marked_ids:
-            if material_id:  # Ensure material_id is not empty
+        # Process materials for deletion using marked_for_deletion with material_type
+        marked_items = request.POST.get('marked_for_deletion', '').split(',')
+        for item in marked_items:
+            if item:  # Ensure item is not empty
                 try:
-                    course_material = CourseMaterial.objects.get(material_id=material_id)
+                    material_id, material_type = item.split(':')
+                    course_material = CourseMaterial.objects.get(material_id=material_id, material_type=material_type)
+
+                    # Delete associated ReadingMaterial if it's not an assessment
                     if course_material.material_type != 'assessments':
                         reading_material = ReadingMaterial.objects.get(id=material_id)
                         reading_material.delete()
+
                     course_material.delete()
-                except (ReadingMaterial.DoesNotExist, CourseMaterial.DoesNotExist):
-                    continue  # Handle if the material doesn't exist
+                except (ReadingMaterial.DoesNotExist, CourseMaterial.DoesNotExist, ValueError):
+                    continue  # Skip if material doesn't exist or if there's a ValueError in item split
 
         # Handle uploaded PDF
         if 'uploaded_material_file[]' in request.FILES and 'uploaded_material_type[]' in request.POST:

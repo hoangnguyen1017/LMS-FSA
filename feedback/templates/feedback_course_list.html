@@ -2,23 +2,170 @@
 
 {% block title %}All Feedback for {{ course.course_name }}{% endblock %}
 
-{% block extra_css %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Course title and rating summary -->
+            <div class="course-title-container d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <h1 class="text-2xl font-bold mb-0 me-4">{{ course.course_name }}</h1>
+                    <div class="rating-summary">
+                        <div class="star-rating">
+                            <div class="back-stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="front-stars" style="width: {{ course_average_rating_star }}%;">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rating-distribution">
+                    {% for rating in rating_distribution %}
+                    <div class="rating-row">
+                        <span class="rating-label">
+                            {% with ''|center:rating.rating as range %}
+                                {% for _ in range %}
+                                    <i class="fas fa-star" style="color: gold; font-size: 0.8rem;"></i>
+                                {% endfor %}
+                            {% endwith %}
+                        </span>
+                        <div class="rating-bar-wrapper">
+                            <div class="rating-bar" style="width: {{ rating.percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <a href="{% url 'course:course_detail' course.pk %}" class="btn btn-primary">Go to Course</a>
+                <span>{{ total_feedbacks }} feedbacks</span>
+            </div>
+
+            <hr>
+
+            <!-- Filter and Sort Section -->
+            <form method="get" action="" class="mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <label for="rating-filter" class="me-2">Filter by Rating:</label>
+                            <select name="rating" id="rating-filter" class="form-select w-50" onchange="this.form.submit()">
+                                <option value="">All</option>
+                                {% for rating in range %}
+                                <option value="{{ rating }}" {% if rating == selected_rating %}selected{% endif %}>{{ rating }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center justify-content-md-end">
+                            <label for="sort-filter" class="me-2">Sort by:</label>
+                            <select name="sort" id="sort-filter" class="form-select w-50" onchange="this.form.submit()">
+                                <option value="recent" {% if sort_by == 'recent' %}selected{% endif %}>Most Recent</option>
+                                <option value="helpful" {% if sort_by == 'helpful' %}selected{% endif %}>Most Helpful</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <hr>
+
+            <!-- Feedback Grid -->
+            <div class="feedback-grid">
+                {% for feedback in page_obj %}
+                <div class="feedback-card">
+                    <div class="feedback-card-header">
+                        <p>{{ feedback.average_rating|floatformat:1 }} / 5 by {{ feedback.student.username }} • {{ feedback.created_at|date:"Y-m-d" }}</p>
+                    </div>
+                    <div class="feedback-comment" id="comment-{{ feedback.id }}">
+                        {{ feedback.comments|truncatechars:150 }}
+                    </div>
+                    {% if feedback.comments|length > 150 %}
+                    <div class="read-more-link"
+                         data-id="{{ feedback.id }}"
+                         data-fullcomment="{{ feedback.comments }}"
+                         data-shortcomment="{{ feedback.comments|truncatechars:150 }}">
+                        Read more
+                    </div>
+                    {% endif %}
+                    <div class="mt-3">
+                        <form method="post" action="{% url 'feedback:helpful_rate' feedback.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                This is helpful (👍) ({{ feedback.helpful_rate.count }})
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="alert alert-info">No feedback has been provided for this course yet.</div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4 mb-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1" aria-label="First">&laquo;&laquo;</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;&raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 <style>
-    /* Feedback grid container */
     .feedback-grid {
         display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
+        flex-direction: column;
+        gap: 1.25rem;
+        lex-wrap: wrap;
         justify-content: flex-start;
         max-width: 100%;
     }
 
-    /* Card style */
     .feedback-card {
         background-color: #f9f9f9;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 20px;
+        border-radius: 0.625rem;
+        box-shadow: 0 0.25rem 5rem rgba(0, 0, 0, 0.1);
+        padding: 1.25rem;
+        transition: all 0.3s ease-in-out;
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -26,16 +173,14 @@
     }
 
     .feedback-card:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-0.125rem); /* -2px */
+        box-shadow: 0 0.375rem 0.75rem rgba(0, 0, 0, 0.15); /* 0 6px 12px */
     }
 
-    .feedback-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-weight: bold;
-        margin-bottom: 10px;
+    .read-more-link {
+        color: #389bb0;
+        cursor: pointer;
+        margin-top: 0.625rem; /* 10px */
     }
 
     .feedback-comment {
@@ -49,51 +194,24 @@
         white-space: normal;
     }
 
-    .read-more-link {
-        color: #389bb0;
-        cursor: pointer;
-        margin-top: 10px;
-    }
-
-    /* Button styles */
-    .btn-primary {
-        background-color: #389bb0;
-        border-color: #004494;
-        color: #fff;
-        padding: 10px 20px;
-        border-radius: 25px;
-        transition: all 0.3s;
-    }
-
-    .btn-primary:hover {
-        background-color: #003f88;
-        border-color: #00336e;
-    }
-
-    /* Course title section */
-    .course-header {
-        margin-bottom: 30px;
-    }
-    .course-title-container {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.5rem;
-        gap = 10px;
-    }
-    /* Star rating system */
     .star-rating {
         display: inline-block;
-        font-size: 1.5rem;
+        font-size: 1.5rem; /* 1.5rem stays the same */
         position: relative;
-        width: 9rem;
-        height: 1.5rem;
+        width: 9rem; /* 9rem stays the same */
+        height: 1.5rem; /* 1.5rem stays the same */
         overflow: hidden;
         vertical-align: middle;
-        margin-left: 1rem;
+        margin-left: 1rem; /* 1rem stays the same */
+        z-index: 1;
     }
 
-    .star-rating .back-stars, .star-rating .front-stars {
+    .star-rating .back-stars,
+    .star-rating .front-stars {
         display: flex;
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
     }
 
@@ -104,93 +222,60 @@
     .star-rating .front-stars {
         color: gold;
         overflow: hidden;
-        position: absolute;
-        top: 0;
-        left: 0;
     }
 
-    .star-rating i {
-        flex: 1;
-        margin-right: 2px;
-    }
-
-    .form-group {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-    }
-
-    .form-group label {
-        margin-right: 10px;
-    }
-
-    #rating-filter {
-        margin-right: auto; /* Ensures the filter stays on the left */
-    }
-
-    #sort-filter {
-        margin-left: auto; /* Ensures the sort dropdown stays on the right */
-    }
-
-    .form-group label[for="sort-filter"] {
-        margin-right: -350px; /* Adjust this value to match the spacing for the rating filter */
-    }
-
-    @media screen and (max-width: 992px) {
-        .feedback-grid {
-            max-width: 100%;
-        }
-    }
-
-    .rating-summary {
-        display: flex;
-        align-items: flex-start;
-        gap: 2rem;
-    }
-
-    .rating-distribution { /*31/10*/
-        flex: 1;
-        max-width: 300px;
-        margin-left: 30rem;
-        margin-top: 10px;
+    .rating-distribution {
+        max-width: 18.75rem; /* 300px */
+        padding: 2rem; /* 2rem */
     }
 
     .rating-row {
         display: flex;
         align-items: center;
-        width: 350px;
-        margin-bottom: 0.1rem;
-        font-size: 0.775rem;
+        margin-bottom: 0.5rem; /* 0.5rem */
+        position: relative;
+    }
+
+    .rating-distribution { /* 31/10 */
+        flex: 1;
+        max-width: 18.75rem; /* 300px */
+        margin-left: 1.875rem; /* 30px */
+        margin-top: 0.625rem; /* 10px */
+    }
+
+    .rating-row {
+        display: flex;
+        align-items: center;
+        width: 21.875rem; /* 350px */
+        margin-bottom: 0.1rem; /* 0.1rem */
+        font-size: 0.775rem; /* 0.775rem */
     }
 
     .rating-label {
         display: flex;
         justify-content: flex-end;
-        width: 70px;
+        width: 4.375rem; /* 70px */
         text-align: left;
-        margin-left: 0.5rem;
+        margin-left: 0.5rem; /* 0.5rem */
     }
-
 
     .rating-bar-wrapper {
         flex: 1;
         background-color: #ccc;
-        height: 6px;
-        border-radius: 6px;
+        height: 0.375rem; /* 6px */
+        border-radius: 0.375rem; /* 6px */
         overflow: hidden;
-        margin: 0 0.5rem;
+        margin: 0 0.5rem; /* 0.5rem */
     }
 
     .rating-bar {
         height: 100%;
         background-color: #515151;
-        border-radius: 4px;
+        border-radius: 0.25rem; /* 4px */
         transition: width 0.04s ease;
     }
 
-    @media (max-width: 580px) {
+    @media (max-width: 36.25rem) { /* 580px */
         .rating-summary {
             flex-direction: column;
         }
@@ -198,177 +283,33 @@
         .rating-distribution {
             max-width: 100%;
             margin-left: 0;
-            margin-top: 1rem;
-            margin-left: 30px;
+            margin-top: 1rem; /* 1rem */
+            margin-left: 1.875rem; /* 30px */
         }
     }
 </style>
-{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <!-- Course title and Go to Content button -->
-    <div class="course-title-container align-items-center">
-        <h1 class="text-2xl font-bold">{{ course.course_name }}</h1>
-        <div class="rating-summary">
-            <div class="star-rating">
-                <div class="back-stars">
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                </div>
-                <div class="front-stars" style="width: {{ course_average_rating_star }}%;">
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                    <i class="fas fa-star"></i>
-                </div>
-            </div>
-        </div>
-        <div class="rating-distribution"> <!-- 31/10-->
-            {% for rating in rating_distribution %}
-            <div class="rating-row">
-                <span class="rating-label">
-                    {% with ''|center:rating.rating as range %}
-                        {% for _ in range %}
-                            <i class="fas fa-star" style="color: gold; font-size: 0.8rem;"></i>
-                        {% endfor %}
-                    {% endwith %}
-                </span>
-                <div class="rating-bar-wrapper">
-                    <div class="rating-bar" style="width: {{ rating.percentage }}%"></div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    <div class="button-container" style="display: flex; align-items: center; gap: 730px;">
-        <a href="{% url 'course:course_detail' course.pk %}" class="btn btn-primary mt-2">Go to Course</a>
-        <span> {{ total_feedbacks}} feedbacks </span>
-    </div>
-
-
-    <hr width="100%" size = "2">
-
-    <form method="get" action="">
-    <div class="form-group">
-        <!-- Filter by rating on the left -->
-        <label for="rating-filter">Filter by Rating:</label>
-            <select name="rating" id="rating-filter" class="form-control w-25" onchange="this.form.submit()">
-                <option value="">All</option>
-                {% for rating in range %}
-                <option value="{{ rating }}" {% if rating == selected_rating %}selected{% endif %}>{{ rating }}</option>
-                {% endfor %}
-            </select>
-
-            <!-- Sort by dropdown on the right -->
-            <label for="sort-filter">Sort by:</label>
-            <select name="sort" id="sort-filter" class="form-control w-25" onchange="this.form.submit()">
-                <option value="recent" {% if sort_by == 'recent' %}selected{% endif %}>Most Recent</option>
-                <option value="helpful" {% if sort_by == 'helpful' %}selected{% endif %}>Most Helpful</option>
-            </select>
-        </div>
-    </form>
-
-    <hr width="100%" size = "2">
-
-    <!-- Feedback grid -->
-    <div class="feedback-grid">
-        {% for feedback in page_obj %}
-        <div class="feedback-card">
-            <div class="feedback-card-header">
-                <p>{{ feedback.average_rating|floatformat:1 }} / 5 by {{ feedback.student.username }} • {{ feedback.created_at|date:"Y-m-d" }}</p>
-            </div>
-            <div class="feedback-comment" id="comment-{{ feedback.id }}">
-                {{ feedback.comments|truncatechars:150 }}
-            </div>
-            {% if feedback.comments|length > 150 %}
-            <div class="read-more-link"
-                 data-id="{{ feedback.id }}"
-                 data-fullcomment="{{ feedback.comments }}"
-                 data-shortcomment="{{ feedback.comments|truncatechars:150 }}">
-                Read more
-            </div>
-            {% endif %}
-            <div>
-                <form method="post" action="{% url 'feedback:helpful_rate' feedback.pk %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                        This is helpful (👍) ({{ feedback.helpful_rate.count }})
-                    </button>
-                </form>
-            </div>
-        </div>
-        {% empty %}
-        <div>No feedback has been provided for this course yet.</div>
-        {% endfor %}
-    </div>
-
-    <hr width="100%" size = "2" color="white" noshade>
-
-    <!-- Pagination -->
-    <nav aria-label="Page navigation" class="mb-6">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link main-color-text" href="?page=1" aria-label="First">
-                        <span aria-hidden="true">&laquo;&laquo;</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link main-color-text" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-            {% endif %}
-
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active"><a class="page-link main-color">{{ num }}</a></li>
-                {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
-                    <li class="page-item"><a class="page-link main-color-text" href="?page={{ num }}">{{ num }}</a></li>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link main-color-text" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link main-color-text" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
-                    <span aria-hidden="true">&raquo;&raquo;</span>
-                    </a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
-</div>
 
 <script>
-    // Toggle full comment on Read More click
-    document.querySelectorAll('.read-more-link').forEach(link => {
-        link.addEventListener('click', function () {
-            const commentId = this.dataset.id;
-            const fullComment = this.dataset.fullcomment;
-            const shortComment = this.dataset.shortcomment;
-            const commentElement = document.getElementById(`comment-${commentId}`);
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.read-more-link').forEach(link => {
+            link.addEventListener('click', function() {
+                const commentId = this.dataset.id;
+                const fullComment = this.dataset.fullcomment;
+                const shortComment = this.dataset.shortcomment;
+                const commentElement = document.getElementById(`comment-${commentId}`);
 
-            if (commentElement.classList.contains('full-comment')) {
-                commentElement.textContent = shortComment;
-                commentElement.classList.remove('full-comment');
-                this.textContent = 'Read more';
-            } else {
-                commentElement.textContent = fullComment;
-                commentElement.classList.add('full-comment');
-                this.textContent = 'Show less';
-            }
+                if (commentElement.classList.contains('full-comment')) {
+                    commentElement.textContent = shortComment;
+                    commentElement.classList.remove('full-comment');
+                    this.textContent = 'Read more';
+                } else {
+                    commentElement.textContent = fullComment;
+                    commentElement.classList.add('full-comment');
+                    this.textContent = 'Show less';
+                }
+            });
         });
     });
 </script>
-
 {% endblock %}

@@ -703,6 +703,20 @@ def reorder_course_materials(request, pk, session_id):
         'selected_session_id': selected_session_id,  # Retain the session
     })
 
+def reading_material_detail(request, id):
+    reading_material = get_object_or_404(ReadingMaterial, id=id)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        # Handle AJAX request
+        data = {
+            'title': reading_material.title,
+            'content': reading_material.content,  # Replace with your actual content field
+        }
+        return JsonResponse(data)
+
+    # Render normal detail page if not AJAX
+    return render(request, 'material/reading_material_detail.html', {'reading_material': reading_material})
+
 def edit_reading_material(request, pk, session_id, reading_material_id):
     # Retrieve the course
     course = get_object_or_404(Course, pk=pk)

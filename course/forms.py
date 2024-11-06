@@ -1,7 +1,9 @@
 from django import forms
 from .models import *
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 #from ckeditor.widgets import CKEditorWidget
+
+User = get_user_model()
 
 # Form for creating and editing courses
 

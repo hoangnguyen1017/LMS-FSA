@@ -93,7 +93,7 @@
                                             {% endfor %}
                                         </select>
                                     {% else %}
-                                        <p class="text-muted">All assessments have been assigned to this session.</p>
+                                        <p class="text-muted">No assessments available.</p>
                                     {% endif %}
                                 </div>
                                 <input type="hidden" name="deleted_assessment_ids" id="deleted-assessment-ids">
@@ -155,12 +155,14 @@
                         <div id="reading-materials">
                             <div class="reading-material-entry" style="display: flex; align-items: flex-start; margin-bottom: 10px; font-size: 36px; font-weight: bold;">
                                 <div style="flex-grow: 1;">
-                                    <input type="text" name="reading_material_title[]" class="form-control" value="{{ selected_session.name }}"placeholder="Reading Material Title">
+                                    <input type="text" name="reading_material_title[]" class="form-control" value="{{ selected_session.name }}" placeholder="Reading Material Title">
                                     <textarea name="reading_material_content[]" class="form-control ckeditor" placeholder="Content"></textarea>
                                     <select name="reading_material_type[]" class="form-control" style="margin-top: 10px;">
                                         <option value="" disabled {% if material_types|length == 0 %}selected{% endif %}>Select Material Type</option>
                                         {% for key, value in material_types.items %}
-                                            <option value="{{ key }}" {% if forloop.first %}selected{% endif %}>{{ value }}</option>
+                                            {% if key != 'assessments' %} <!-- Exclude "Assessments" option -->
+                                                <option value="{{ key }}" {% if key == 'lectures' %}selected{% endif %}>{{ value }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -170,17 +172,15 @@
 
                         <div id="uploaded-pdfs" style="margin-bottom: 10px;"></div>
                     </div>
-
-
                 </div>
-            </div>
-            <div style="display: flex; justify-content: flex-start; margin-top: 20px;">
-                <button type="submit" class="btn btn-primary" style="background-color: #389bb0; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 20px; margin-right: 10px;">
-                    Save
-                </button>
-                <a href="{% url 'course:course_list' %}" style="background-color: gray; color: white; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 20px; text-decoration: none;">
-                    Return to Course List
-                </a>
+                    <div style="display: flex; justify-content: flex-end; margin-top: -10px; padding-right: 55px;">
+                        <button type="submit" class="btn btn-primary" style="background-color: #389bb0; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 20px; margin-right: 10px;">
+                            Save
+                        </button>
+                        <a href="{% url 'course:course_list' %}" style="background-color: gray; color: white; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 20px; text-decoration: none;">
+                            Return to Course List
+                        </a>
+                    </div>
             </div>
         </form>
     </div>
@@ -273,7 +273,7 @@
                 <select name="reading_material_type[]" class="form-control" style="margin-top: 10px;">
                     <option value="" disabled {% if material_types|length == 0 %}selected{% endif %}>Select Material Type</option>
                     {% for key, value in material_types.items %}
-                        <option value="{{ key }}">{{ value }}</option>
+                        <option value="{{ key }}" {% if key == 'lectures' %}selected{% endif %}>{{ value }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -308,9 +308,11 @@
             <div style="flex-grow: 1; margin-bottom: 5px;">
                 <input type="file" name="uploaded_material_file[]" class="form-control" accept="application/pdf" style="margin-bottom: 5px;" multiple>
                 <select name="uploaded_material_type[]" class="form-control" style="margin-bottom: 5px;">
-                    <option value="" disabled>Select Material Type</option>
+                    <option value="" disabled {% if material_types|length == 0 %}selected{% endif %}>Select Material Type</option>
                     {% for key, value in material_types.items %}
-                        <option value="{{ key }}">{{ value }}</option>
+                        {% if key != 'assessments' %} <!-- Exclude "Assessments" option -->
+                            <option value="{{ key }}" {% if key == 'lectures' %}selected{% endif %}>{{ value }}</option>
+                        {% endif %}
                     {% endfor %}
                 </select>
             </div>

@@ -278,6 +278,9 @@ def course_list(request):
         courses = department_courses | no_department_courses  # Combine both querysets
         courses = courses.distinct()
 
+        # Filter out courses with no materials
+        courses = [course for course in courses if course.sessions.filter(materials__isnull=False).exists()]
+
     module_groups = ModuleGroup.objects.all()
     enrollments = Enrollment.objects.filter(student=request.user)
     enrolled_courses = {enrollment.course.id for enrollment in enrollments}

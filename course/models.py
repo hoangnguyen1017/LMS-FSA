@@ -13,7 +13,7 @@ class Course(models.Model):
 
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_courses')
     instructor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='taught_courses')
-    published = models.BooleanField(default=True)
+    published = models.BooleanField(default=False)
     prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='is_prerequisite_for')
     tags = models.ManyToManyField('Tag', blank=True, related_name='courses')
     image = models.ImageField(upload_to='course_images/', null=True, blank=True)
@@ -84,8 +84,8 @@ class Session(models.Model):
         return self.name
 
 class Enrollment(models.Model):
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='enrollments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
     date_enrolled = models.DateTimeField(auto_now_add=True)
 
     class Meta:

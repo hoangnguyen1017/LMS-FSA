@@ -25,8 +25,15 @@
         </div>
         <div class="mb-3">
             <label for="role" class="form-label">Role</label>
-            <input type="text" class="form-control" id="role" name="role" required>
+            <select class="form-select" id="role" name="role" required>
+                <option value="">Select Role</option>
+                <option value="Leader">Leader</option>  <!-- Capitalized values -->
+                <option value="Manager">Manager</option>
+                <option value="Member">Member</option>
+            </select>
+            
         </div>
+        
         <div class="mb-3">
             <label for="email" class="form-label">Email</label>
             <input type="email" class="form-control" id="email" name="email" required>

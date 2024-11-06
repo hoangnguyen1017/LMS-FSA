@@ -54,7 +54,7 @@ def user_duration_login(request):
                 'total_minutes': total_minutes,  # Lưu trữ tổng phút
             })
     session_durations = session_durations[-10:]
-    return render(request, 'reports/user_duration_login.html', {
+    return render(request, 'reports/user/user_duration_login.html', {
         'session_durations': session_durations,
     })
 
@@ -99,7 +99,7 @@ def login_frequency_report(request):
     title = "Login frequency in the last 30 days"
     back_to_month = False
 
-    return render(request, 'reports/login_frequency_report.html', {
+    return render(request, 'reports/user/login_frequency_report.html', {
         'times': times,
         'counts': counts,
         'title': title,
@@ -154,7 +154,7 @@ def user_statistics_report(request):
     # Truy vấn tất cả người dùng đăng nhập trong tháng hiện tại
     users = User.objects.filter(date_joined__gte=start_of_month, is_superuser=False)
 
-    return render(request, 'reports/user_statistics_report.html', 
+    return render(request, 'reports/user/user_statistics_report.html', 
     {
         'module_groups': module_groups,
         'login_dates': login_dates,
@@ -194,7 +194,7 @@ def student_id_report(request):
         'cohort_summary': cohort_summary,
     }
 
-    return render(request, 'reports/student_id_report.html', context)
+    return render(request, 'reports/user/student_id_report.html', context)
 
 def get_students_by_cohort(request, cohort):
     """Lấy danh sách sinh viên theo cohort cho yêu cầu AJAX"""
@@ -210,13 +210,13 @@ def role_report(request):
         'role_counts': role_counts,
     }
 
-    return render(request, 'reports/role_report.html', context)
+    return render(request, 'reports/user/role_report.html', context)
 @login_required
 def user_overview_report(request):
     # Lấy tất cả người dùng (trừ superusers)
     users = User.objects.exclude(is_superuser=True)
     
-    return render(request, 'reports/user_overview_report.html', {'users': users})
+    return render(request, 'reports/user/user_overview_report.html', {'users': users})
 
 @login_required
 def report_dashboard(request):

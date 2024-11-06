@@ -8,18 +8,47 @@ from django.contrib import messages
 from .admin import MemberResource
 from tablib import Dataset 
 from django.db.models import Q
+from unidecode import unidecode
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+
 def team_list(request):
     query = request.GET.get('q', '')
+    selected_role = request.GET.get('role', '')  # Lấy giá trị vai trò từ request
     members = Member.objects.all()
-    
-    # Lọc danh sách thành viên dựa vào truy vấn
+
+    # Lọc danh sách thành viên dựa vào truy vấn tìm kiếm
     if query:
         members = members.filter(Q(name__icontains=query))
+    
+    # Lọc theo vai trò nếu có
+    if selected_role:
+        members = members.filter(role=selected_role)
 
     # Sắp xếp danh sách theo tên
     members = members.order_by('name')
-    
-    return render(request, 'team_list.html', {'members': members, 'query': query})
+
+    # Phân trang
+    paginator = Paginator(members, 6)  
+    page = request.GET.get('page', 1)
+
+    try:
+        members = paginator.page(page)
+    except PageNotAnInteger:
+        members = paginator.page(1)
+    except EmptyPage:
+        members = paginator.page(paginator.num_pages)
+
+    # Lấy tất cả các vai trò để đưa vào dropdown
+    roles = Member.ROLE_CHOICES
+
+    return render(request, 'team_list.html', {
+        'members': members,
+        'query': query,
+        'selected_role': selected_role,
+        'roles': roles,
+        'page_obj': members,  # Thêm page_obj để sử dụng trong template
+    })
+
 
 def add_member(request):
     if request.method == 'POST':
@@ -52,13 +81,19 @@ def delete_member(request, pk):
         member.delete()
         return redirect('team:team_list')
     return render(request, 'confirm_delete.html', {'member': member})
+
 def search_members(request):
-    query = request.GET.get('query', '')
+    query = request.GET.get('q', '').strip()  # Sửa đổi 'query' thành 'q'
     if query:
-        members = Member.objects.filter(name__icontains=query)  # Thay 'name' bằng trường bạn muốn tìm kiếm
+        # Tìm kiếm các thành viên có tên chứa truy vấn, bất kể có dấu hay không
+        members = Member.objects.filter(name__icontains=query)  # Tìm kiếm có dấu
+        if not members.exists():  # Nếu không tìm thấy, tìm kiếm không dấu
+            members = Member.objects.filter(name__icontains=unidecode(query))
     else:
         members = Member.objects.all()
+
     return render(request, 'team_list.html', {'members': members, 'query': query})
+
 def export_members(request):
     member_resource = MemberResource()
     dataset = member_resource.export()

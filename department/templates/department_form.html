@@ -80,13 +80,9 @@
                                     <label class="form-check-label" for="selectAllCourses">Select All Courses</label>
                                 </div>
                                 <div class="border rounded scrollable-list" id="courseList" style="max-height: 40vh; overflow-y: auto; padding: 1vw;">
-                                    {% for course in form.courses %}
-                                        <div class="form-check">
-                                            {{ course.tag|add_class:"form-check-input" }}
-                                            <label class="form-check-label" for="{{ course.id_for_label }}">{{ course.name }}</label>
-                                        </div>
-                                    {% endfor %}
+                                    {{ form.courses }}
                                 </div>
+                                
                             </td>
                         </tr>
                     </tbody>

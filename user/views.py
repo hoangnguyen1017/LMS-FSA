@@ -276,7 +276,7 @@ def user_edit(request, pk):
 
     user_role_permissions = request.user.profile.role.permissions.values_list('codename', flat=True) if not is_superuser else []
 
-    if 'can_edit_user' not in user_role_permissions and request.user.pk != user.pk and not request.user.is_superuser:
+    if 'can_edit_user' not in user_role_permissions and request.user.pk != user.pk and not is_superuser:
         messages.error(request, "Bạn không có quyền chỉnh sửa người dùng này.")
         return redirect('user:user_list')
 
@@ -284,7 +284,7 @@ def user_edit(request, pk):
     old_role = profile.role
 
     student_code = None
-    if profile.role.role_name == 'Student':
+    if profile.role and profile.role.role_name == 'Student':  # Kiểm tra nếu profile.role không phải None
         try:
             student = Student.objects.get(user=user)
             student_code = student.student_code
@@ -294,24 +294,34 @@ def user_edit(request, pk):
     if request.method == 'POST':
         form = UserForm(request.POST, instance=user)
 
-        if form.is_valid():
-            user = form.save(commit=False)
+        if is_superuser or form.is_valid():
+            user.username = form.data.get('username', user.username)
+            user.first_name = form.data.get('first_name', user.first_name)
+            user.last_name = form.data.get('last_name', user.last_name)
+            user.email = form.data.get('email', user.email)
             user.save()
 
-            new_role = form.cleaned_data.get('role')
-            if new_role and new_role != old_role:
-                profile.role = new_role
+            new_role_id = form.data.get('role') if is_superuser else form.cleaned_data.get('role')
 
-            profile.profile_picture_url = form.cleaned_data.get('profile_picture_url', profile.profile_picture_url)
-            profile.bio = form.cleaned_data.get('bio', profile.bio)
-            profile.interests = form.cleaned_data.get('interests', profile.interests)
-            profile.learning_style = form.cleaned_data.get('learning_style', profile.learning_style)
-            profile.preferred_language = form.cleaned_data.get('preferred_language', profile.preferred_language)
+            if new_role_id and new_role_id != old_role.id:  # Kiểm tra nếu new_role_id không phải None và khác old_role
+                # Lấy đối tượng Role từ ID
+                try:
+                    new_role = Role.objects.get(id=new_role_id)  # Lấy Role theo ID
+                    profile.role = new_role
+                except Role.DoesNotExist:
+                    messages.error(request, "Vai trò không tồn tại.")
+                    return redirect('user:user_list')
+
+            profile.profile_picture_url = form.data.get('profile_picture_url', profile.profile_picture_url)
+            profile.bio = form.data.get('bio', profile.bio)
+            profile.interests = form.data.get('interests', profile.interests)
+            profile.learning_style = form.data.get('learning_style', profile.learning_style)
+            profile.preferred_language = form.data.get('preferred_language', profile.preferred_language)
 
             # Xử lý nếu người dùng có vai trò là Student
-            if profile.role.role_name == 'Student':
+            if profile.role and profile.role.role_name == 'Student':
                 student, created = Student.objects.get_or_create(user=user)
-                new_student_code = form.cleaned_data.get('student_code', student_code)
+                new_student_code = form.data.get('student_code', student_code)
                 student.student_code = new_student_code if new_student_code else student_code
                 student.save()
                 profile.student = student
@@ -322,7 +332,7 @@ def user_edit(request, pk):
                     profile.student = None
                 except Student.DoesNotExist:
                     pass
-            
+
             profile.save()
 
             if request.user.pk == user.pk:
@@ -348,20 +358,17 @@ def user_edit(request, pk):
     form.fields['learning_style'].initial = profile.learning_style
     form.fields['preferred_language'].initial = profile.preferred_language
     form.fields['profile_picture_url'].initial = profile.profile_picture_url
-    form.fields['role'].initial = profile.role
+    form.fields['role'].initial = profile.role.id if profile.role else None  # Gán ID của role
 
     # Nếu người dùng không phải là superuser hoặc Manager, đặt thuộc tính readonly cho trường 'role'
-    if not (request.user.is_superuser or request.user.profile.role.role_name == 'Manager'):
+    if not (is_superuser or (request.user.profile and request.user.profile.role and request.user.profile.role.role_name == 'Manager')):
         form.fields['role'].widget.attrs['readonly'] = True
 
     # Hiển thị trường student_code không bị ẩn
-    form.fields['student_code'].initial = student_code if profile.role.role_name == 'Student' else ''
+    form.fields['student_code'].initial = student_code if profile.role and profile.role.role_name == 'Student' else ''
 
     return render(request, 'user_form.html', {'form': form, 'user': user})
 
-
-
-@login_required
 def user_delete(request):
     is_superuser = request.user.is_superuser
 

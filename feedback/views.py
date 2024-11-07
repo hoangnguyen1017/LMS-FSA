@@ -3,11 +3,12 @@ from .forms import InstructorFeedbackForm, CourseFeedbackForm, TrainingProgramFe
 from .models import InstructorFeedback, CourseFeedback, TrainingProgramFeedback
 from course.models import Course
 from training_program.models import TrainingProgram
-from user.models import User
+from django.contrib.auth import get_user_model
 from module_group.models import ModuleGroup, Module
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import F, FloatField, ExpressionWrapper, Count
+from django.http import Http404
 
 '''def feedback_list(request):
     module_groups = ModuleGroup.objects.all()
@@ -24,6 +25,7 @@ from django.db.models import F, FloatField, ExpressionWrapper, Count
         'modules': modules
     })'''
 
+User = get_user_model()
 
 def feedback_list(request):
     module_groups = ModuleGroup.objects.all()
@@ -33,7 +35,7 @@ def feedback_list(request):
     training_feedbacks = TrainingProgramFeedback.objects.all()
 
     # Fetch instructors and courses
-    instructors = User.objects.all()  # Assuming you have a role model for instructors
+    instructors = User.objects.filter(id__in=Course.objects.values_list('instructor_id', flat=True)).distinct()  # Assuming you have a role model for instructors
     courses = Course.objects.all()
     training_programs = TrainingProgram.objects.all()
 
@@ -113,7 +115,10 @@ def course_feedback_detail(request, feedback_id):
     return render(request, 'feedback_detail.html', {'feedback': feedback, 'type': 'Course'})
 
 def program_feedback_detail(request, feedback_id):
-    feedback = TrainingProgramFeedback.objects.get(pk=feedback_id)
+    try:
+        feedback = TrainingProgramFeedback.objects.get(pk=feedback_id)
+    except TrainingProgramFeedback.DoesNotExist:
+        raise Http404("Feedback does not exist")
     return render(request, 'feedback_detail.html', {'feedback': feedback, 'type': 'Training Program'})
 
 def course_all_feedback(request, course_id):

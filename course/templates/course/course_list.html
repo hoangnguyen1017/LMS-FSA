@@ -17,8 +17,8 @@
                 <form method="GET" action="{% url 'course:course_search' %}" class="d-flex">
                     <input type="text" name="query" class="form-control me-2" placeholder="Search..." aria-label="Search">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search me-1"></i> 
-                    </button>                    
+                        <i class="fas fa-search me-1"></i>
+                    </button>
                 </form>
             </div>
             <div class="col-md-4 text-md-end mt-2 mt-md-0">
@@ -27,7 +27,7 @@
                 {% endif %}
             </div>
         </div>
-        
+
     </div>
     <div class="row">
         {% for course in page_obj %}
@@ -68,20 +68,20 @@
                     </a>
                     {% if user.is_superuser or course.instructor == user %}
                         <div>
-                            <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm me-2" title="Edit">
+                            <a href="{% url 'course:course_edit_detail' course.id %}" class="btn btn-warning btn-sm me-2" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <a href="{% url 'course:course_delete' course.id %}" class="btn btn-danger btn-sm me-2" title="Delete">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
-                            
+
                             {% if course.published %}
-                                <a href="{% url 'course:toggle_publish' course.pk %}" class="btn btn-secondary" >Unpublish</a>  
+                                <a href="{% url 'course:toggle_publish' course.pk %}" class="btn btn-secondary" >Unpublish</a>
                             {% else %}
                                 <a href="{% url 'course:toggle_publish' course.pk %}" class="btn btn-primary" style="background-color: #097969 !important;">Publish</a>
-                                
+
                             {% endif %}
-                         
+
                         </div>
                     {% endif %}
                 </div>

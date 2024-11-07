@@ -3,7 +3,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/excel_to_json_styles.css' %}">
-<div class="container mt-5">
+<div class="mt-1">
     <ul class="nav nav-tabs">
         <li class="nav-item">
             <a class="nav-link active" href="{% url 'tools:excel_to_json_view' %}" aria-controls="excel" aria-selected="true">Excel to JSON</a>
@@ -12,15 +12,13 @@
             <a class="nav-link" href="{% url 'tools:txt_to_json_view' %}" aria-controls="txt" aria-selected="false">TXT to JSON</a>
         </li>
     </ul>
-    <div class="container text-center">
+    <div class="mt-1 text-center">
         <h2 class="mb-4 text-center">Convert Excel to JSON</h2>
-        <p>Choose EXCEL files</p>
-
         <form id="excel-upload-form" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="file-upload" id="file-upload-area">
                 <i class="fas fa-cloud-upload-alt"></i>
-                <p>Drag and drop files here</p>
+                <p>Drag and drop Excel files here</p>
                 <input type="file" name="files" multiple accept=".xlsx" style="display: none;" id="file-input">
                 <button type="button" class="btn btn-primary" onclick="document.getElementById('file-input').click();">Browse files</button>
             </div>
@@ -28,14 +26,14 @@
             <p id="file-count">You have uploaded 0 files.</p>
             <button type="submit" class="btn btn-success convert-btn">Convert to JSON</button>
         </form>
-        
-        <!-- JSON Preview Section -->
-        <div id="json-preview-container" class="mt-4">
-            <h3>JSON Preview:</h3>
-            <div id="json-preview"></div>
-        </div>
     </div>
-
+    
+    <div class="mt-1">
+        <h3>JSON Preview:</h3>
+        <div id="json-preview" class="border p-3" style="max-height: 400px; overflow-y: auto;">
+            <!-- Your JSON content will go here -->
+          </div>          
+    </div>
     <script>
         const fileInput = document.getElementById('file-input');
         const uploadedFilesContainer = document.getElementById('uploaded-files');
@@ -138,17 +136,17 @@
             })
             .then(response => response.json())
             .then(data => {
-                const jsonPreview = document.getElementById('json-preview'); // Đảm bảo bạn có phần tử này trong HTML
-                if (data.json_preview) {
-                    jsonPreview.textContent = JSON.stringify(data.json_preview, null, 2); // Hiển thị JSON thô
-                } else if (data.error) {
-                    jsonPreview.textContent = `Error: ${data.error}`;
-                }
-            })
-            .catch(error => {
-                const jsonPreview = document.getElementById('json-preview'); // Đảm bảo bạn có phần tử này trong HTML
-                jsonPreview.textContent = `Error: ${error}`;
-            });
+                // Convert JSON to a string with pretty formatting
+                let jsonString = JSON.stringify(data.json_preview, null, 2);
+                // Replace newline characters with <br> tags and spaces with &nbsp; for indentation
+                jsonString = jsonString.replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
+                // Display formatted JSON as HTML
+                jsonPreview.innerHTML = jsonString;
+                })
+                .catch(error => {
+                    const jsonPreview = document.getElementById('json-preview'); // Đảm bảo bạn có phần tử này trong HTML
+                    jsonPreview.textContent = `Error: ${error}`;
+                });
         }
         
         {% comment %} function updateJsonPreview() {

@@ -11,7 +11,7 @@ from django.core.files.storage import default_storage
 from io import BytesIO, StringIO
 from django.utils import timezone
 import pandas as pd
-
+from module_group.models import ModuleGroup
 
 def excel_to_json_view(request):
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -38,7 +38,6 @@ def excel_to_json_view(request):
                     excel_data = pd.read_excel(excel_file, sheet_name=None)
                     for sheet_name, df in excel_data.items():
                         json_output = excel_to_json(df)
-                       
                         json_filename = f"{excel_file.name.split('.')[0]}_{sheet_name}.json"
                         json_files.append((json_filename, json_output))
 
@@ -56,8 +55,12 @@ def excel_to_json_view(request):
 
     else:
         form = ExcelUploadForm()
-
-    return render(request, 'tool_excel_to_json.html', {'form': form})
+    module_groups = ModuleGroup.objects.all()
+    return render(request, 'tool_excel_to_json.html', 
+        {
+            'form': form, 
+            'module_groups': module_groups,
+        })
 
 def download_zip_file(request):
     # Generate or retrieve the zip file and return it as a response
@@ -70,23 +73,32 @@ def download_zip_file(request):
     return HttpResponse(status=404)
 
 def txt_to_json_view(request):
+    print(request.method)
     """Chuyển đổi văn bản từ textarea sang JSON và trả về file ZIP để tải xuống ngay lập tức."""
     if request.method == 'POST':
+        print('a')
         texts = request.POST.getlist('texts')  # Lấy danh sách các chuỗi từ textarea
-
+        print(texts)
         # Tạo file ZIP trong bộ nhớ
         zip_buffer = BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for idx, text_content in enumerate(texts):
+                print(idx)
                 if text_content.strip():
                     # Lấy tên tệp từ nội dung hoặc đặt tên mặc định
-                    file_name = extract_code_name(text_content) or f'text_{idx + 1}'
+                    file_name = extract_code_name(text_content) or f'text_{idx + 1}'  # Get the extracted name or default to 'text_{idx+1}'
+                    file_name = file_name if file_name else f'text_{idx + 1}'  # Use default if file_name is empty
+                    print(file_name)
+                    
+
+                    
                     file_like = StringIO(text_content)
 
                     # Chuyển đổi nội dung thành JSON
                     json_output = txt_to_json(file_like, file_name)
+                    print(json_output)
                     json_file_name = f'{file_name}.json'
-
+                    print('come')
                     # Lưu dữ liệu JSON vào file ZIP
                     zip_file.writestr(json_file_name, json_output)
 

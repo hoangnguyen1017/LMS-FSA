@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-5">
+<div class=" mt-1">
     <ul class="nav nav-tabs">
         <li class="nav-item">
             <a class="nav-link" href="{% url 'tools:excel_to_json_view' %}" aria-controls="excel" aria-selected="false">Excel to JSON</a>
@@ -12,7 +12,7 @@
         </li>
     </ul>
 
-    <h2 class="mb-4 text-center">Convert Text to JSON</h2>
+    <h2 class="mb-1 text-center">Convert Text to JSON</h2>
 
     <!-- Form for selecting number of text areas -->
     <div class="row justify-content-center">
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Text areas form, initially hidden -->
-    <form method="POST" id="text-form" class="mt-4">
+    <form method="POST" id="text-form" class="mt-1">
         {% csrf_token %}
         <div id="textareas-container" style="display: none;">
             <div id="textareas-wrapper" class="mt-3"></div>
@@ -43,7 +43,7 @@
 
     <!-- Success message and file download link -->
     {% if success_message %}
-        <div class="mt-4">
+        <div class="mt-1">
             <h3>Success!</h3>
             <p>{{ success_message }}</p>
             <p>Files created:</p>

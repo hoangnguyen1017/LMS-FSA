@@ -2,9 +2,9 @@
 {% load static %}
 
 {% block content %}
-<head>
+<!-- <head>
     <link rel="stylesheet" type="text/css" href="{% static 'course/course.css' %}">
-</head>
+</head> -->
 <body id="course-list">
 <div class="full-width-container bg-white p-6">
     {% comment %} <h1 class="text-2xl font-bold mb-6 main-color-text">Courses</h1> {% endcomment %}
@@ -12,17 +12,22 @@
         <h1 class="course-title font-bold mb-6 main-color-text">Courses</h1>
 
         <!-- Search Form -->
-        <div class="search-container">
-            <form method="GET" action="{% url 'course:course_search' %}" class="form-inline">
-                <input type="text" name="query" class="search-input p-2 border border-gray-300 rounded" placeholder="Search...">
-                <button type="submit" class="btn main-color px-4 py-2 rounded ml-2">Search</button>
-            </form>
-            <div>
+        <div class="row align-items-center mb-3">
+            <div class="col-md-8">
+                <form method="GET" action="{% url 'course:course_search' %}" class="d-flex">
+                    <input type="text" name="query" class="form-control me-2" placeholder="Search..." aria-label="Search">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>
+                    </button>
+                </form>
+            </div>
+            <div class="col-md-4 text-md-end mt-2 mt-md-0">
                 {% if is_instructor or user.is_superuser %}
                     <a href="{% url 'course:course_add' %}" class="btn btn-primary">Add New Course</a>
                 {% endif %}
             </div>
         </div>
+
     </div>
     <div class="row">
         {% for course in page_obj %}
@@ -63,19 +68,20 @@
                     </a>
                     {% if user.is_superuser or course.instructor == user %}
                         <div>
-                            <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm me-2" title="Edit">
+                            <a href="{% url 'course:course_edit_detail' course.id %}" class="btn btn-warning btn-sm me-2" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <a href="{% url 'course:course_delete' course.id %}" class="btn btn-danger btn-sm me-2" title="Delete">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
-                            <a href="{% url 'course:toggle_publish' course.pk %}" class="btn btn-sm" style="background-color: #097969 !important;">
-                                {% if course.published %}
-                                    Unpublish
-                                {% else %}
-                                    Publish
-                                {% endif %}
-                            </a>
+
+                            {% if course.published %}
+                                <a href="{% url 'course:toggle_publish' course.pk %}" class="btn btn-secondary" >Unpublish</a>
+                            {% else %}
+                                <a href="{% url 'course:toggle_publish' course.pk %}" class="btn btn-primary" style="background-color: #097969 !important;">Publish</a>
+
+                            {% endif %}
+
                         </div>
                     {% endif %}
                 </div>

@@ -222,10 +222,18 @@
         for (i = 0; i < tablinks.length; i++) {
             tablinks[i].className = tablinks[i].className.replace(" active", "");
         }
-        if (tabName === 'Tab1' || tabName === 'Tab2' || tabName === 'Tab3') {
+        if (tabName === 'Tab1') {
             var courseId = {{ course.pk }};
-            localStorage.setItem("activeTab", tabName);
-            window.location.href = `/course/edit/${courseId}/`;
+            localStorage.setItem("activeTab", "Tab1");
+            window.location.href = `/course/edit/${courseId}/details/`;
+        } else if (tabName === 'Tab2') {
+            var courseId = {{ course.pk }};
+            localStorage.setItem("activeTab", "Tab2");
+            window.location.href = `/course/edit/${courseId}/sessions/`;
+        } else if (tabName === 'Tab3') {
+            var courseId = {{ course.pk }};
+            localStorage.setItem("activeTab", "Tab3");
+            window.location.href = `/course/edit/${courseId}/topic-tags/`;
         } else {
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";

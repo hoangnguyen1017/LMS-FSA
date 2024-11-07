@@ -7,19 +7,19 @@
     <div class="row">
         <div class="col-12">
             <!-- Course title and rating summary -->
-            <div class="course-title-container d-flex justify-content-between align-items-center">
+            <div class="course-title-container d-flex justify-content-between align-items-center mt-3 mb-3">
                 <div class="d-flex align-items-center">
-                    <h1 class="text-2xl font-bold mb-0 me-4">{{ course.course_name }}</h1>
+                    <h1 class="text-2xl font-bold mb-0 me-4" style="color: #072ac8">{{ course.course_name }}</h1>
                     <div class="rating-summary">
-                        <div class="star-rating">
-                            <div class="back-stars">
+                        <div class="star-rating" style="display: inline-block; font-size: 1.5rem; position: relative; width: 9rem; height: 1.5rem; overflow: hidden; vertical-align: middle; margin-left: 0.5rem; z-index: 1;">
+                            <div class="back-stars" style="display: flex; color: #ccc;">
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
                             </div>
-                            <div class="front-stars" style="width: {{ course_average_rating_star }}%;">
+                            <div class="front-stars" style="display: flex; position: absolute; top: 0; left: 0; width: {{ course_average_rating_star }}%; color: gold; overflow: hidden;">
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
@@ -29,18 +29,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="rating-distribution">
+                <div class="rating-distribution" style="padding: 0; max-width: 100%; margin-left: 2rem;">
                     {% for rating in rating_distribution %}
-                    <div class="rating-row">
-                        <span class="rating-label">
+                    <div class="rating-row" style="display: flex; align-items: center; width: 21.875rem; margin-bottom: 0.1rem; font-size: 0.775rem; position: relative;">
+                        <span class="rating-label" style=" display: flex; justify-content: flex-end; width: 4.375rem; text-align: left; margin-left: 0.5rem;">
                             {% with ''|center:rating.rating as range %}
                                 {% for _ in range %}
-                                    <i class="fas fa-star" style="color: gold; font-size: 0.8rem;"></i>
+                                <i class="fas fa-star" style="color: gold; font-size: 0.8rem;"></i>
                                 {% endfor %}
                             {% endwith %}
                         </span>
-                        <div class="rating-bar-wrapper">
-                            <div class="rating-bar" style="width: {{ rating.percentage }}%"></div>
+                        <div class="rating-bar-wrapper" style="  flex: 1; background-color: #ccc;height: 0.375rem; border-radius: 0.375rem;  overflow: hidden; margin-right: 0.5rem; margin-left: 0.5rem;">
+                            <div class="rating-bar" style="height: 100%; background-color: #515151; border-radius: 0.25rem; transition: width 0.04s ease; width: {{ rating.percentage }}%;"></div>
                         </div>
                     </div>
                     {% endfor %}
@@ -49,7 +49,7 @@
 
             <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
                 <a href="{% url 'course:course_detail' course.pk %}" class="btn btn-primary">Go to Course</a>
-                <span>{{ total_feedbacks }} feedbacks</span>
+                <span style="color:#6eb2df">{{ total_feedbacks }} feedbacks </span>
             </div>
 
             <hr>
@@ -83,20 +83,21 @@
             <hr>
 
             <!-- Feedback Grid -->
-            <div class="feedback-grid">
+            <div class="feedback-grid" style="display: flex; flex-direction: column; gap: 1.25rem; max-width: 100%;">
                 {% for feedback in page_obj %}
-                <div class="feedback-card">
+                <div class="feedback-card" style="background-color: #f9f9f9; border-radius: 0.625rem; box-shadow: 0 0.25rem 5rem rgba(0, 0, 0, 0.1); padding: 1.25rem; transition: all 0.3s ease-in-out; width: 100%; display: flex; flex-direction: column;">
                     <div class="feedback-card-header">
                         <p>{{ feedback.average_rating|floatformat:1 }} / 5 by {{ feedback.student.username }} • {{ feedback.created_at|date:"Y-m-d" }}</p>
                     </div>
-                    <div class="feedback-comment" id="comment-{{ feedback.id }}">
+                    <div class="feedback-comment" id="comment-{{ feedback.id }}" style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer;">
                         {{ feedback.comments|truncatechars:150 }}
                     </div>
                     {% if feedback.comments|length > 150 %}
                     <div class="read-more-link"
                          data-id="{{ feedback.id }}"
                          data-fullcomment="{{ feedback.comments }}"
-                         data-shortcomment="{{ feedback.comments|truncatechars:150 }}">
+                         data-shortcomment="{{ feedback.comments|truncatechars:150 }}"
+                         style="color: #389bb0; cursor: pointer; margin-top: 0.625rem;">
                         Read more
                     </div>
                     {% endif %}
@@ -150,145 +151,7 @@
     </div>
 </div>
 
-<style>
-    .feedback-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-        lex-wrap: wrap;
-        justify-content: flex-start;
-        max-width: 100%;
-    }
-
-    .feedback-card {
-        background-color: #f9f9f9;
-        border-radius: 0.625rem;
-        box-shadow: 0 0.25rem 5rem rgba(0, 0, 0, 0.1);
-        padding: 1.25rem;
-        transition: all 0.3s ease-in-out;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        transition: all 0.3s ease-in-out;
-    }
-
-    .feedback-card:hover {
-        transform: translateY(-0.125rem); /* -2px */
-        box-shadow: 0 0.375rem 0.75rem rgba(0, 0, 0, 0.15); /* 0 6px 12px */
-    }
-
-    .read-more-link {
-        color: #389bb0;
-        cursor: pointer;
-        margin-top: 0.625rem; /* 10px */
-    }
-
-    .feedback-comment {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        cursor: pointer;
-    }
-
-    .full-comment {
-        white-space: normal;
-    }
-
-    .star-rating {
-        display: inline-block;
-        font-size: 1.5rem; /* 1.5rem stays the same */
-        position: relative;
-        width: 9rem; /* 9rem stays the same */
-        height: 1.5rem; /* 1.5rem stays the same */
-        overflow: hidden;
-        vertical-align: middle;
-        margin-left: 1rem; /* 1rem stays the same */
-        z-index: 1;
-    }
-
-    .star-rating .back-stars,
-    .star-rating .front-stars {
-        display: flex;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-    }
-
-    .star-rating .back-stars {
-        color: #ccc;
-    }
-
-    .star-rating .front-stars {
-        color: gold;
-        overflow: hidden;
-    }
-
-    .rating-distribution {
-        max-width: 18.75rem; /* 300px */
-        padding: 2rem; /* 2rem */
-    }
-
-    .rating-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.5rem; /* 0.5rem */
-        position: relative;
-    }
-
-    .rating-distribution { /* 31/10 */
-        flex: 1;
-        max-width: 18.75rem; /* 300px */
-        margin-left: 1.875rem; /* 30px */
-        margin-top: 0.625rem; /* 10px */
-    }
-
-    .rating-row {
-        display: flex;
-        align-items: center;
-        width: 21.875rem; /* 350px */
-        margin-bottom: 0.1rem; /* 0.1rem */
-        font-size: 0.775rem; /* 0.775rem */
-    }
-
-    .rating-label {
-        display: flex;
-        justify-content: flex-end;
-        width: 4.375rem; /* 70px */
-        text-align: left;
-        margin-left: 0.5rem; /* 0.5rem */
-    }
-
-    .rating-bar-wrapper {
-        flex: 1;
-        background-color: #ccc;
-        height: 0.375rem; /* 6px */
-        border-radius: 0.375rem; /* 6px */
-        overflow: hidden;
-        margin: 0 0.5rem; /* 0.5rem */
-    }
-
-    .rating-bar {
-        height: 100%;
-        background-color: #515151;
-        border-radius: 0.25rem; /* 4px */
-        transition: width 0.04s ease;
-    }
-
-    @media (max-width: 36.25rem) { /* 580px */
-        .rating-summary {
-            flex-direction: column;
-        }
-
-        .rating-distribution {
-            max-width: 100%;
-            margin-left: 0;
-            margin-top: 1rem; /* 1rem */
-            margin-left: 1.875rem; /* 30px */
-        }
-    }
-</style>
-
+{% block extra_js %}
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

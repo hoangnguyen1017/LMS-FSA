@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -28,8 +29,6 @@ LOGIN_URL = 'login'  # Default URL to redirect if not logged in
 LOGIN_REDIRECT_URL = ''
 
 # Add or update media settings for handling uploaded files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 #for PDF
 X_FRAME_OPTIONS = 'SAMEORIGIN'
@@ -41,13 +40,6 @@ XS_SHARING_ALLOWED_METHODS = ['POST','GET','OPTIONS', 'PUT', 'DELETE']
 
 # STATIC_URL = '/staticfiles/'
 # STATIC_URL for development
-STATIC_URL = '/static/'
-
-# STATICFILES_DIRS is correct - it tells Django where to look for static files
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # Custom static files directory
-]
-
 
 # settings.py
 AUTH_USER_MODEL = 'user.User'  # Change 'user' to the name of your app
@@ -170,12 +162,6 @@ WSGI_APPLICATION = 'LMS_SYSTEM.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 
 # DATABASES = {
 #     'default': {
@@ -206,21 +192,62 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LANGUAGE_CODE = 'en-us'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
-
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# SERVER CONFIG, DO NOT MODIFY!!!!!
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
+USE_TZ = False
+USE_I18N = True
+
+
+if os.getenv("DATABASE_USER") is not None:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv("DATABASE_NAME"),
+            'USER': os.getenv("DATABASE_USER"),
+            'PASSWORD': os.getenv("DATABASE_PASSWORD"),
+            'HOST': os.getenv("DATABASE_HOST_NAME"),  # Set to the appropriate host if using a remote server
+            'PORT': '5432',       # Default PostgreSQL port
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+
+logging.basicConfig(
+    level=logging.INFO, format='%(levelname)-4s - "%(name)s": %(message)s'
+)
+
+# secure config
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_HSTS_SECONDS = 31536000  # 1 year
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+CSRF_TRUSTED_ORIGINS = ['https://lms.truong51972.id.vn']

@@ -19,9 +19,9 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg bg-dark text-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'main:home' %}">LMS</a>
+            <a class="navbar-brand text-light" href="{% url 'student_portal:course_list' %}">LMS</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -29,15 +29,14 @@
                 <ul class="navbar-nav ms-auto align-items-center">
                     {% if user.is_authenticated %}
                         <!-- Notification bell -->
-                        <li class="nav-item position-relative me-3">
-                            
+                        <li class="nav-item position-relative me-3 text-light">
                             {% include 'notification_bell.html' %}
                         </li>
                 
                         <!-- Admin Link (for superuser only) -->
                         {% if user.is_superuser %}
                             <li class="nav-item me-3">
-                                <a class="nav-link text-danger fw-bold" href="{% url 'main:home' %}" target="_blank">
+                                <a class="nav-link text-light fw-bold" href="{% url 'main:home' %}" target="_blank">
                                     <i class="fas fa-user-shield"></i> Admin LMS
                                 </a>
                             </li>
@@ -45,22 +44,22 @@
                 
                         <!-- Links for authenticated users -->
                         <li class="nav-item me-3">
-                            <a class="nav-link" href="{% url 'student_portal:course_list' %}">
-                                <i class="fas fa-book-reader"></i> Learning
+                            <a class="nav-link text-light" href="{% url 'student_portal:course_list' %}">
+                                <i class="fas fa-book-reader"></i> Go to Learn
                             </a>
                         </li>
                         <li class="nav-item me-3">
-                            <a class="nav-link" href="{% url 'mylearning:index' %}">
+                            <a class="nav-link text-light" href="{% url 'mylearning:index' %}">
                                 <i class="fas fa-graduation-cap"></i> My Learning
                             </a>
                         </li>
                 
                         <!-- User Dropdown -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center text-light" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle me-1"></i> {{ user.username }}
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <ul class="dropdown-menu dropdown-menu-end text-light"  aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="{% url 'user:user_detail' request.user.id %}"><i class="fas fa-user"></i> Profile</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger" href="{% url 'main:logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -68,7 +67,7 @@
                         </li>
                     {% else %}
                         <!-- Login link for unauthenticated users -->
-                        <li class="nav-item me-3">
+                        <li class="nav-item me-3 text-light">
                             <a class="nav-link" href="{% url 'main:login' %}">
                                 <i class="fas fa-sign-in-alt"></i> Login
                             </a>

@@ -83,14 +83,18 @@
                 </div>
 
                 <div class="col">
-                    {% if is_enrolled and sessions %}
-                        <a href="{% url 'course:course_unenroll' course.pk %}" class="unenroll-link" style="font-size: 30px;" >Unenroll</a>
-                    {% elif is_enrolled %}
-                        <p>No sessions</p>
-                    {% else %}
-                        <div class="d-inline-flex align-items-center">
-                            <a href="{% url 'course:course_enroll' course.pk %}" class="enroll-link" style="font-size: 30px; color: #2b59c3;" title="Please review the prerequisite course!">Enroll</a>
-                        </div>
+                    {%if can_enroll%}
+                        {% if is_enrolled and sessions %}
+                            <a href="{% url 'course:course_unenroll' course.pk %}" class="unenroll-link" style="font-size: 30px;" >Unenroll</a>
+                        {% elif is_enrolled %}
+                            <p>No sessions</p>
+                        {% else %}
+                            <div class="d-inline-flex align-items-center">
+                                <a href="{% url 'course:course_enroll' course.pk %}" class="enroll-link" style="font-size: 30px; color: #2b59c3;" title="Please review the prerequisite course!">Enroll</a>
+                            </div>
+                        {% endif %}
+                    {% else%}
+                        <p style="color: red; font-size: 18px;">You are not eligible to enroll in this course</p>
                     {% endif %}
                 </div>
             </div>
@@ -135,7 +139,7 @@
                     </tr>
                     <tr>
                         <th>Instructor</th>
-                        <td class="text-left"><a href ="#">{{ course.instructor.get_full_name }} {{ course.instructor.username }}</a></td>
+                        <td class="text-left">{{ course.instructor.get_full_name }} {{ course.instructor.username }}</td>
                     </tr>
                     <tr>
                         <th>Average Rating</th>
@@ -247,7 +251,7 @@
                             <thead>
                                 <tr>
                                     <th class="table-header username-column" style=" background-color: #eaecee; color: #2b59c3; width: 30%; text-align: center; padding: 10px; font-size: 18px;  border: 1px solid #ccc;">Username</th>
-                                    <th class="table-header progress-column" style=" background-color: #eaecee; color: #2b59c3; width: 40%; text-align: center; padding: 10px; font-size: 18px;  border: 1px solid #ccc;"">Progress (%)</th>
+                                    <th class="table-header progress-column" style=" background-color: #eaecee; color: #2b59c3; width: 40%; text-align: center; padding: 10px; font-size: 18px;  border: 1px solid #ccc;">Progress (%)</th>
                                 </tr>
                             </thead>
                             <tbody>

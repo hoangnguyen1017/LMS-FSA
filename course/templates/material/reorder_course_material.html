@@ -22,11 +22,15 @@
                 <select name="session_id" id="session-select" onchange="this.form.submit()" class="form-control form-control-sm" style="width: 100%; max-width: 200px;">
                     <option value="" disabled>Select a session</option>
                     {% for session in sessions %}
-                        <option value="{{ session.id }}" {% if session.id|stringformat:"s" == selected_session_id %}selected{% endif %}>
+                        <option value="{{ session.id }}"
+                                {% if session.id|stringformat:"s" == selected_session_id %}
+                                    selected
+                                {% endif %}>
                             {{ session.name }}
                         </option>
                     {% endfor %}
                 </select>
+
             </div>
 
             <!-- Materials List (Right) -->
@@ -63,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
         handle: '.material-handle',
         animation: 150,
         onEnd: function() {
-            // Cập nhật giá trị thứ tự sau khi kéo thả
+            // Update the order after drag and drop
             var items = el.getElementsByTagName('li');
             for (var i = 0; i < items.length; i++) {
                 var id = items[i].getAttribute('data-id');

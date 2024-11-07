@@ -4,7 +4,6 @@
 {% block title %}User List{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/user_list.css' %}">
 <div class="container mt-4">
     <ul class="nav nav-tabs">
         <li class="nav-item">
@@ -17,21 +16,86 @@
 
     <div class="mt-3">
         <div class="d-flex justify-content-between align-items-center">
-            <div class="btn-group mt-3">
+            <div class="mt-3">
+                {% if request.user.is_authenticated and can_add_user %}
+                    <a href="{% url 'user:user_add' %}" class="btn btn-primary" title="Add New User">
+                        <i class="fas fa-plus"></i> Add User
+                    </a>
+                {% endif %}
+                {% if request.user.is_authenticated and can_delete_user %}
+                    <button type="button" id="delete_button" class="btn btn-danger" title="Delete Selected Users" data-bs-toggle="tooltip">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                {% endif %}
                 {% if request.user.is_authenticated and can_export_users %}
-                    <button class="btn btn-secondary" title="Export Users" data-toggle="modal" data-target="#exportModal" data-toggle="tooltip">
+                    <!-- Button to open Import Modal -->
+                    <button class="btn btn-success" title="Import Users" data-bs-toggle="modal" data-bs-target="#importModal">
+                        <i class="fas fa-file-import"></i> Import
+                    </button>
+                
+                    <!-- Modal for Import -->
+                    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document" style="max-width: 100vw;">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="importModalLabel">Import Users</h5>
+                                    <button type="button" class="btn-close" id="closeImportModal" data-bs-dismiss="modal" aria-label="Close"></button>                                    
+                                </div>
+                                <form id="importForm" method="POST" enctype="multipart/form-data" action="{% url 'user:import_users' %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body text-center">
+                                        <h5>Choose a file (XLSX, CSV, JSON)</h5>
+                                        <div id="drop_area" class="drag-area">
+                                            <p>Drag and drop file here or click to browse</p>
+                                            <small>Limit 200MB per file • <span id="fileName"></span></small>
+                                            <input type="file" id="file" name="file" class="form-control" accept=".xlsx, .csv, .json" style="display: none;">
+                                        </div>                                  
+                
+                                        <!-- Table to display file content -->
+                                        <div id="filePreview" style="display:none;" class="file-preview mt-3">
+                                            <h5>File Preview</h5>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <!-- Search icon on the left -->
+                                                <div class="d-flex align-items-center me-auto">
+                                                    <div class="btn btn-success" style="margin-right: 1vh;">Search</div>
+                                                    <input type="text" id="searchInput" placeholder="Searching..." class="search-input">
+                                                </div>
+                                                
+                                                <!-- Confirm Import button on the right -->
+                                                <button type="submit" id="confirmImport" class="btn btn-primary" disabled>Confirm Import</button>
+                                            </div>
+                                        
+                                            <div class="table-responsive" style="max-height: 65vh;">
+                                                <table class="table" id="previewTable">
+                                                    <thead>
+                                                        <tr id="previewHeader">
+                                                            <!-- Add <th> tags here -->
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="previewBody">
+                                                        <!-- Add data rows here -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>                                                                             
+
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-info" title="Export Users" data-bs-toggle="modal" data-bs-target="#exportModal">
                         <i class="fas fa-file-export"></i> Export
                     </button>
 
                     <!-- Modal Export -->
-                    <div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
+                    <div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered custom-small-modal" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="exportModalLabel">Export Users</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <form method="GET" action="{% url 'user:export_users' %}">
                                     <div class="modal-body">
@@ -46,7 +110,7 @@
                                         <input type="hidden" name="q" value="{{ query }}">
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                         <button type="submit" class="btn btn-primary">Export</button>
                                     </div>
                                 </form>
@@ -54,46 +118,37 @@
                         </div>
                     </div>
                 {% endif %}
-                <a href="{% url 'user:user_list' %}" class="btn btn-secondary" title="Refresh User List" id="refresh_button">
+                <a href="{% url 'user:user_list' %}" class="btn btn-warning" title="Refresh User List" id="refresh_button">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </a>
             </div>
-            <form method="GET" action="{% url 'user:user_list' %}" class="form-inline">
+            <form method="GET" action="{% url 'user:user_list' %}">
                 <div class="input-group">
-                    <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control" placeholder="Search users..." aria-label="Search users">
-                    <select name="role" class="form-control ms-2">
+                    <input type="text" name="q" value="{{ query|default_if_none:'' }}" 
+                           class="form-control me-2 " 
+                           placeholder="Search users..." aria-label="Search users" >
+                    
+                    <select name="role" class="form-select me-2">
                         <option value="">Select Role</option>
                         {% for role in roles %}
-                            <option value="{{ role.role_name }}" {% if role.role_name == selected_role %}selected{% endif %}>{{ role.role_name }}</option>
+                            <option value="{{ role.role_name }}" {% if role.role_name == selected_role %}selected{% endif %}>
+                                {{ role.role_name }}
+                            </option>
                         {% endfor %}
                     </select>
-                    <button type="submit" class="btn btn-outline-success ms-2">Search</button>
+                    
+                    <button type="submit" class="btn btn-outline-success" >Search</button>
                 </div>
-            </form>  
+            </form>                    
         </div>
 
         <!-- Form xử lý xóa nhiều người dùng -->
         <form id="delete_form" method="POST" action="{% url 'user:user_delete' %}">
             {% csrf_token %}
-            <div class="btn-group mt-3">
-                {% if request.user.is_authenticated and can_add_user %}
-                    <a href="{% url 'user:user_add' %}" class="btn btn-primary" title="Add New User">
-                        <i class="fas fa-plus"></i> Add User
-                    </a>
-                {% endif %}
-                {% if request.user.is_authenticated and can_delete_user %}
-                    <button type="button" id="delete_button" class="btn btn-danger" title="Delete Selected Users" data-toggle="tooltip">
-                        <i class="fas fa-trash-alt"></i> Delete
-                    </button>
-                {% endif %}
-            </div>
-        
             <table class="table table-striped mt-3">
                 <thead>
                     <tr>
-                        <th>
-                            <input type="checkbox" id="select_all">
-                        </th>
+                        <th><input type="checkbox" id="select_all" class="form-check-input"></th>
                         <th>#</th>
                         <th>Username</th>
                         <th>Email</th>
@@ -101,18 +156,13 @@
                         {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %}
                             <th>Role</th>
                         {% endif %}
-                        <th class="text-center">Profile Picture</th>
-                        {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %}
-                            <th>Actions</th>
-                        {% endif %}
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for user in users %}
                     <tr>
-                        <td>
-                            <input type="checkbox" name="selected_users" value="{{ user.pk }}" class="user-checkbox">
-                        </td>
+                        <td><input type="checkbox" name="selected_users" value="{{ user.pk }}" id="userCheckbox{{ user.pk }}" class="form-check-input"></td>
                         <td>{{ users.number|add:'-1'|multiply:5|add:forloop.counter }}</td>
                         <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
@@ -120,21 +170,14 @@
                         {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %}
                             <td>{{ user.profile.role.role_name }}</td>
                         {% endif %}
-                        <td class="text-center">
-                            {% if user.profile.profile_picture_url %}
-                                <img src="{{ user.profile.profile_picture_url }}" alt="Profile Picture" class="img-fluid" style="width: 100px; height: 100px; object-fit: cover; margin: auto; display: block;">
-                            {% else %}
-                                No image
-                            {% endif %}
-                        </td>
                         <td>
                             {% if request.user.is_authenticated and can_detail_user %}
-                                <a href="{% url 'user:user_detail' user.pk %}" class="btn btn-info btn-sm" title="View User Details" data-toggle="tooltip">
-                                    <i class="fas fa-info-circle"></i>
+                                <a href="{% url 'user:user_detail' user.pk %}" class="btn btn-outline-dark btn-sm" title="View User Details" data-bs-toggle="tooltip">
+                                    <i class="fas fa-eye"></i>
                                 </a>
                             {% endif %}
                             {% if request.user.is_authenticated and can_edit_user %}
-                                <a href="{% url 'user:user_edit' user.pk %}" class="btn btn-warning btn-sm" title="Edit User" data-toggle="tooltip">
+                                <a href="{% url 'user:user_edit' user.pk %}" class="btn btn-outline-dark btn-sm" title="Edit User" data-bs-toggle="tooltip">
                                     <i class="fas fa-edit"></i>
                                 </a>
                             {% endif %}
@@ -143,11 +186,8 @@
                     {% endfor %}
                 </tbody>
             </table>
-            
-        </form>
-        
+        </form>        
 
-        <!-- Phân trang -->
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
@@ -162,15 +202,19 @@
                         </a>
                     </li>
                 {% endif %}
-
+        
                 {% for num in page_obj.paginator.page_range %}
                     {% if page_obj.number == num %}
-                        <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
                     {% else %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}&search={{ query }}">{{ num }}</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}&search={{ query }}">{{ num }}</a>
+                        </li>
                     {% endif %}
                 {% endfor %}
-
+        
                 {% if page_obj.has_next %}
                     <li class="page-item">
                         <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ query }}" aria-label="Next">
@@ -185,93 +229,21 @@
                 {% endif %}
             </ul>
         </nav>
-
-        <!-- Thông báo -->
+        
         {% if messages %}
             <div class="mt-3">
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                         <i class="fas fa-{{ message.tags }}"></i>
                         {{ message }}
-                       
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             </div>
         {% endif %}
-        <!-- ############### IMPORT##################### -->
-        <form id="importForm" method="POST" enctype="multipart/form-data" action="{% url 'user:import_users' %}">
-            {% csrf_token %}
-            <div class="mt-4 text-center">
-                <h5>Choose a file (XLSX, CSV, JSON)</h5>
-                <div id="drop_area" class="drag-area" style="border: 2px dashed #ccc; padding: 30px; cursor: pointer;">
-                    <p>Drag and drop file here or click to browse</p>
-                    <small>Limit 200MB per file • <span id="fileName"></span></small>
-                    <input type="file" id="file" name="file" class="form-control" accept=".xlsx, .csv, .json" style="display: none;">
-                </div>
-            </div>
-        
-            <!-- Table to display file content -->
-            <div id="filePreview" style="display:none;" class="file-preview mt-3">
-                <h5>File Preview</h5>
-                <div id="searchContainer" style="display: none;">
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm...">
-                </div>
-                <div id="searchIcon" style="display: none; cursor: pointer;">🔍</div>
-                <div id="fullscreenIcon" style="display: none; cursor: pointer;">🖥️</div>
-            
-                <div class="previewTable" style="overflow: auto; border: 1px solid #ccc;">
-                    <table class="table table-bordered" id="previewTable" style="width: 100%;">
-                        <thead>
-                            <tr id="previewHeader">
-                                <!-- Thêm các thẻ <th> vào đây -->
-                            </tr>
-                        </thead>
-                        <tbody id="previewBody">
-                            <!-- Thêm các dòng dữ liệu vào đây -->
-                        </tbody>
-                    </table>
-                </div>
-            
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="closeButton">Close</button>
-                    <button type="submit" id="confirmImport" class="btn btn-primary" disabled>Confirm Import</button>
-                </div>
-            </div>
-            
-        
-            
-            
-            
-        </form>
     </div>
 </div>
 
-<script>
-    document.getElementById('fullscreenIcon').addEventListener('click', function() {
-        const previewTable = document.querySelector('.previewTable'); // Lấy bảng xem trước
-        const navbar = document.querySelector('.navbar'); // Lấy thanh navbar
-        const pagination = document.querySelector('.pagination'); // Lấy phần phân trang
-        const body = document.body; // Lấy thẻ body
-        
-        previewTable.classList.toggle('fullscreen'); // Thay đổi trạng thái full screen
-        
-        if (previewTable.classList.contains('fullscreen')) {
-            this.innerHTML = '❌'; // Thay đổi biểu tượng thành nút thoát
-            navbar.classList.add('navbar-hidden'); // Ẩn navbar
-            pagination.style.display = 'none'; // Ẩn phần phân trang
-            previewTable.style.zIndex = '999999'; // Đảm bảo bảng nằm trên cùng
-            body.classList.add('fullscreen'); // Thêm lớp để ẩn thanh cuộn
-            window.scrollTo(0, 0); // Cuộn lên đầu trang
-        } else {
-            this.innerHTML = '🖥️'; // Khôi phục biểu tượng phóng to
-            navbar.classList.remove('navbar-hidden'); // Hiển thị lại navbar
-            pagination.style.display = ''; // Hiển thị lại phần phân trang
-            previewTable.style.zIndex = ''; // Khôi phục z-index ban đầu
-            body.classList.remove('fullscreen'); // Xóa lớp để hiển thị thanh cuộn
-        }
-    });
-    
-</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const dropArea = document.getElementById('drop_area');
@@ -282,14 +254,7 @@
         const confirmImportButton = document.getElementById('confirmImport');
         const fileNameDisplay = document.getElementById('fileName');
         const searchInput = document.getElementById('searchInput');
-        const searchContainer = document.getElementById('searchContainer'); // Ô tìm kiếm
-        const searchIcon = document.getElementById('searchIcon'); // Biểu tượng tìm kiếm
-        const fullscreenIcon = document.getElementById('fullscreenIcon');
         
-        let hideIconsTimeout;
-        let isFullscreen = false; // Biến để kiểm tra trạng thái fullscreen
-        let previousStyles = {};
-
         // Khi nhấp vào vùng kéo và thả, mở hộp thoại tệp
         dropArea.addEventListener('click', function() {
             fileInput.click();
@@ -366,7 +331,7 @@
                 alert("Định dạng tệp không được hỗ trợ.");
             }
         }
-        
+
         // Cập nhật hàm displayPreview để xử lý JSON, CSV, và TSV
         function displayPreview(content, fileType) {
             const rows = [];
@@ -395,9 +360,11 @@
             previewBody.innerHTML = rows.join('');
             filePreview.style.display = 'block';
             confirmImportButton.disabled = false;
+
+            // Thiết lập chức năng tìm kiếm
             setupSearchFunctionality(rows, headers);
         }
-        
+
         // Hàm hiển thị bản xem trước cho tệp YAML
         function displayYAMLPreview(content) {
             try {
@@ -414,11 +381,12 @@
                 previewBody.innerHTML = rows.join('');
                 filePreview.style.display = 'block';
                 confirmImportButton.disabled = false;
+
+                // Thiết lập chức năng tìm kiếm
                 setupSearchFunctionality(rows, headers);
             } catch (e) {
                 alert("Lỗi khi xử lý tệp YAML: " + e.message);
             }
-            
         }
         
         // Hàm hiển thị bản xem trước cho tệp Excel
@@ -448,7 +416,7 @@
             filePreview.style.display = 'block';
             confirmImportButton.disabled = false;
         
-            // Đặt sự kiện cho tìm kiếm
+            // Thiết lập chức năng tìm kiếm
             setupSearchFunctionality(rows, headers);
         }
         
@@ -460,159 +428,105 @@
     
         // Hàm thiết lập chức năng tìm kiếm
         function setupSearchFunctionality(rows, headers) {
-            // Hiển thị biểu tượng tìm kiếm khi di chuột vào bảng
-            previewBody.parentElement.addEventListener('mouseenter', function() {
-                searchIcon.style.display = 'inline';
-                fullscreenIcon.style.display = 'inline';
-                clearTimeout(hideIconsTimeout);
-            });
-        
-            // Ẩn biểu tượng tìm kiếm và toàn màn hình khi rời khỏi bảng
-            previewBody.parentElement.addEventListener('mouseleave', function() {
-                hideIconsTimeout = setTimeout(() => {
-                    searchIcon.style.display = 'none'; 
-                    fullscreenIcon.style.display = 'none'; 
-                }, 1000);
-            });
-        
-            // Hiển thị thanh tìm kiếm khi nhấp vào biểu tượng tìm kiếm
-            searchIcon.addEventListener('click', function(event) {
-                event.stopPropagation(); 
-                if (searchContainer.style.display === 'block') {
-                    searchContainer.style.display = 'none'; 
-                } else {
-                    searchContainer.style.display = 'block'; 
-                    searchInput.focus(); 
-                }
-            });
-        
             // Sự kiện tìm kiếm
             searchInput.addEventListener('input', function() {
                 const searchTerm = searchInput.value.toLowerCase();
-                const filteredRows = rows.filter(row => row.toLowerCase().includes(searchTerm));
-                previewBody.innerHTML = filteredRows.join('');
-            });
-        
-            // Đóng thanh tìm kiếm khi nhấp ra ngoài
-            document.addEventListener('click', function(event) {
-                if (!searchContainer.contains(event.target) && searchContainer.style.display === 'block') {
-                    searchContainer.style.display = 'none';
-                }
-            });
-        
-            // Chức năng xem toàn màn hình
-            fullscreenIcon.addEventListener('click', function() {
-                toggleFullscreen(previewBody.parentElement);
+                const allRows = previewBody.querySelectorAll('tr'); // Lấy tất cả các hàng trong bảng
+    
+                allRows.forEach(row => {
+                    const rowData = row.innerText.toLowerCase(); // Lấy dữ liệu của hàng
+                    if (rowData.includes(searchTerm)) {
+                        row.style.display = ''; // Hiển thị hàng nếu có từ khóa tìm kiếm
+                    } else {
+                        row.style.display = 'none'; // Ẩn hàng nếu không có từ khóa tìm kiếm
+                    }
+                });
             });
         }
         
-        // Thêm sự kiện click cho biểu tượng phóng to
-        fullscreenIcon.addEventListener('click', function() {
-            if (filePreview.classList.contains('fullscreen')) {
-                // Nếu đang ở chế độ phóng to, khôi phục lại kích thước ban đầu
-                filePreview.classList.remove('fullscreen'); // Xóa lớp fullscreen
-                filePreview.style.width = '1100px'; // Đặt lại chiều rộng
-                filePreview.style.height = '400px'; // Đặt lại chiều cao
-                filePreview.style.position = ''; // Khôi phục thuộc tính position
-                filePreview.style.backgroundColor = ''; // Khôi phục màu nền
-                filePreview.style.color = ''; // Khôi phục màu chữ
-            } else {
-                // Nếu chưa ở chế độ phóng to, yêu cầu phóng to
-                filePreview.classList.add('fullscreen'); // Thêm lớp fullscreen
-                adjustFullScreenStyles(); // Gọi hàm điều chỉnh kiểu dáng
+        // Thêm sự kiện để xóa dữ liệu khi đóng modal
+        document.getElementById('closeImportModal').addEventListener('click', function() {
+            const importModal = new bootstrap.Modal(document.getElementById('importModal'), {});
+            importModal.hide();
+
+            // Reset dữ liệu
+            fileInput.value = ""; // Xóa tệp đã chọn
+            fileNameDisplay.textContent = ""; // Xóa tên tệp hiển thị
+            previewHeader.innerHTML = ""; // Xóa tiêu đề
+            previewBody.innerHTML = ""; // Xóa nội dung bản xem trước
+            filePreview.style.display = 'none'; // Ẩn bảng bản xem trước
+            confirmImportButton.disabled = true; // Vô hiệu hóa nút xác nhận
+            searchInput.value = ""; // Xóa ô tìm kiếm
+        });
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const storedCheckboxes = JSON.parse(localStorage.getItem('selectedUsers')) || {};
+        const checkboxes = document.querySelectorAll('input[name="selected_users"]');
+    
+        // Cập nhật trạng thái checkbox dựa trên localStorage
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = storedCheckboxes[checkbox.value] || false;
+        });
+    
+        // Lưu trạng thái checkbox vào localStorage khi checkbox được thay đổi
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                storedCheckboxes[checkbox.value] = checkbox.checked;
+                localStorage.setItem('selectedUsers', JSON.stringify(storedCheckboxes));
+            });
+        });
+    
+        // Chọn tất cả checkbox
+        const selectAllCheckbox = document.getElementById('select_all');
+        selectAllCheckbox.addEventListener('change', function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+                storedCheckboxes[checkbox.value] = checkbox.checked; // Cập nhật trạng thái cho tất cả
+            });
+            localStorage.setItem('selectedUsers', JSON.stringify(storedCheckboxes));
+        });
+    
+        // Xóa người dùng đã chọn
+        document.getElementById('delete_button').addEventListener('click', function() {
+            const selectedUsers = Object.keys(storedCheckboxes).filter(userId => storedCheckboxes[userId]);
+            
+            if (selectedUsers.length === 0) {
+                alert('Please select at least one user to delete.');
+                return;
+            }
+            if (confirm('Are you sure you want to delete the selected users?')) {
+                const deleteForm = document.getElementById('delete_form');
+    
+                // Tạo các input ẩn để gửi các giá trị đã chọn
+                selectedUsers.forEach(userId => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'selected_users'; // Tên phải khớp với tên trong form
+                    input.value = userId;
+                    deleteForm.appendChild(input);
+                });
+    
+                // Reset trạng thái checkbox trong localStorage
+                selectedUsers.forEach(userId => {
+                    delete storedCheckboxes[userId]; // Xóa người dùng đã chọn khỏi localStorage
+                });
+                localStorage.setItem('selectedUsers', JSON.stringify(storedCheckboxes));
+                deleteForm.submit(); // Gửi form xóa
             }
         });
-
-        // Hàm điều chỉnh kiểu dáng cho chế độ toàn màn hình
-        function adjustFullScreenStyles() {
-            filePreview.style.width = '100vw'; // Chiếm toàn bộ chiều rộng
-            filePreview.style.height = '100vh'; // Chiếm toàn bộ chiều cao
-            filePreview.style.position = 'fixed'; // Đặt vị trí cố định
-            filePreview.style.top = '0'; // Đặt phần tử ở trên cùng
-            filePreview.style.left = '0'; // Đặt phần tử ở bên trái
-            filePreview.style.backgroundColor = 'white'; // Màu nền trắng
-            filePreview.style.color = 'black'; // Màu chữ đen
-        }
-
-        // Hàm lọc hàng trong bảng dựa trên từ khóa tìm kiếm
-        function filterRows(rows, headers, searchTerm) {
-            const filteredRows = rows.filter(row => {
-                const rowData = row.replace(/<td>|<\/td>/g, '').toLowerCase(); // Chuyển đổi hàng thành chuỗi và loại bỏ thẻ td
-                return rowData.includes(searchTerm);
-            });
-            previewBody.innerHTML = filteredRows.length > 0 ? filteredRows.join('') : '<tr><td colspan="' + headers.length + '">Không tìm thấy kết quả.</td></tr>';
-        }
-
-    });
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const storedCheckboxes = JSON.parse(localStorage.getItem('selectedUsers')) || {};
-    const checkboxes = document.querySelectorAll('input[name="selected_users"]');
-
-    // Cập nhật trạng thái checkbox dựa trên localStorage
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = storedCheckboxes[checkbox.value] || false;
-    });
-
-    // Lưu trạng thái checkbox vào localStorage khi checkbox được thay đổi
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            storedCheckboxes[checkbox.value] = checkbox.checked;
-            localStorage.setItem('selectedUsers', JSON.stringify(storedCheckboxes));
-        });
-    });
-
-    // Chọn tất cả checkbox
-    const selectAllCheckbox = document.getElementById('select_all');
-    selectAllCheckbox.addEventListener('change', function() {
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = selectAllCheckbox.checked;
-            storedCheckboxes[checkbox.value] = checkbox.checked; // Cập nhật trạng thái cho tất cả
-        });
-        localStorage.setItem('selectedUsers', JSON.stringify(storedCheckboxes));
-    });
-
-    // Xóa người dùng đã chọn
-    document.getElementById('delete_button').addEventListener('click', function() {
-        const selectedUsers = Object.keys(storedCheckboxes).filter(userId => storedCheckboxes[userId]);
-        
-        if (selectedUsers.length === 0) {
-            alert('Please select at least one user to delete.');
-            return;
-        }
-        if (confirm('Are you sure you want to delete the selected users?')) {
-            const deleteForm = document.getElementById('delete_form');
-
-            // Tạo các input ẩn để gửi các giá trị đã chọn
-            selectedUsers.forEach(userId => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'selected_users'; // Tên phải khớp với tên trong form
-                input.value = userId;
-                deleteForm.appendChild(input);
-            });
-
-            // Reset trạng thái checkbox trong localStorage
-            selectedUsers.forEach(userId => {
-                delete storedCheckboxes[userId]; // Xóa người dùng đã chọn khỏi localStorage
-            });
-            localStorage.setItem('selectedUsers', JSON.stringify(storedCheckboxes));
-            deleteForm.submit(); // Gửi form xóa
-        }
-    });
-    // Xóa dữ liệu trong localStorage khi nhấn nút Refresh
-    document.getElementById('refresh_button').addEventListener('click', function() {
-        localStorage.removeItem('selectedUsers');
-    });
-});
     
-
-// Khởi tạo tooltip nếu cần
-$(function () {
-    $('[data-toggle="tooltip"]').tooltip();
-});
-</script>
-
+        // Xóa dữ liệu trong localStorage khi nhấn nút Refresh
+        document.getElementById('refresh_button').addEventListener('click', function() {
+            localStorage.removeItem('selectedUsers');
+        });
+    
+        // Khởi tạo tooltip cho Bootstrap 5
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>   
 {% endblock %}

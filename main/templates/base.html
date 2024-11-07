@@ -29,9 +29,9 @@
                     {% if request.user.is_authenticated %}
                         
                         {% include 'notification_bell.html' %}
-                        <li class="nav-item">
+                        <li class="nav-item text-light">
                             <a class="nav-link" href="{% url 'student_portal:course_list' %}">
-                                <i class="fas fa-user-graduate"></i> Learning
+                                <i class="fas fa-user-graduate"></i> Go to Learn
                             </a>
                         </li>
                         <li class="nav-item">
@@ -67,8 +67,8 @@
     </nav>
 
     <!-- Sidebar and Main Content -->
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid ">
+        <div class="row mt-5">
             <!-- Sidebar -->
             <nav id="sidebar" class="col-md-3 col-lg-2 bg-dark pt-3 vh-100 d-flex flex-column position-fixed" style="height: 100vh; overflow-y: auto;">
                 <ul class="nav flex-column">

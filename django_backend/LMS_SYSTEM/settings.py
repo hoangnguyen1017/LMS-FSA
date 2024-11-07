@@ -12,6 +12,14 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+import logging
+
+# Load environment variables from the .env file
+load_dotenv()
+
+# Now you can access environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,23 +29,13 @@ LOGIN_URL = 'login'  # Default URL to redirect if not logged in
 LOGIN_REDIRECT_URL = ''
 
 # Add or update media settings for handling uploaded files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-
 # STATIC_URL = '/staticfiles/'
 # STATIC_URL for development
-STATIC_URL = '/static/'
-
-# STATICFILES_DIRS is correct - it tells Django where to look for static files
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # Custom static files directory
-]
-
 
 # settings.py
 AUTH_USER_MODEL = 'user.User'  # Change 'user' to the name of your app
@@ -93,7 +91,6 @@ INSTALLED_APPS = [
     'ckeditor_uploader',  #Optional: if you want to allow image uploads
     'widget_tweaks',
 
-    
     'module_group',
     'training_program',
     'subject', 'student_materials', #for FSA subject
@@ -103,24 +100,24 @@ INSTALLED_APPS = [
     'exercises', #Binh_Thang
     #ngattt
     'assessments', 'reports', 'group_enrollment', 'mylearning', 'certification', 
-    'learning_path',
+    'learning_path', 'backup', 'student_portal', #'quiz_generator',
 
     #group01
-    'user', 'role', 'department', 
+    'user', 'role', 'department', 'team',
 
     #group02
     'course', 'feedback', 'forum', 
 
     #group03
-    'quiz', 'std_quiz', 'course_Truong', 'tools', # 'std_course',
+    'quiz', 'tools', # 'std_course', 'course_Truong', 'std_quiz', 
 
     #group04
     'chat', 'chatapp', 'thread', 'collaboration_group', 
 
     #group05 
-    'activity', 'ai_insights', 'analytics_report', 'assignment', 'certificate', #'course_completion',  
-    'performance_analytics', 'progress_notification', 'student_performance', 
-    'user_progress', 'user_summary', 'book'
+    'activity', 'analytics_report', 'book', 'progress_notification',
+    'achievement', 'quiz_bank', # -- add this app
+
 ]
 
 MIDDLEWARE = [
@@ -161,12 +158,6 @@ WSGI_APPLICATION = 'LMS_SYSTEM.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 
 # DATABASES = {
 #     'default': {
@@ -197,21 +188,62 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LANGUAGE_CODE = 'en-us'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
-
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# SERVER CONFIG, DO NOT MODIFY!!!!!
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
+USE_TZ = False
+USE_I18N = True
+
+
+if os.getenv("DATABASE_USER") is not None:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv("DATABASE_NAME"),
+            'USER': os.getenv("DATABASE_USER"),
+            'PASSWORD': os.getenv("DATABASE_PASSWORD"),
+            'HOST': os.getenv("DATABASE_HOST_NAME"),  # Set to the appropriate host if using a remote server
+            'PORT': '5432',       # Default PostgreSQL port
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+
+logging.basicConfig(
+    level=logging.INFO, format='%(levelname)-4s - "%(name)s": %(message)s'
+)
+
+# secure config
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_HSTS_SECONDS = 31536000  # 1 year
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+CSRF_TRUSTED_ORIGINS = ['https://lms.truong51972.id.vn']

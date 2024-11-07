@@ -16,4 +16,12 @@ urlpatterns = [
     path('tag-report/', views.tag_report, name='tag_report'),
     path('user-progress/', views.user_progress_report, name='user_progress_report'),
     path('instructor-performance/', views.instructor_performance_report, name='instructor_performance_report'),
+    path('user_overview_report/', views.user_overview_report, name='user_overview_report'),  
+    path('student-id-report/', views.student_id_report, name='student_id_report'),
+    path('students/<str:cohort>/', views.get_students_by_cohort, name='get_students_by_cohort'),
+    path('role-report/', views.role_report, name='role_report'),
+    path('user_statistics_report/', views.user_statistics_report, name='user_statistics_report'),  
+    path('login-frequency-report/', views.login_frequency_report, name='login_frequency_report'),
+    path('user_duration_login/', views.user_duration_login, name='user_duration_login'),
+
 ]

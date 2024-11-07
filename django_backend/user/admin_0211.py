@@ -125,6 +125,58 @@ class ProfileInline(admin.StackedInline):
     can_delete = True
     verbose_name_plural = 'Profiles'
 
+<<<<<<< HEAD:django_backend/user/admin_0211.py
+# Cập nhật CustomUserAdmin
+from import_export.results import RowResult
+class CustomUserAdmin(ImportExportModelAdmin, BaseUserAdmin):
+    resource_class = UserProfileResource
+    def _create_log_entries(self, result, request):
+        # Kiểm tra xem result có phải là một đối tượng hợp lệ và có thuộc tính totals
+        if isinstance(result, RowResult):
+            # Đảm bảo rằng trường 'skip' tồn tại trong kết quả
+            if 'skip' not in result.totals:
+                result.totals['skip'] = 0  # Gán giá trị mặc định là 0 nếu không có
+        else:
+            print("Result is not a valid RowResult object.")
+            return
+
+        # Gọi phương thức gốc của ImportExportModelAdmin
+        super()._create_log_entries(result, request)
+
+
+    list_display = ('username', 'first_name', 'last_name', 'email', 'get_role', 'is_staff', 'is_active', 'date_joined')
+    list_filter = ('is_staff', 'is_active', 'is_superuser', 'groups')
+    readonly_fields = ('date_joined',)
+
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),  # Ensure 'password' field is handled properly
+        ('Personal Info', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Modules', {'fields': ('modules',)}),
+        ('Important dates', {'fields': ('last_login', 'date_joined')}), 
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'is_staff', 'is_active', 'modules')},
+        ),
+    )
+    filter_horizontal = ('groups', 'user_permissions', 'modules')
+
+    search_fields = ('username', 'email', 'first_name', 'last_name')
+    ordering = ('username',)
+    inlines = [ProfileInline]
+
+    def get_role(self, obj):
+        return obj.profile.role.role_name if hasattr(obj, 'profile') and obj.profile.role else 'No Role'
+    get_role.short_description = 'Role'
+
+if User in admin.site._registry:
+    admin.site.unregister(User)
+
+admin.site.register(User, CustomUserAdmin)
+=======
 # # Cập nhật CustomUserAdmin
 # from import_export.results import RowResult
 # class CustomUserAdmin(ImportExportModelAdmin, BaseUserAdmin):
@@ -175,6 +227,7 @@ class ProfileInline(admin.StackedInline):
 #     admin.site.unregister(User)
 
 # admin.site.register(User, CustomUserAdmin)
+>>>>>>> main:user/admin_0211.py
 
 
 class StudentResource(resources.ModelResource):
@@ -192,5 +245,14 @@ class StudentAdmin(ImportExportModelAdmin):
         return ", ".join(course.course_name for course in obj.enrolled_courses.all())
     enrolled_courses_display.short_description = 'Enrolled Courses'
 
+<<<<<<< HEAD:django_backend/user/admin_0211.py
+<<<<<<<< HEAD:django_backend/user/admin_0211.py
 # admin.site.register(Student, StudentAdmin)
 # admin.site.register(User)
+========
+admin.site.register(Student, StudentAdmin)
+>>>>>>>> main:user/admin.py
+=======
+# admin.site.register(Student, StudentAdmin)
+# admin.site.register(User)
+>>>>>>> main:user/admin_0211.py

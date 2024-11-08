@@ -78,6 +78,8 @@ urlpatterns = [
     #group06 - Binh_Thang - Coding
     path('exercises/', include('exercises.urls')), 
     path('assessments/', include('assessments.urls')),
-    path('reports/', include('reports.urls'))
+    path('reports/', include('reports.urls')),
+
+    path('cheat_logger/', include('cheat_logger.urls'))
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

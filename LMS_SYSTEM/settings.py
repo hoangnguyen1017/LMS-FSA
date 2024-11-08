@@ -117,7 +117,7 @@ INSTALLED_APPS = [
     #group05 
     'activity', 'analytics_report', 'book', 'progress_notification',
     'achievement', 'quiz_bank', # -- add this app
-
+    'cheat_logger',
 ]
 
 MIDDLEWARE = [

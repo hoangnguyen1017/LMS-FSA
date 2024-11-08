@@ -46,19 +46,22 @@ def update_quiz_progress(sender, instance, **kwargs):
 
 @receiver(post_save, sender=StudentAssessmentAttempt)
 def update_user_progress(sender, instance, **kwargs):
-    user_id = instance.user.id
-    course_id = instance.assessment.course.id
-    total, attempts = calculate(user_id, course_id)
+    try:
+        user_id = instance.user.id
+        course_id = instance.assessment.course.id
+        total, attempts = calculate(user_id, course_id)
 
-    percent = round(attempts / total * 100, 2) if total > 0 else 0
+        percent = round(attempts / total * 100, 2) if total > 0 else 0
+        
+        progress, _ = UserProgress.objects.get_or_create(
+            user=instance.user,
+            course=instance.assessment.course
+        )
+        progress.progress_percentage = percent
+        progress.save()
+    except:
+        pass
     
-    progress, _ = UserProgress.objects.get_or_create(
-        user=instance.user,
-        course=instance.assessment.course
-    )
-    progress.progress_percentage = percent
-    progress.save()
-
 @receiver([post_save, post_delete], sender=Enrollment)
 def update_enrollment_progress(sender, instance, **kwargs):
     if kwargs.get('created', False):  # Sự kiện post_save

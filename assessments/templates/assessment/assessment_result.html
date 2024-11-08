@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'basePortal.html' %}
 {% load static %}  <!-- Load static files -->
 {% block title %}{{ assessment.assessment_title }}{% endblock %}
 
@@ -80,7 +80,7 @@
     </div>
 
     <div class="alert alert-primary" role="alert">
-        <h4 class="alert-heading">Total Assessment Score: {{ score_ass }}</h4>
+        <h4 class="alert-heading">Total Assessment Score: {{ score_asm }}</h4>
     </div>
 </div>
 {% endblock %}

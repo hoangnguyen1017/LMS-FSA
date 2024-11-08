@@ -66,18 +66,22 @@ function scanning() {
     const imageData = canvas.toDataURL("image/jpeg");
 
     if (imageData.startsWith("data:image/jpeg")) {
+        id = getCookie("id");
+        target = getCookie("target");
         body = JSON.stringify({
+            id: id,
+            target: target,
             type: 'face',
             data: {
                 image: imageData,
             },
         })
-        fetch("face_detector/", {
+        fetch("/cheat_logger/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ image: imageData }),
+            body: body,
         }).then(response => response.json())
             .then(data => {
                 console.log(data);

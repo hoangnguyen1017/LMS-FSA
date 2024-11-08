@@ -18,7 +18,7 @@ models_mapping = {
 data_encryption = Data_Encryption()
 
 
-def __tab_behavior_logger(id, target, data):
+def __tab_behavior_logger(request, id, target, data):
     attempt = models_mapping[target].objects.get(pk=id)
 
     attempt.is_proctored = True
@@ -31,45 +31,52 @@ def __tab_behavior_logger(id, target, data):
     attempt.save()
 
 
-def __face_behavior_detector(id, target, data):
+def __face_behavior_detector(request, id, target, data):
     response = _request(api_name="face_detector", json=data)
     
     attempt = models_mapping[target].objects.get(pk=id)
     attempt.is_proctored = True
 
-    data = response.get('data', {})
-    last_face_behavior_state = cache.get(
-        f"face_behavior_{request.user.id}_{attempt_pk}", None
-    )
-    cache.set(f"face_behavior_{request.user.id}_{attempt_pk}", data, timeout=10)
+    response_data = response.get('data', {})
+    # last_face_behavior_state = request.session.get('face_behavior', None)
 
+    # request.session['face_behavior'] = response_data
+    # cache.set(f"face_behavior_{request.user.id}_{attempt_pk}", data, timeout=10)
+    # print(last_face_behavior_state)
+    # print(response_data)
 
-    if (last_face_behavior_state is None) or (last_face_behavior_state != data):
+    face_behavior_dict = attempt.proctoring_data.get("face_behavior", {})
+
+    last_face_behavior_state = face_behavior_dict.get(str(len(face_behavior_dict)), {}).get("data", {})
+
+    if (last_face_behavior_state != response_data):
         face_behavior = attempt.proctoring_data.get("face_behavior", {})
 
         # data_temp = data.copy()
-        data["time"] = datetime.datetime.now().timestamp()
+        response_data["time"] = datetime.datetime.now().timestamp()
 
-        face_behavior[len(face_behavior)] = data
+        face_behavior[len(face_behavior)] = response_data
 
         attempt.proctoring_data["face_behavior"] = face_behavior
 
     attempt.save()
 
     # print(response.json())
-    return JsonResponse(data)
+    # return JsonResponse(data)
     # return JsonResponse({"status": "ok"})
 
 
 behavior_logger_func_mapping = {
-    "tab" : __tab_behavior_logger
+    "tab" : __tab_behavior_logger,
+    "face" : __face_behavior_detector,
 }
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class Log(View):
     def post(self, request):
         try:
             data = json.loads(request.body)
-            print(data)
 
             encoded_id = data.get('id', None)
             assert encoded_id is not None, 'Empty ID!'
@@ -90,7 +97,7 @@ class Log(View):
             encrypted_target = urlsafe_base64_decode(encoded_target)
             target = data_encryption.str_decrypt(encrypted_target)
 
-            behavior_logger_func_mapping[type](id, target, data)
+            behavior_logger_func_mapping[type](request, id, target, data)
             
             return JsonResponse({"status": "ok"})
         except AssertionError as error:

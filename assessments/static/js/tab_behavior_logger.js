@@ -1,6 +1,6 @@
 function log_tab_behavior(time, behavior){
-    id = getCookie("id")
-    target = getCookie("target")
+    id = getCookie("id");
+    target = getCookie("target");
     body = JSON.stringify({
         id: id,
         target: target,

@@ -84,6 +84,9 @@ def _request(
     except requests.exceptions.RequestException as err:
         message = f"An error occurred: {err}!"
         is_error = True
+    except:
+        message = f"Undetected error!"
+        is_error = True
     finally:
         if is_error:
             if verbose:

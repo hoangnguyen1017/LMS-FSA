@@ -35,7 +35,7 @@ def feedback_list(request):
     training_feedbacks = TrainingProgramFeedback.objects.all()
 
     # Fetch instructors and courses
-    instructors = User.objects.filter(id__in=Course.objects.values_list('instructor_id', flat=True)).distinct()  # Assuming you have a role model for instructors
+    instructors = User.objects.filter(id__in=Course.objects.values_list('instructor_id', flat=True)).distinct() # Assuming you have a role model for instructors
     courses = Course.objects.all()
     training_programs = TrainingProgram.objects.all()
 

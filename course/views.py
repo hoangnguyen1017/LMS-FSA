@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Course, Enrollment, ReadingMaterial, Completion, Session, SessionCompletion, Topic, Tag, CourseMaterial
+from .models import Course, Enrollment, ReadingMaterial, Completion, Session, SessionCompletion, Topic, Tag, CourseMaterial, UserCourseProgress
 from .forms import CourseForm, EnrollmentForm, CourseSearchForm, SessionForm, TopicForm, TagForm, ReadingMaterialEditForm
 from module_group.models import ModuleGroup
 from django.contrib.auth.decorators import login_required
@@ -255,6 +255,9 @@ def course_unenroll(request, pk):
     if request.method == 'POST':
         # Unenroll the user and redirect to course list with a message
         if enrollment:
+            Completion.objects.filter(user=request.user, session__course=course).delete()
+            SessionCompletion.objects.filter(user=request.user, course=course).delete()
+            UserCourseProgress.objects.filter(user=request.user, course=course).delete()
             enrollment.delete()
             messages.success(request, f'You have been unenrolled from {course.course_name}.')
         return redirect('course:course_list')
@@ -1028,12 +1031,12 @@ def course_content_edit(request, pk, session_id):
             for uploaded_file, material_type in zip(uploaded_files, material_types):
                 file_name = remove_accents(uploaded_file.name)
                 file_name = file_name.replace(' ', '-').replace('_', '-')
-                course_name = course.course_name
-                course_name = course_name.replace(' ', '-').replace('_', '-')
-                file_path = default_storage.save(f'course_pdf/{course_name}_{file_name}', uploaded_file)
+                course_code = course.course_code
+                course_code = course_code.replace(' ', '-').replace('_', '-')
+                file_path = default_storage.save(f'course_pdf/{course_code}/{file_name}', uploaded_file)
                 file_url = default_storage.url(file_path)
 
-                iframe_html = f'<iframe src="{file_url}#toolbar=0" style="border: none;"></iframe>'
+                iframe_html = f'<iframe src="{file_url}#toolbar=0" style="border: none; width: 100%; height: 590px;"></iframe>'
 
                 if iframe_html:
                     # Create and save reading material with HTML content containing base64 images

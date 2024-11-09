@@ -192,32 +192,34 @@ class Take_assessment(View):
         )
 
         # Process each question
-        for question in questions:
-            # Fetch all selected option IDs for the question (adjust if using checkboxes or other multi-select elements)
-            selected_option_ids = request.POST.getlist(f'question_{question.id}')
-            text_response = request.POST.get(f'text_response_{question.id}')
+        if total_questions is not 0:
+            for question in questions:
+                # Fetch all selected option IDs for the question (adjust if using checkboxes or other multi-select elements)
+                selected_option_ids = request.POST.getlist(f'question_{question.id}')
+                text_response = request.POST.get(f'text_response_{question.id}')
 
-            # Initialize selected_options as an empty list to store AnswerOption instances
-            selected_options = []
+                # Initialize selected_options as an empty list to store AnswerOption instances
+                selected_options = []
 
-            # Populate selected_options with AnswerOption instances if IDs are valid
-            if selected_option_ids:
-                selected_options = AnswerOption.objects.filter(id__in=selected_option_ids)
+                # Populate selected_options with AnswerOption instances if IDs are valid
+                if selected_option_ids:
+                    selected_options = AnswerOption.objects.filter(id__in=selected_option_ids)
 
-            # Create a UserAnswer instance for the question, excluding selected_options for now
-            student_answer = UserAnswer.objects.create(
-                attempt=attempt,
-                question=question,
-                text_response=text_response  # Keep text_response field
-            )
+                # Create a UserAnswer instance for the question, excluding selected_options for now
+                student_answer = UserAnswer.objects.create(
+                    attempt=attempt,
+                    question=question,
+                    text_response=text_response  # Keep text_response field
+                )
 
-            # Set the selected options using the ManyToManyField's set method
-            student_answer.selected_options.set(selected_options)
+                # Set the selected options using the ManyToManyField's set method
+                student_answer.selected_options.set(selected_options)
 
-            # Optional: Count correct answers if selected options are supposed to be evaluated for correctness
-            correct_answers += sum(1 for option in selected_options if option.is_correct)
-
-        total_quiz_score = (total_marks / total_questions) * correct_answers
+                # Optional: Count correct answers if selected options are supposed to be evaluated for correctness
+                correct_answers += sum(1 for option in selected_options if option.is_correct)
+            total_quiz_score = (total_marks / total_questions) * correct_answers
+        else:
+            total_quiz_score = 0
 
         # Calculate and save exercise scores
         total_exercise_score = sum(

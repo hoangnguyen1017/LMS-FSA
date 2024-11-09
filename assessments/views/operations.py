@@ -37,6 +37,7 @@ from django.utils.decorators import decorator_from_middleware_with_args
 
 from cheat_logger.utils.encryption_handler import Data_Encryption
 
+import datetime
 
 
 def no_cache(view):
@@ -185,6 +186,10 @@ class Take_assessment(View):
         attempt = get_object_or_404(StudentAssessmentAttempt, id=attempt_id)
 
         correct_answers = 0
+        duration = round(
+            datetime.datetime.now().timestamp()
+            - attempt.attempt_date.timestamp()
+        )
 
         # Process each question
         for question in questions:
@@ -224,6 +229,7 @@ class Take_assessment(View):
         attempt.score_quiz = total_quiz_score
         attempt.score_ass = total_exercise_score
         attempt.is_submitted = True
+        attempt.duration = duration
         attempt.save()
         attempt_id = attempt.id  # Store the attempt_id after saving the attempt
         # Redirect to the results page with attempt details

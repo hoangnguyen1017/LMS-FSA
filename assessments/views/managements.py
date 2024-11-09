@@ -104,7 +104,7 @@ class Assessment_create(View):
             # Add selected questions to the assessment
             for question_id in selected_questions:
                 question = get_object_or_404(Question, id=question_id)
-                print(question)
+                # print(question)
                 assessment.questions.add(question)  # Add questions to the assessment
 
             messages.success(request, 'Assessment created successfully with exercises!')
@@ -143,12 +143,12 @@ class Assessment_edit(View):
         
         # Fetch selected exercises and questions for the assessment
         selected_exercises = assessment.exercises.values_list('id', flat=True)
-        print("selected_exercise is:  {selected_exercises}")
+        # print("selected_exercise is:  {selected_exercises}")
         # selected_questions = assessment.questions.values_list('id', flat=True)
         selected_question_ids = assessment.questions.values_list('id', flat=True)
-        print("selected_question_ids is:  {selected_question_ids}")
+        # print("selected_question_ids is:  {selected_question_ids}")
         selected_questions = Question.objects.filter(id__in=selected_question_ids)  # Fetching the actual Question objects
-        print(f"selected_questions is: {selected_questions}")
+        # print(f"selected_questions is: {selected_questions}")
         # selected_questions = assessment.questions.all()  # Fetching selected Question objects
         form = AssessmentForm(instance=assessment)
 
@@ -158,7 +158,7 @@ class Assessment_edit(View):
             'exercises': exercises,
             'questions': questions,
             'selected_exercises': selected_exercises,
-            'selected_questions': selected_questions, 
+            'selected_questions': selected_questions,
         })
     @method_decorator(login_required)
     def post(self, request, pk):
@@ -168,16 +168,16 @@ class Assessment_edit(View):
         
         if form.is_valid():
             form.save()
-            print("-----------------")
+            # print("-----------------")
             # Update associated exercises
             selected_exercise_ids = request.POST.getlist('selected_exercises')
-            print(f"form after post.getlist exercise {selected_exercise_ids}")
+            # print(f"form after post.getlist exercise {selected_exercise_ids}")
             assessment.exercises.set(selected_exercise_ids)  # Update the associated exercises
-            print(f"assessment is:  {assessment}")
-            print(f"assessment is:  { assessment.exercises}")
+            # print(f"assessment is:  {assessment}")
+            # print(f"assessment is:  { assessment.exercises}")
             # Update associated questions from the selected questions in the HTML
             selected_question_ids = request.POST.get('selected_questions', '').split(',')
-            print(f"selected_question_ids is {selected_question_ids}")
+            # print(f"selected_question_ids is {selected_question_ids}")
             selected_question_ids = [q_id for q_id in selected_question_ids if q_id]  # Filter out empty strings
             
             assessment.questions.set(selected_question_ids)  # Update the associated questions

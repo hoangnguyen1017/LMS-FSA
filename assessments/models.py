@@ -113,6 +113,8 @@ class StudentAssessmentAttempt(models.Model):
     email = models.EmailField(blank=True, null=True, verbose_name="Email Address")  # Optional email for anonymous users
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
 
+    duration = models.IntegerField(default=0)
+    
     # Scoring and feedback
     score_quiz = models.IntegerField(default=0, verbose_name="Quiz Score")
     score_ass = models.IntegerField(default=0, verbose_name="Assignment Score")
@@ -121,6 +123,8 @@ class StudentAssessmentAttempt(models.Model):
     # Additional fields to track user answers and submissions
     # user_answers = models.ForeignKey(UserAnswer, related_name='attempts', blank=True)
     # user_submissions = models.ManyToManyField('exercises.Submission', related_name='attempts', blank=True)
+
+
     is_submitted = models.BooleanField(default=False)
     is_proctored = models.BooleanField(default=False)
     proctoring_data = models.JSONField(null=True, default=dict)

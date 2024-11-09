@@ -10,7 +10,7 @@
     <h2 class="text-center mb-4">{% if assessment %}Edit Assessment{% else %}Create New Assessment{% endif %}</h2>
 
     {% if assessment.id %}
-    <a href="{% url 'assessment:take_assessment' assessment_id=assessment.id %}" class="btn btn-secondary">Prievew Assessment</a>
+    <a href="{% url 'assessment:take_assessment' assessment_id=assessment.id %}?preview=true" class="btn btn-secondary">Prievew Assessment</a>
     
     {% endif %}
     <form method="POST" id="assessment-form" class="mb-5">
@@ -92,7 +92,7 @@
                                 <div class="exercise-list" id="exercise-list" style="height: 300px; overflow-y: auto; border: 1px solid #f5ebeb;">
                                     {% for exercise in exercises %}
                                         <div class="d-flex align-items-center justify-content-between exercise-item border mb-1 p-2 cursor-pointer" data-exercise-id="{{ exercise.id }}">
-                                            <input type="checkbox" name="exercises" value="{{ exercise.id }}" id="exercise-{{ exercise.id }}"
+                                            <input type="checkbox" name="selected_exercises" value="{{ exercise.id }}" id="exercise-{{ exercise.id }}"
                                                 {% if exercise.id in selected_exercises %}checked{% endif %}>
                                             <label for="exercise-{{ exercise.id }}" class="me-2">{{ exercise.title }}</label>
                                 

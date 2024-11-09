@@ -6,6 +6,7 @@ from course.models import Course, Enrollment
 from assessments.models import Assessment, StudentAssessmentAttempt
 from django.db.models import OuterRef, Subquery,Max
 from user.models import User
+from .ai_model import AIInsightModel
 #########################################################################################################
 class UserProgress(models.Model):
     user = models.ForeignKey('user.User', on_delete=models.CASCADE)  # String reference to avoid circular import
@@ -44,20 +45,22 @@ def update_quiz_progress(sender, instance, **kwargs):
         progress.progress_percentage = percent
         progress.save()
 
-@receiver(post_save, sender=StudentAssessmentAttempt)
+@receiver([post_save, post_delete], sender=StudentAssessmentAttempt)
 def update_user_progress(sender, instance, **kwargs):
-    user_id = instance.user.id
-    course_id = instance.assessment.course.id
-    total, attempts = calculate(user_id, course_id)
+    try:
+        user_id = instance.user.id
+        course_id = instance.assessment.course.id
+        total, attempts = calculate(user_id, course_id)
 
-    percent = round(attempts / total * 100, 2) if total > 0 else 0
-    
-    progress, _ = UserProgress.objects.get_or_create(
-        user=instance.user,
-        course=instance.assessment.course
-    )
-    progress.progress_percentage = percent
-    progress.save()
+        percent = round(attempts / total * 100, 2) if total > 0 else 0
+        
+        progress, _ = UserProgress.objects.get_or_create(
+            user=instance.user,
+            course=instance.assessment.course
+        )
+        progress.progress_percentage = percent
+        progress.save()
+    except: pass
 
 @receiver([post_save, post_delete], sender=Enrollment)
 def update_enrollment_progress(sender, instance, **kwargs):
@@ -102,12 +105,11 @@ class PerformanceAnalytics(models.Model):
             completed_assessments = highest_attempts.filter().count()
             # print('count:',completed_assessments)
             total_score = highest_attempts.aggregate(models.Sum('score_ass'))['score_ass__sum'] or 0
-            try:
-                self.average_score = round(total_score / completed_assessments, 3) if completed_assessments > 0 else 0
-                self.completion_rate = round((completed_assessments / total_assessments) * 100, 2)
-            except:       
-                self.average_score = 0.0
-                self.completion_rate = 0.0
+            self.average_score = round(total_score / completed_assessments, 3) if completed_assessments > 0 else 0
+            self.completion_rate = round((completed_assessments / total_assessments) * 100, 2)
+        else:
+            self.average_score = 0.0
+            self.completion_rate = 0.0
         self.save()
     
     class Meta:
@@ -131,15 +133,12 @@ def update_performance_analytics(sender, instance, **kwargs):
 @receiver(post_delete, sender=Assessment)
 def update_performance_analytics(sender, instance, **kwargs):
         students = User.objects.filter(id__in=StudentAssessmentAttempt.objects.filter(assessment__course=instance.course).values('user'))
-        try:
-            for student in students:
-                performance,created = PerformanceAnalytics.objects.get_or_create(
-                    user=student,
-                    course=instance.course
-                )
-                performance.update_performance()
-        except PerformanceAnalytics.DoesNotExist:
-            ValueError('No performance found')
+        for student in students:
+            performance = PerformanceAnalytics.objects.get(
+                user=student,
+                course=instance.course
+            )
+            performance.update_performance()
 
 
 @receiver(post_save, sender=Enrollment)
@@ -164,7 +163,7 @@ def delete_performance(sender, instance, **kwargs):
 class AIInsights(models.Model):    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True)
-    insight_text = models.CharField(max_length=255, blank=True, null=True)
+    insight_text = models.TextField(blank=True, null=True)
     insight_type = models.CharField(max_length=50, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -177,3 +176,43 @@ class AIInsights(models.Model):
             if val:
                 setattr(self, fields, val.capitalize().strip())
         super(AIInsights, self).save(*args, **kwargs)
+
+@receiver(post_save, sender=Enrollment)
+def update_insight_on_enrollment(sender, instance, created, **kwargs):
+    AIInsights.objects.update_or_create(
+        user=instance.student,
+        course=instance.course,
+        insight_type=None,
+        insight_text=None,
+    )
+
+@receiver(post_delete, sender=Enrollment)
+def delete_insight_on_enrollment_delete(sender, instance, **kwargs):
+    AIInsights.objects.filter(
+        user=instance.student,
+        course=instance.course,
+    ).delete()
+
+@receiver(post_save, sender=StudentAssessmentAttempt)
+def create_insight_on_assessment_attempt(sender, instance, **kwargs):
+    try:
+        student_assessments = StudentAssessmentAttempt.objects.filter(
+            user = instance.user,
+            assessment__course__id=instance.assessment.course.id
+        )
+        score_history = []
+        count = 1
+        for student_assessment in student_assessments:
+            score_history.append(f"{student_assessment.score_quiz}")
+            count += 1
+
+        score = instance.score_quiz
+        insight_text, insight_type = AIInsightModel(score,score_history)
+
+        AIInsights.objects.create(
+            user=instance.user,
+            course=instance.assessment.course,
+            insight_type=insight_type,
+            insight_text=insight_text,
+        )
+    except: pass

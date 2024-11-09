@@ -12,6 +12,13 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file
+load_dotenv()
+
+# Now you can access environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +34,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
-
 
 # STATIC_URL = '/staticfiles/'
 # STATIC_URL for development
@@ -93,7 +99,6 @@ INSTALLED_APPS = [
     'ckeditor_uploader',  #Optional: if you want to allow image uploads
     'widget_tweaks',
 
-    
     'module_group',
     'training_program',
     'subject', 'student_materials', #for FSA subject
@@ -103,30 +108,23 @@ INSTALLED_APPS = [
     'exercises', #Binh_Thang
     #ngattt
     'assessments', 'reports', 'group_enrollment', 'mylearning', 'certification', 
-    'learning_path',
+    'learning_path', 'backup', 'student_portal', #'quiz_generator',
 
     #group01
-    'user', 'role', 'department', 
+    'user', 'role', 'department', 'team',
 
     #group02
     'course', 'feedback', 'forum', 
 
     #group03
-    'quiz', 'std_quiz', 'course_Truong', 'tools', # 'std_course',
+    'quiz', 'tools', # 'std_course', 'course_Truong', 'std_quiz', 
 
     #group04
     'chat', 'chatapp', 'thread', 'collaboration_group', 
 
     #group05 
     'activity', 'analytics_report', 'book', 'progress_notification',
-    'achievement', 'quiz_bank',# -- add this app
-    # ''' Delete theses apps
-    
-    # user_progress', 'user_summary' ,'performance_analytics', 'ai_insights' , 
-    # 'certificate', 'student_performance', 'course_completion','assignment',
-    
-    # '''
-
+    'achievement', 'quiz_bank', # -- add this app
 
 ]
 

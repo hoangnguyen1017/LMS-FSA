@@ -39,11 +39,15 @@ urlpatterns = [
     path('mylearning/', include('mylearning.urls')),
     path('certification/', include('certification.urls')),
     path('learning_path/', include('learning_path.urls')),
+    path('backup/', include('backup.urls')),
+    path('student_portal/', include('student_portal.urls')),
+    #path('quiz_generator/', include('quiz_generator.urls')),
     
     #group01
     path('user/', include(('user.urls', 'user'), namespace='user')),  # Register user app URLs with a namespace
     path('role/', include(('role.urls', 'user'))),
     path('department/', include(('department.urls', 'department'))),
+    path('team/', include(('team.urls', 'team'))),
 
     #group02
     path('course/', include('course.urls')),
@@ -52,8 +56,8 @@ urlpatterns = [
 
     #group03
     path('quiz/', include('quiz.urls')),  
-    path('std_quiz/', include('std_quiz.urls')),
-    path('course_Truong/', include('course_Truong.urls')),
+    # path('std_quiz/', include('std_quiz.urls')),
+    # path('course_Truong/', include('course_Truong.urls')),
     path('tools/', include('tools.urls')),
     
 
@@ -69,16 +73,7 @@ urlpatterns = [
     path('progress_notification', include('progress_notification.urls')),
     path('book/', include('book.urls')),
     path('achievement/',include('achievement.urls')),
-    path('quiz_bank/', include('quiz_bank.urls')),
-    
-    # path('certificate/', include('certificate.urls')),
-    # path('ai_insights', include('ai_insights.urls')),
-    # path('assignment', include('assignment.urls')),
-    # path('course_completion', include('course_completion.urls')),
-    # path('performance_analytics', include('performance_analytics.urls')),
-    # path('student_performance', include('student_performance.urls')),
-    # path('user_progress', include('user_progress.urls')),
-    # path('user_summary', include('user_summary.urls')),
+    path('quiz_bank/',include('quiz_bank.urls')),
 
     #group06 - Binh_Thang - Coding
     path('exercises/', include('exercises.urls')), 

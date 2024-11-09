@@ -7,8 +7,10 @@
 </head>
 <body id="course-list">
 <div class="full-width-container bg-white p-6">
-    <h1 class="text-2xl font-bold mb-6 main-color-text">Courses</h1>
+    {% comment %} <h1 class="text-2xl font-bold mb-6 main-color-text">Courses</h1> {% endcomment %}
     <div class="flex justify-between items-center mb-6">
+        <h1 class="course-title font-bold mb-6 main-color-text">Courses</h1>
+
         <!-- Search Form -->
         <div class="search-container">
             <form method="GET" action="{% url 'course:course_search' %}" class="form-inline">
@@ -17,55 +19,76 @@
             </form>
             <div>
                 {% if is_instructor or user.is_superuser %}
-                    <a href="{% url 'course:course_add' %}" class="btn main-color px-4 py-2 rounded ml-2">Add New Course</a>
+                    <a href="{% url 'course:course_add' %}" class="btn btn-primary">Add New Course</a>
                 {% endif %}
             </div>
         </div>
     </div>
-    <div class="course-grid mb-6">
+    <div class="row">
         {% for course in page_obj %}
-        <div class="course-card bg-white p-4 rounded-lg shadow-md border border-gray-200">
-            <div class="course-card-body">
-                <div class="course-image-container">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-light">
+                <!-- Course Image -->
+
+                <div class="ratio ratio-16x9"> <!-- Aspect Ratio Wrapper -->
                     {% if course.image %}
-                        <img src="{{ course.image.url }}" alt="{{ course.course_name }}" class="course-image">
+                        <img src="{{ course.image.url }}" class="card-img-top" alt="{{ course.course_name }}" style="object-fit: cover;">
                     {% else %}
-                        <img src="{% static 'default_course_image.jpg' %}" alt="Default Image" class="course-image">
+                        <img src="{% static 'course/images/chotbg.png' %}" alt="Default Image" class="course-image">
+                       
                     {% endif %}
                 </div>
-                <div class="course-details">
-                    <h2 class="text-xl font-bold mb-2 main-color-text">{{ course.course_name }}</h2>
-                    <p class="text-gray-700 mb-4">{{ course.description|truncatewords:20 }}</p>
+
+                
+    
+                <!-- Card Body -->
+                <div class="card-body">
+                    <h5 class="card-title main-color-text">{{ course.course_name }}</h5>
+                    <p class="card-text text-muted">{{ course.description|truncatewords:20 }}</p>
+    
                     {% if not is_instructor %}
-                        <div class="relative pt-1 mb-4">
-                            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-                                <div style="width: {{ course.completion_percent }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center main-color"></div>
+                        <!-- Completion Progress Bar -->
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar main-color" role="progressbar" style="width: {{ course.completion_percent }}%;" aria-valuenow="{{ course.completion_percent }}" aria-valuemin="0" aria-valuemax="100">
                             </div>
-                            <span class="absolute top-0 left-0 text-xs font-semibold main-color-text">{{ course.completion_percent }}%</span>
+                        </div>
+                        <small class="text-muted">{{ course.completion_percent }}% Complete</small>
+                    {% endif %}
+                </div>
+    
+                <!-- Card Footer -->
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                    <a href="{% url 'course:course_detail' course.id %}" class="btn main-color btn-sm" title="View Details">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                    {% if user.is_superuser or course.instructor == user %}
+                        <div>
+                            <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm me-2" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'course:course_delete' course.id %}" class="btn btn-danger btn-sm me-2" title="Delete">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                            <a href="{% url 'course:toggle_publish' course.pk %}" class="btn btn-sm" style="background-color: #097969 !important;">
+                                {% if course.published %}
+                                    Unpublish
+                                {% else %}
+                                    Publish
+                                {% endif %}
+                            </a>
                         </div>
                     {% endif %}
                 </div>
             </div>
-            <div class="course-card-footer flex justify-between items-center">
-                <a href="{% url 'course:course_detail' course.id %}" class="btn main-color btn-sm" title="View Details">
-                    <i class="fas fa-eye"></i>
-                </a>
-                {% if user.is_superuser or course.instructor == user %}
-                    <a href="{% url 'course:course_edit' course.id %}" class="btn btn-warning btn-sm mr-2" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                    <a href="{% url 'course:course_delete' course.id %}" class="btn btn-danger btn-sm" title="Delete">
-                        <i class="fas fa-trash-alt"></i>
-                    </a>
-                {% endif %}
-            </div>
         </div>
         {% empty %}
-        <div class="col-span-3 text-center py-4">
+        <div class="col-12 text-center py-4">
             No courses found.
         </div>
         {% endfor %}
     </div>
+    
+    
     <nav aria-label="Page navigation" class="mb-6">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}

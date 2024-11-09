@@ -3,37 +3,9 @@
 {% load static %}
 {% block title %}Student List{% endblock %}
 
-{% block extra_styles %}
-<style>
-    .nav-tabs {
-        width: 100%;
-        display: flex;
-        justify-content: center; /* Thay đổi từ start thành center */
-    }
-
-    .nav-item {
-        flex: 1;
-    }
-
-    .nav-link {
-        text-align: center;
-        font-weight: bold;
-        padding: 10px;
-        border-radius: 0;
-    }
-
-    .center-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Căn giữa nội dung theo chiều dọc */
-        justify-content: center; /* Căn giữa nội dung theo chiều ngang */
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 
-<div class="container mt-4 center-content"> <!-- Thêm lớp center-content vào đây -->
+<div class="container mt-4 center-content"> <!-- Giữ nguyên -->
     <ul class="nav nav-tabs">
         <li class="nav-item">
             <a class="nav-link" href="{% url 'user:user_list' %}">Users</a>
@@ -50,21 +22,24 @@
                         <a href="{% url 'user:user_add' %}" class="btn btn-primary" title="Add New User">
                             <i class="fas fa-plus"></i> Add User
                         </a>
-                        <a href="{% url 'user:export_users' %}?role=Student&q={{ query }}" class="btn btn-secondary" title="Export Students to Excel" data-toggle="tooltip">
+                        <a href="{% url 'user:export_users' %}?role=Student&q={{ query }}" class="btn btn-secondary" title="Export Students to Excel" data-bs-toggle="tooltip">
                             <i class="fas fa-file-export"></i> Export Students
                         </a>
                     {% endif %}
                 {% endif %}
-                <a href="{% url 'user:student_list' %}" class="btn btn-secondary" title="Refresh Student List">
+                <a href="{% url 'user:student_list' %}" class="btn btn-info" title="Refresh Student List">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </a>
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the selected students?');">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
             </div>
             <form method="GET" action="{% url 'user:student_list' %}" class="form-inline">
                 <div class="input-group">
                     <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control" placeholder="Search students..." aria-label="Search students">
                     <button type="submit" class="btn btn-outline-success ms-2">Search</button>
                 </div>
-            </form>  
+            </form>
         </div>
 
         <!-- Form to delete selected users -->
@@ -80,7 +55,6 @@
                         <th>Username</th>
                         <th>Email</th>
                         <th>Full Name</th>
-                        <th class="text-center">Profile Picture</th>
                         {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %}
                             <th>Actions</th>
                         {% endif %}
@@ -95,19 +69,12 @@
                         <td>{{ student.user.username }}</td>
                         <td>{{ student.user.email }}</td>
                         <td>{{ student.user.first_name }} {{ student.user.last_name }}</td>
-                        <td class="text-center">
-                            {% if student.user.profile.profile_picture_url %}
-                                <img src="{{ student.user.profile.profile_picture_url }}" alt="Profile Picture" class="img-fluid" style="width: 100px; height: 100px; object-fit: cover;">
-                            {% else %}
-                                No image
-                            {% endif %}
-                        </td>
                         {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %}
                             <td>
-                                <a href="{% url 'user:user_detail' student.user.pk %}" class="btn btn-info btn-sm" title="View Student Details" data-toggle="tooltip">
+                                <a href="{% url 'user:user_detail' student.user.pk %}" class="btn btn-info btn-sm" title="View Student Details" data-bs-toggle="tooltip">
                                     <i class="fas fa-info-circle"></i>
                                 </a>
-                                <a href="{% url 'user:user_edit' student.user.pk %}" class="btn btn-warning btn-sm" title="Edit Student" data-toggle="tooltip">
+                                <a href="{% url 'user:user_edit' student.user.pk %}" class="btn btn-warning btn-sm" title="Edit Student" data-bs-toggle="tooltip">
                                     <i class="fas fa-edit"></i>
                                 </a>
                             </td>
@@ -117,17 +84,12 @@
                 </tbody>
             </table>
 
-            <!-- Button to submit form and delete selected users -->
-            <button type="submit" class="btn btn-danger mt-3" onclick="return confirm('Are you sure you want to delete the selected students?');">
-                Delete Selected
-            </button>
+            {% if not students %}
+                <div class="alert alert-warning" role="alert">
+                    No students found matching your criteria.
+                </div>
+            {% endif %}
         </form>
-
-        {% if not students %}
-            <div class="alert alert-warning" role="alert">
-                No students found matching your criteria.
-            </div>
-        {% endif %}
 
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center">
@@ -175,27 +137,25 @@
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
 </div>
 
 <script>
-$(document).ready(function() {
-    $('[data-toggle="tooltip"]').tooltip();
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
     
     // Select or deselect all checkboxes
-    $('#select-all').click(function(event) {
-        if(this.checked) {
-            $(':checkbox').each(function() {
-                this.checked = true;                        
-            });
-        } else {
-            $(':checkbox').each(function() {
-                this.checked = false;                       
-            });
-        }
+    document.getElementById('select-all').addEventListener('click', function(event) {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = event.target.checked;
+        });
     });
 });
 </script>

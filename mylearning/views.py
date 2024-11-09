@@ -10,11 +10,21 @@ from learning_path.models import LearningPath
 
 def index(request):
     # Retrieve all published courses
-    courses = Course.objects.filter(published=True)
+    # courses = Course.objects.filter(published=True)
 
-    # Prepare data to be passed to the template
+    if request.user.is_authenticated:
+        # Get the courses the user is enrolled in
+        # enrolled_courses = Course.objects.filter(enrollments__user=request.user).distinct()
+        enrolled_courses = Course.objects.filter(enrollments__student=request.user).distinct()
+
+        # Add completion percentage for each course
+        for course in enrolled_courses:
+            course.completion_percent = course.get_completion_percent(request.user)
+    else:
+        enrolled_courses = Course.objects.none()
+
     course_data = []
-    for course in courses:
+    for course in enrolled_courses:
         # Calculate the completion percentage based on your logic
         completion_percentage = course.get_completion_percent(request.user)  # Assuming user is authenticated
 

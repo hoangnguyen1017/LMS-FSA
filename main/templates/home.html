@@ -1,51 +1,35 @@
 {% extends "base.html" %}
-
+{%load static%}
 {% block title %}Home{% endblock %}
 
 {% block content %}
+
 <div class="container mt-4">
-    
-    <h1 class="mb-4 text-center">Learning Management System </h1>
-    {% for group in module_groups %}
-    <div class="mb-5">
-        <h2 class="text-primary mb-3">{{ group.name }}</h2>  
+    <h2>Home Page</h2>
 
-        <div class="row">
-            {% for module in modules %}
-                {% if module.module_group == group %}
-                <div class="col-md-4 mb-4">
-                    <div class="card shadow-sm h-100">
-                        <!-- Bọc nội dung card trong thẻ a để tạo liên kết -->
-                        <a href="{% url module.module_url %}" class="text-decoration-none text-dark">
-                            <div class="card-body text-center d-flex flex-column justify-content-center" style="height: 180px; width: 100%; overflow: hidden;">
-                                <!-- Module Icon -->
-                                <div class="icon mb-3">
-                                    <i class="{{ module.icon }} fa-3x" style="color: #2196F3;"></i> <!-- Thay đổi màu icon -->
-                                </div>
+    <!-- Tab navigation -->
+    <ul class="nav nav-tabs" id="homeTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="module-tab" data-bs-toggle="tab" data-bs-target="#module" type="button" role="tab" aria-controls="module" aria-selected="true">
+                Module
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="course-tab" data-bs-toggle="tab" data-bs-target="#course" type="button" role="tab" aria-controls="course" aria-selected="false">
+                Course
+            </button>
+        </li>
+    </ul>
 
-                                <!-- Module Name -->
-                                <h5 class="card-title" style="font-size: 1.5rem;">{{ module.module_name }}</h5>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                {% endif %}
-            {% endfor %}
+    <!-- Tab content -->
+    <div class="tab-content" id="homeTabsContent">
+        <div class="tab-pane fade show active" id="module" role="tabpanel" aria-labelledby="module-tab">
+            {% include 'home_module.html' %}
+        </div>
+        <div class="tab-pane fade" id="course" role="tabpanel" aria-labelledby="course-tab">
+            {% include 'home_course.html' %}
         </div>
     </div>
-    {% endfor %}
 </div>
-{% endblock %}
 
-{% block extra_css %}
-<style>
-    .card {
-        transition: transform 0.2s, box-shadow 0.2s; /* Thay đổi thời gian cho các hiệu ứng */
-    }
-
-    .card:hover {
-        transform: scale(1.03); /* Phóng to thẻ một chút */
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Thêm bóng đổ khi hover */
-    }
-</style>
 {% endblock %}

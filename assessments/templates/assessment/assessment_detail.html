@@ -26,7 +26,6 @@
                 </div>
             </div>
         </div>
-        
     </div>
 
     <!-- Two-Column Layout for Exercises and Questions -->
@@ -73,6 +72,65 @@
 
     </div>
 
+    <!-- Quiz Results -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Quiz Results</h3>
+        </div>
+        <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+            <ul class="list-group">
+                {% for answer in user_answers %}
+                    <li class="list-group-item">
+                        <strong>{{ forloop.counter }}. </strong> {{ answer.question.question_text }}<br>
+                        <ul class="list-group">
+                            {% for option in answer.question.answer_options.all %}
+                                <li class="list-group-item 
+                                    {% if option in answer.selected_options.all %}
+                                        {% if option.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}
+                                    {% endif %}
+                                ">
+                                    - {{ option.option_text }} 
+                                    {% if option in answer.selected_options.all %}
+                                        {% if option.is_correct %}
+                                            <span class="badge bg-success">Your Answer: Correct</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Your Answer: Incorrect</span>
+                                        {% endif %}
+                                    {% elif option.is_correct %}
+                                        <span class="badge bg-success">Correct Answer</span>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">No quiz answers found.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Exercise Submissions -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Exercise Submissions</h3>
+        </div>
+        <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+            <ul class="list-group">
+                {% for submission in user_submissions %}
+                    <li class="list-group-item">
+                        <strong>Exercise:</strong> {{ submission.exercise.title }}<br>
+                        <strong>Code Submitted:</strong>
+                        <pre class="bg-light p-2">{{ submission.code }}</pre>
+                        <strong>Score:</strong> {{ submission.score }}
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">No submissions found.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
     <!-- Invited Candidates Section at the Bottom -->
      
     <div class="card">
@@ -90,31 +148,47 @@
                         <th>Expiration Date</th>
                         <th>Quiz Score</th>
                         <th>Assignment Score</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for candidate in invited_candidates %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ candidate.email }}</td>
-                        <td>{{ candidate.email }}</td>
-                        <td>{{ candidate.invitation_date }}</td>
-                        <td>{{ candidate.expiration_date }}</td>
-                        <td>{{ registered_attempts.attempts.score}}</td>
-                        <td>{{ registered_attempts.score_ass}}</td>
-                        
-                        <!-- Use the custom filter here -->
-                     
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">No candidates have been invited yet.</td>
-                    </tr>
-                    {% endfor %}
+                    
+                    {% with found_candidates=False %}
+                        {% for attempt in registered_attempts %}
+                            {% for candidate in invited_candidates %}
+                                {% if attempt.email == candidate.email and candidate.assessment == attempt.assessment%}
+                                    {% if not found_candidates %}
+                                        {% with found_candidates=True %}
+                                        {% endwith %}
+                                    {% endif %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>  <!-- Sử dụng giá trị count từ context -->
+                                        <td>{{ name }}</td>
+                                        <td>{{ candidate.email }}</td>
+                                        <td>{{ candidate.invitation_date }}</td>
+                                        <td>{{ candidate.expiration_date }}</td>
+                                        <td>{{ attempt.score_quiz|floatformat:0 }}</td>
+                                        <td>{{ attempt.score_ass|floatformat:0 }}</td>
+                                        <td>
+                                            <a href="{% url 'assessment:assessment_report' assessment.id attempt.id candidate.email %}">View report</a>
+                                        </td>
+                                    </tr>
+                                    
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                        {% if not found_candidates %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">No candidates have been invited yet.</td>
+                            </tr>
+                        {% endif %}
+                    {% endwith %}
                 </tbody>
             </table>
         </div>
     </div>
+    
+    
     
 
 

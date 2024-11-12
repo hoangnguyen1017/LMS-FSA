@@ -31,7 +31,7 @@ urlpatterns = [
 
     path('result/<int:assessment_id>/<int:attempt_id>/<str:email>/', views.assessment_result, name='assessment_result'),
     path('result/<int:assessment_id>/<int:attempt_id>/', views.assessment_result, name='assessment_result_no_email'),
-
+    path('report/<int:assessment_id>/<int:attempt_id>/<str:email>/', views.assessment_report, name='assessment_report'),
 
     
 ]

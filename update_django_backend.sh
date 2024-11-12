@@ -7,5 +7,5 @@ mkdir "$TARGET_DIR"
 git archive "$SRC_DIR" | tar -x -C ./"$TARGET_DIR"
 
 git add "$TARGET_DIR"
-git commit -m "update django_backed from main branch to '$TARGET_DIR'"
+git commit -m "update django_backed from '$SRC_DIR' branch to '$TARGET_DIR'"
 git push

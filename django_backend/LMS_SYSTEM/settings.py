@@ -43,7 +43,7 @@ AUTH_USER_MODEL = 'user.User'  # Change 'user' to the name of your app
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-#Send email
+# Send email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -59,7 +59,7 @@ SECRET_KEY = 'django-insecure-h+p6t3%50m)_a15%4&i*q_ule5a_$566#wu=f_5uvlapiqq%5v
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-#ALLOWED_HOSTS = ['codinglmsfsa.pythonanywhere.com']
+# ALLOWED_HOSTS = ['codinglmsfsa.pythonanywhere.com']
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -117,7 +117,7 @@ INSTALLED_APPS = [
     #group05 
     'activity', 'analytics_report', 'book', 'progress_notification',
     'achievement', 'quiz_bank', # -- add this app
-
+    'cheat_logger',
 ]
 
 MIDDLEWARE = [
@@ -247,3 +247,8 @@ logging.basicConfig(
 # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 CSRF_TRUSTED_ORIGINS = ['https://lms.truong51972.id.vn']
+
+AI_API_SERVER = {
+    "HOST": os.environ.get("AI_API_SERVER_HOST"),
+    "PORT": os.environ.get("AI_API_SERVER_PORT"),
+}

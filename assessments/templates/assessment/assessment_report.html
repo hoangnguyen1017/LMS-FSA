@@ -4,11 +4,11 @@
 
 {% block content %}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-<div class="container my-4">
+<div>
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-3"> <!-- Reduced bottom margin -->
         <div class="mb-3"> <!-- Reduced bottom margin -->
-            <h3 class="text-center mb-1" style="font-size: 1.75rem;">Assessment Report</h3> <!-- Reduced font size -->
+            <h1 class="text-center mb-1">Assessment Report</h1> <!-- Reduced font size -->
             <span class="text-primary" style="font-size: 1rem;"> <!-- Reduced font size -->
                 <i class="bi bi-box-arrow-up-right"></i> 
                 {{ assessment.title }}
@@ -19,19 +19,18 @@
     <hr>
 
     <div class="row">
-        <!-- User Information on the left -->
-        <div class="col-md-3"style="padding-right: 0;">
+        <!-- User Information on the left, using sticky positioning -->
+        <div class="col-md-3" style="padding-right: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;">
             <h6 style="font-size: 0.875rem;">{{ attempt.email }}</h6> <!-- Reduced font size -->
             <p style="font-size: 0.875rem; margin-bottom: 0;">Joined on: {{ attempt.attempt_date }}</p> <!-- No margin-bottom -->
             <p style="font-size: 0.875rem; margin-top: 0;">Invite by: {{ assessment.created_by }}</p> <!-- Removed margin-top and margin-bottom -->
 
-
             <!-- Links container -->
             <nav class="nav flex-column">
-                <a href="#score-point" class="fw-bold text-secondary text-decoration-none mb-2 link-hover" style="border-left: 4px solid gray; padding-left: 10px; font-size: 0.875rem;">SCORES</a> <!-- Reduced font size -->
-                <a href="#skill-ratings" class="fw-bold text-secondary text-decoration-none mb-2 link-hover" style="border-left: 4px solid gray; padding-left: 10px; font-size: 0.875rem;">SKILL RATINGS</a> <!-- Reduced font size -->
-                <a href="#scorecard" class="fw-bold text-secondary text-decoration-none mb-2 link-hover" style="border-left: 4px solid gray; padding-left: 10px; font-size: 0.875rem;">SCORECARD</a> <!-- Reduced font size -->
-                <a href="#challenges" class="fw-bold text-secondary text-decoration-none link-hover" style="border-left: 4px solid gray; padding-left: 10px; font-size: 0.875rem;">CHALLENGE SOLUTIONS</a> <!-- Reduced font size -->
+                <a href="#score-point" class="fw-bold text-secondary text-decoration-none mb-2 link-hover" style="border-left: 4px solid gray; padding-left: 10px; font-size: 0.875rem;">SCORES</a>
+                <a href="#skill-ratings" class="fw-bold text-secondary text-decoration-none mb-2 link-hover" style="border-left: 4px solid gray; padding-left: 10px; font-size: 0.875rem;">SKILL RATINGS</a>
+                <a href="#scorecard" class="fw-bold text-secondary text-decoration-none mb-2 link-hover" style="border-left: 4px solid gray; padding-left: 10px; font-size: 0.875rem;">SCORECARD</a>
+                <a href="#challenges" class="fw-bold text-secondary text-decoration-none link-hover" style="border-left: 4px solid gray; padding-left: 10px; font-size: 0.875rem;">CHALLENGE SOLUTIONS</a>
             </nav>
         </div>
         
@@ -40,31 +39,35 @@
         <div class="col-md-9">
             <h4 id="score-point" style="margin-left: -10px; font-size: 1.25rem; margin-bottom: 2rem;">Score</h4>
             <div class="row">
-                <!-- Score Card -->
+                 <!-- Score Card -->
                 <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h3 class="mb-0">Quiz Answers</h3>
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center"
+                            style="background-color: #20c997; color: white; font-weight: bold; text-align: center; padding: 10px;">
+                            <span >Scores</span>
+                            <span style="width: 20%;">Average 76%</span>
+                            <span style="width: 20%;">Qualifying 60%</span>
+                            <span style="width: 20%; font-weight: bold;">Final Score 68%</span>
                         </div>
-                        <div class="card-body">
-                            <div class="bg-light fw-bold fs-3 col-12 d-flex justify-content-between">
-                                <span>Score</span>
-                                <span>Final score</span>
-                            </div>
-                            <hr>
-                            <div class="col-12 d-flex justify-content-between">
-                                <span>Score Quiz</span>
-                                <span>{{ score_quiz }}</span>
-                            </div>
-                            <hr>
-                            <div class="col-12 d-flex justify-content-between">
-                                <span>Score Code</span>
-                                <span>{{ score_ass }}</span>
-                            </div>
-                            <hr>
-                            <div class="col-12 d-flex justify-content-between">
+                        <div class="card-body" style="background-color: #e8f5f4;">
+                            <div class="d-flex justify-content-between mb-3">
                                 <span>Challenges</span>
-                                <span>###</span>
+                                <span style="font-weight: bold;">68%</span>
+                            </div>
+                            <hr class="my-1">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Score Quiz</span>
+                                <span style="color: #6c757d; font-size: 0.9rem;">{{ score_quiz }}</span>
+                            </div>
+                            <hr class="my-1">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Score Code</span>
+                                <span style="color: #6c757d; font-size: 0.9rem;">{{ score_ass }}</span>
+                            </div>
+                            <hr class="my-1">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Personality test <i class="fas fa-info-circle" style="color: #6c757d;"></i></span>
+                                <span style="color: #6c757d; font-size: 0.9rem;">N/A</span>
                             </div>
                         </div>
                     </div>
@@ -72,29 +75,36 @@
 
                 <!-- Cheating Card -->
                 <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h3 class="mb-0">Cheating</h3>
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center"
+                            style="background-color: #6c757d; color: white; font-weight: bold; text-align: center; padding: 10px;">
+                            <span style="width: 20%;">Cheating</span>
+                            <span style="width: 20%; font-weight: bold;">Overall<br>No issues</span>
                         </div>
                         <div class="card-body">
-                            <div class="bg-light fw-bold fs-3 col-12 d-flex justify-content-between">
-                                <span>Cheating</span>
-                                <span>Overall</span>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span><i class="fas fa-external-link-alt me-2"></i>Leaving tab</span>
+                                <span style="color: #6c757d; font-size: 0.9rem;">None</span>
                             </div>
-                            <hr>
-                            <div class="col-12 d-flex justify-content-between">
-                                <span><i class="fas fa-window-restore me-2"></i>Leaving tab</span>
-                                <span>No</span>
+                            <hr class="my-1">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span><i class="fas fa-cut me-2"></i>Pasted <span style="font-style: italic; color: #6c757d;">from external sources</span></span>
+                                <span style="color: #6c757d; font-size: 0.9rem;">Not detected</span>
                             </div>
-                            <hr>
-                            <div class="col-12 d-flex justify-content-between">
-                                <span><i class="fas fa-scissors me-2"></i>Paste from external sources</span>
-                                <span>Not detected</span>
+                            <hr class="my-1">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span><i class="fas fa-clone me-2"></i>Plagiarism</span>
+                                <span style="color: #6c757d; font-size: 0.9rem;">Not detected</span>
                             </div>
-                            <hr>
-                            <div class="col-12 d-flex justify-content-between">
-                                <span><i class="fas fa-exclamation-triangle me-2"></i>Plagiarism</span>
-                                <span>Not detected</span>
+                            <hr class="my-1">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span><i class="fas fa-robot me-2"></i>AI usage</span>
+                                <span style="color: #6c757d; font-size: 0.9rem;">Not detected</span>
+                            </div>
+                            <hr class="my-1">
+                            <div class="d-flex justify-content-between">
+                                <span><i class="fas fa-user-secret me-2"></i>Suspicious activity <i class="fas fa-info-circle" style="color: #6c757d;"></i></span>
+                                <span style="color: #6c757d; font-size: 0.9rem;">Not detected</span>
                             </div>
                         </div>
                     </div>
@@ -413,6 +423,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
+
 document.querySelectorAll('.link-hover').forEach(link => {
     link.addEventListener('click', function(event) {
         event.preventDefault();

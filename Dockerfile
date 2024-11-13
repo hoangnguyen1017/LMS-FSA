@@ -1,19 +1,15 @@
 # Use an official Python runtime as a parent image
-FROM python:3.10-slim
-
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    default-libmysqlclient-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+FROM pytorch/pytorch:2.2.2-cuda12.1-cudnn8-runtime
 
 WORKDIR /app
-
+# COPY . /app
 COPY requirements.txt /app
 
+RUN apt-get update && apt-get install -y libgl1-mesa-dev libglib2.0-dev
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 8001
+EXPOSE 8000
 
-CMD ["gunicorn", "--workers", "10", "--bind", "0.0.0.0:8001", "LMS_SYSTEM.wsgi:application"]
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:8001"]
+# ENV NAME World
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--reload", "--port", "8000"]

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Departments and Courses</title>
+</head>
+<body>
+    <h1>Edit Departments and Courses</h1>
+
+    <!-- Search Form for Department -->
+    <form method="GET" action="">
+        <input type="text" name="search" value="{{ search_query }}" placeholder="Search by department name...">
+        <button type="submit">Search</button>
+    </form>
+
+    <div style="display: flex;">
+        <!-- Available Courses List -->
+        <div style="flex: 1; padding: 10px;">
+            <h2>Available Courses</h2>
+            <ul id="all-courses">
+                {% for course in courses %}
+                    <li class="course-item" data-course-id="{{ course.id }}" draggable="true">
+                        {{ course.course_name }}
+                        <button onclick="showAssessments({{ course.id }}, this)">Show Assessments</button>
+                        <!-- Dropdown for assessments -->
+                        <ul class="assessment-dropdown" style="display: none;"></ul>
+                    </li>
+                {% empty %}
+                    <li>No courses found.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Departments and Courses Assigned to Them -->
+        <div style="flex: 1; padding: 10px;">
+            <h2>Departments</h2>
+            <ul>
+                {% for department in departments %}
+                    <li>
+                        <a href="#" class="department-name" data-department-id="{{ department.id }}">{{ department.name }}</a>
+                        <ul style="display: none;" class="course-list-{{ department.id }}" ondrop="drop(event)" ondragover="allowDrop(event)">
+                            {% for course in department.courses.all %}
+                                <li>
+                                    {{ course.course_name }}
+                                    <button onclick="showAssessments({{ course.id }}, this)">Show Assessments</button>
+                                    <!-- Dropdown for assessments -->
+                                    <ul class="assessment-dropdown" style="display: none;"></ul>
+                                    <button class="remove-course" data-course-id="{{ course.id }}" onclick="removeCourse(event)">Remove</button>
+                                </li>
+                            {% empty %}
+                                <li>No courses found for this department.</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% empty %}
+                    <li>No departments found.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Add this section below the course list -->
+    <div id="assessment-display" style="display: none;">
+        <h3>Assessments for <span id="course-name"></span></h3>
+        <ul id="assessment-list"></ul>
+    </div>
+
+    <script>
+        // Toggle department course lists when department name is clicked
+        document.querySelectorAll('.department-name').forEach(item => {
+            item.addEventListener('click', event => {
+                event.preventDefault();
+                const courseList = document.querySelector(`.course-list-${item.dataset.departmentId}`);
+                const allCourses = document.querySelectorAll('.course-item');
+
+                // Hide all course items
+                allCourses.forEach(course => {
+                    course.style.display = 'none';
+                });
+
+                // Toggle visibility of courses assigned to selected department
+                if (courseList) {
+                    courseList.style.display = courseList.style.display === 'none' ? 'block' : 'none';
+                }
+
+                // Show unassigned courses
+                const departmentCourses = Array.from(courseList.children).map(li => li.innerText);
+                allCourses.forEach(course => {
+                    if (!departmentCourses.includes(course.innerText)) {
+                        course.style.display = 'block'; // Display unassigned courses
+                    }
+                });
+            });
+        });
+
+        // Drag and Drop event handlers
+        document.querySelectorAll('.course-item').forEach(item => {
+            item.addEventListener('dragstart', event => {
+                event.dataTransfer.setData('text/plain', item.innerText); // Save course name
+                event.dataTransfer.setData('courseId', item.dataset.courseId); // Save course ID
+            });
+        });
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drop(event) {
+            event.preventDefault();
+
+            const departmentId = event.target.closest('ul').className.match(/course-list-(\d+)/)[1];
+            const courseName = event.dataTransfer.getData('text/plain');
+            const courseId = event.dataTransfer.getData('courseId');
+
+            console.log('Dropping course:', courseName, 'with ID:', courseId, 'into department ID:', departmentId);
+
+            // Create a new list item for the course in the department's course list
+            const newCourseItem = document.createElement('li');
+            newCourseItem.textContent = courseName;
+
+            // Create the "Show Assessments" button
+            const showAssessmentsButton = document.createElement('button');
+            showAssessmentsButton.textContent = 'Show Assessments';
+            showAssessmentsButton.onclick = function() {
+                showAssessments(courseId, showAssessmentsButton);
+            };
+
+            // Create the dropdown for assessments
+            const dropdown = document.createElement('ul');
+            dropdown.className = 'assessment-dropdown';
+            dropdown.style.display = 'none';
+
+            // Append the button and dropdown to the new course item
+            newCourseItem.appendChild(showAssessmentsButton);
+            newCourseItem.appendChild(dropdown);
+
+            // Create the remove button
+            const removeButton = document.createElement('button');
+            removeButton.textContent = 'Remove';
+            removeButton.className = 'remove-course';
+            removeButton.dataset.courseId = courseId;
+            removeButton.onclick = removeCourse; // Assign the remove function
+
+            // Append the remove button to the new course item
+            newCourseItem.appendChild(removeButton);
+
+            // Append the new course item to the department's course list
+            event.target.appendChild(newCourseItem);
+
+            // NEW: Hide the course from the available courses list
+            const availableCourseItem = document.querySelector(`.course-item[data-course-id="${courseId}"]`);
+            if (availableCourseItem) {
+                availableCourseItem.style.display = 'none'; // Hide the course from available courses
+            }
+
+            // Send AJAX request to add the course to the department
+            fetch("{% url 'department_course:add_course_to_department' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    department_id: departmentId,
+                    course_id: courseId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response:', data);
+                if (data.status === 'success') {
+                    alert('Course added successfully!');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function removeCourse(event) {
+            const courseId = event.target.dataset.courseId;
+            const departmentId = event.target.closest('ul').className.match(/course-list-(\d+)/)[1];
+
+            // Send AJAX request to remove the course from the department
+            fetch("{% url 'department_course:remove_course_from_department' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    department_id: departmentId,
+                    course_id: courseId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response:', data);
+                if (data.status === 'success') {
+                    // Remove the course from the department's list
+                    event.target.closest('li').remove();
+
+                    // Add the course back to the available courses list
+                    const availableCoursesList = document.getElementById('all-courses');
+                    const newCourseItem = document.createElement('li');
+                    newCourseItem.className = 'course-item';
+                    newCourseItem.dataset.courseId = courseId;
+                    newCourseItem.textContent = data.course_name;
+
+                    // Create the "Show Assessments" button
+                    const showAssessmentsButton = document.createElement('button');
+                    showAssessmentsButton.textContent = 'Show Assessments';
+                    showAssessmentsButton.onclick = function() {
+                        showAssessments(courseId, showAssessmentsButton);
+                    };
+
+                    // Create the dropdown for assessments
+                    const dropdown = document.createElement('ul');
+                    dropdown.className = 'assessment-dropdown';
+                    dropdown.style.display = 'none';
+
+                    // Append the button and dropdown to the new course item
+                    newCourseItem.appendChild(showAssessmentsButton);
+                    newCourseItem.appendChild(dropdown);
+
+                    // Make the new course item draggable
+                    newCourseItem.draggable = true;
+                    newCourseItem.addEventListener('dragstart', event => {
+                        event.dataTransfer.setData('text/plain', newCourseItem.innerText); // Save course name
+                        event.dataTransfer.setData('courseId', newCourseItem.dataset.courseId); // Save course ID
+                    });
+
+                    // Append the new course item to the available courses list
+                    availableCoursesList.appendChild(newCourseItem);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function showAssessments(courseId, button) {
+            const dropdown = button.nextElementSibling; // Get the dropdown for assessments
+
+            // Toggle dropdown visibility
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none'; // Hide if already displayed
+                return; // Exit if already displayed
+            }
+
+            fetch(`/department_course/get-assessments/${courseId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const assessments = data.assessments;
+                        dropdown.innerHTML = ''; // Clear previous assessments
+
+                        // Populate the assessment dropdown
+                        assessments.forEach(assessment => {
+                            const listItem = document.createElement('li');
+                            listItem.textContent = assessment.name;
+                            dropdown.appendChild(listItem);
+                        });
+
+                        // Show the dropdown
+                        dropdown.style.display = 'block';
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

@@ -28,6 +28,8 @@ from django.conf import settings
 from assessments.models import Assessment
 from django.http import HttpResponseRedirect
 from department.models import Department
+from django.utils import timezone
+import shutil
 
 
 @login_required
@@ -250,7 +252,7 @@ def course_enroll(request, pk):
 @login_required
 def course_unenroll(request, pk):
     course = get_object_or_404(Course, pk=pk)
-    enrollment = Enrollment.objects.filter(student=request.user, course=course).first()
+    enrollment = Enrollment.objects.filter(student=request.user, course=course, is_active=True).first()
 
     if request.method == 'POST':
         # Unenroll the user and redirect to course list with a message
@@ -258,13 +260,106 @@ def course_unenroll(request, pk):
             Completion.objects.filter(user=request.user, session__course=course).delete()
             SessionCompletion.objects.filter(user=request.user, course=course).delete()
             UserCourseProgress.objects.filter(user=request.user, course=course).delete()
-            enrollment.delete()
+            enrollment.is_active = False
+            enrollment.date_unenrolled = timezone.now()
+            enrollment.save()
             messages.success(request, f'You have been unenrolled from {course.course_name}.')
         return redirect('course:course_list')
 
     # Render confirmation page
     return render(request, 'course/course_unenroll.html', {'course': course})
 
+def duplicate_course(original_course):
+    # Create a new instance for the duplicated course
+    duplicated_course = Course(
+        course_name=original_course.course_name,
+        course_code=original_course.course_code,
+        instructor=original_course.instructor,
+        description=original_course.description,
+        published=original_course.published,
+    )
+
+    # Ensure unique course_name
+    original_name = original_course.course_name
+    counter = 1
+    while Course.objects.filter(course_name=f"{original_name} - Copy" + (f" ({counter})" if counter > 1 else "")).exists():
+        counter += 1
+    duplicated_course.course_name = f"{original_name} - Copy" + (f" ({counter})" if counter > 1 else "")
+
+    # Ensure unique course_code
+    original_code = original_course.course_code or ""  # Handle cases where course_code is None
+    code_counter = 1
+    while Course.objects.filter(course_code=f"{original_code}{code_counter}").exists():
+        code_counter += 1
+    duplicated_course.course_code = f"{original_code}{code_counter}"
+
+    duplicated_course.save()  # Save the duplicated course
+
+    # Duplicate sessions related to the duplicated course
+    for session in original_course.sessions.all():
+        # Create a new session for the duplicated course
+        duplicated_session = Session(name=session.name, order=session.order)
+        duplicated_session.pk = None  # Create a new session
+        duplicated_session.course = duplicated_course  # Associate with the duplicated course
+        duplicated_session.save()
+
+        # Duplicate materials for the duplicated session
+        for material in session.materials.all():
+            if material.material_type == 'assessments':
+                continue
+
+            # Get the ReadingMaterial associated with the current CourseMaterial
+            material_id = material.material_id
+            reading_material = ReadingMaterial.objects.get(id=material_id)
+
+            # Check if the content includes an iframe with a file URL
+            if '<iframe' in reading_material.content and 'src="' in reading_material.content:
+                start_index = reading_material.content.find('src="') + len('src="')
+                end_index = reading_material.content.find('#toolbar=0"', start_index)
+                if end_index > start_index:
+                    file_url = reading_material.content[start_index:end_index]
+
+                    # Copy the file to the new directory
+                    file_path = file_url.lstrip('/media')
+                    original_file_path = os.path.join(settings.MEDIA_ROOT, file_path)
+                    new_directory = os.path.join(settings.MEDIA_ROOT, 'course_pdf', duplicated_course.course_code)
+                    os.makedirs(new_directory, exist_ok=True)
+                    new_file_path = os.path.join(new_directory, os.path.basename(file_url))
+
+                    if os.path.exists(original_file_path):
+                        shutil.copy2(original_file_path, new_file_path)
+                    else:
+                        print("No file path with this path:", original_file_path)
+
+                    # Update the content to use the new file path
+                    new_file_url = os.path.join('/media/course_pdf', duplicated_course.course_code, os.path.basename(file_url))
+                    reading_material.content = reading_material.content.replace(file_url, new_file_url)
+
+            # Duplicate the ReadingMaterial
+            duplicated_rm = ReadingMaterial.objects.create(
+                content=reading_material.content,  # Updated content
+                title=reading_material.title,      # Copy the title
+            )
+
+            # Create a new CourseMaterial for the duplicated session
+            duplicated_material = CourseMaterial.objects.create(
+                session=duplicated_session,
+                material_id=duplicated_rm.id,
+                material_type=material.material_type,
+                order=material.order,
+                title=material.title,
+            )
+            duplicated_material.save()
+
+            # Link the ReadingMaterial to the CourseMaterial
+            duplicated_rm.material = duplicated_material
+            duplicated_rm.save()
+
+    # Copy tags and prerequisites
+    duplicated_course.tags.set(original_course.tags.all())
+    duplicated_course.prerequisites.set(original_course.prerequisites.all())
+
+    return duplicated_course
 
 def course_list(request):
     user_departments = Department.objects.filter(users=request.user)
@@ -291,6 +386,13 @@ def course_list(request):
     enrollments = Enrollment.objects.filter(student=request.user)
     enrolled_courses = {enrollment.course.id for enrollment in enrollments}
     is_instructor = Course.objects.filter(instructor=request.user).exists()
+
+    duplicate_course_id = request.GET.get('duplicate_course_id')
+    if duplicate_course_id:
+        original_course = get_object_or_404(Course, id=duplicate_course_id)
+        duplicated_course = duplicate_course(original_course)
+        messages.success(request, f"The course '{duplicated_course.course_name}' has been duplicated successfully.")
+        return redirect('course:course_list')
 
     # Calculate completion percentage for each course
     for course in courses:
@@ -563,6 +665,14 @@ def course_edit_topic_tags(request, pk):
 def course_delete(request, pk):
     course = get_object_or_404(Course, pk=pk)
     if request.method == 'POST':
+        # Get the path to the folder
+        folder_path = os.path.join(settings.MEDIA_ROOT, 'course_pdf', course.course_code)
+
+        # Check if the folder exists and delete it
+        if os.path.exists(folder_path) and os.path.isdir(folder_path):
+            shutil.rmtree(folder_path)
+        else:
+            print("No path exist:", folder_path)
         course.delete()
         return redirect('course:course_list')
     return render(request, 'course/course_confirm_delete.html', {'course': course})
@@ -583,8 +693,8 @@ def course_detail(request, pk):
             not course_departments.exists()
         )
     # Get related documents and videos
-    is_enrolled = Enrollment.objects.filter(student=request.user, course=course).exists()
-    users_enrolled_count = Enrollment.objects.filter(course=course).count()
+    is_enrolled = Enrollment.objects.filter(student=request.user, course=course, is_active=True).exists()
+    users_enrolled_count = Enrollment.objects.filter(course=course, is_active=True).count()
 
     # Get all feedback related to the course
     feedbacks = CourseFeedback.objects.filter(course=course)

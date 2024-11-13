@@ -8,13 +8,11 @@
 <!-- <div class="background-wrapper" style="background-image: url('{% if course.image %}{{ course.image.url }}{% else %}{% static 'course/images/blue(8).png' %}{% endif %}');"> -->
 <body>
 <div>
-    {% if user_type == 'instructor' or user.is_superuser %}
     <div class="container mt-0" >
         <a href="{% url 'course:course_list' %}" style="margin-top: -3.75rem; font-size: 1.125rem; color: #0087f3;">
             <i class="fas fa-arrow-left" style="font-size: 1.25rem; color: #0087f3; margin-top: 1.25rem;"></i> <!-- Arrow icon -->
         </a>
     </div>
-    {% endif %}
     <div class="container mt-4" style="max-width: 87.5rem; margin-left: auto; margin-right: auto; padding-left: 0.9375rem; padding-right: 0.9375rem; padding-top: 1.125rem; gap: 0.625rem;">
         <div class="course-title-container" style="margin-left: 0; margin-right: 0; font-size: 1.875rem; margin-top: 0.0625rem; margin-bottom: 0.625;">
             <h1 class="text-3xl font-bold main-color-text" style=" text-transform: uppercase; font-size: 3.7rem; color: #072Ac8; ">{{ course.course_name }}</h1>

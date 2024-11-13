@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .chart-container {
+        width: 100%;
+        max-width: 800px;
+        height: 400px;
+        margin: auto;
+    }
+
+    canvas {
+        height: 100% !important;
+    }
+
+    .filter-form {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .data-table {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+
+{% include "menuReport.html" %}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Enrollment Trends Report</h1>
+
+    <!-- Filter Form -->
+    <form method="get" class="filter-form">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="course_id" class="form-label">Select Course</label>
+                <select name="course_id" id="course_id" class="form-select" required>
+                    {% for course in all_courses %}
+                    <option value="{{ course.id }}" {% if course.id == course_id %}selected{% endif %}>
+                        {{ course.course_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="year" class="form-label">Select Year</label>
+                <input type="number" name="year" id="year" class="form-control"
+                       value="{{ year }}" min="2000" max="2099" required>
+            </div>
+            <div class="col-md-4">
+                <label for="month" class="form-label">Select Month (Optional)</label>
+                <select name="month" id="month" class="form-select">
+                    <option value="">All Months</option>
+                    {% for month in months %}
+                    <option value="{{ month.number }}" {% if selected_month == month.number %}selected{% endif %}>
+                        {{ month.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Apply Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="row">
+        <!-- Chart Column -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Enrollment Trends for {{ course.course_name }} ({{ year }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="enrollmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table Column -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Monthly Data</h5>
+                </div>
+                <div class="card-body data-table">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% if selected_month %}Week{% else %}Month{% endif %}</th>
+                                <th>Enrollments</th>
+                                <th>Unenrollments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for label, enroll, unenroll in table_data %}
+                            <tr>
+                                <td>{{ label }}</td>
+                                <td>{{ enroll }}</td>
+                                <td>{{ unenroll }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Parse the JSON data
+    const chartLabels = JSON.parse('{{ chart_labels|safe }}');
+    const chartEnrollmentData = JSON.parse('{{ chart_enrollment_data|safe }}');
+    const chartUnenrollmentData = JSON.parse('{{ chart_unenrollment_data|safe }}');
+
+    const ctx = document.getElementById('enrollmentChart').getContext('2d');
+    const enrollmentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Enrollments',
+                backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                borderColor: '#4CAF50',
+                data: chartEnrollmentData,  // Use the correct variable name
+                fill: true,
+                tension: 0.1
+            }, {
+                label: 'Unenrollments',
+                backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                borderColor: '#f44336',
+                data: chartUnenrollmentData,  // Use the correct variable name
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Enrollment Trends'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1, // Force the y-axis to use a step size of 1
+                        callback: function(value) {
+                            if (Number.isInteger(value)) {
+                                return value; // Only show integer values
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Students'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: '{{ selected_month|yesno:"Weeks,Months" }}'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

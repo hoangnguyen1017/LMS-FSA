@@ -32,7 +32,7 @@ services:
       DATABASE_HOST_NAME: 'database'
       DATABASE_NAME: 'LMS_database'
       DATABASE_USER: 'root'
-      DATABASE_PASSWOR: '123'
+      DATABASE_PASSWORD: '123'
     networks:
       - app-network
 

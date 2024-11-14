@@ -2,8 +2,8 @@ services:
   nginx:
     build: 
       context: ./nginx_service
-    image: nginx_service:v1.6
-    container_name: nginx_service
+    # image: nginx_service:v1.6
+    # container_name: nginx_service
     # ports:
     #   - "80:80"
     #   - "443:443"
@@ -20,8 +20,8 @@ services:
   django:
     build: 
       context: ./django_backend 
-    container_name: django_backend
-    image: django_backend:v1.2
+    # container_name: django_backend
+    # image: django_backend:v1.2
     # ports:
     #   - "8001:8001"
     volumes:
@@ -39,8 +39,8 @@ services:
   model_api:
     build: 
       context: ./model_api 
-    container_name: model_api
-    image: model_api:v1.1
+    # container_name: model_api
+    # image: model_api:v1.1
     # ports:
     #   - "8000:8000"
     volumes:
@@ -54,7 +54,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: cloudflared_tunnel
+    # container_name: cloudflared_tunnel
     command: tunnel run
     restart: always
     environment:
@@ -73,7 +73,7 @@ services:
       
   database:
     image: postgres:latest
-    container_name: postgres_container
+    # container_name: postgres_container
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: 123

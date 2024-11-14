@@ -81,13 +81,13 @@ services:
     # ports:
     #   - "5433:5432"
     volumes:
-      # - ./.database:/var/lib/postgresql/data # comment this line if you wanna switch back to old database 
-      - postgres_data:/var/lib/postgresql/data # uncomment this line if you wanna switch back to old database 
+      - ./.database:/var/lib/postgresql/data # comment this line if you wanna switch back to old database 
+      # - postgres_data:/var/lib/postgresql/data # uncomment this line if you wanna switch back to old database 
     networks:
       - app-network
 
 # volumes:
-#   db_data:
+#   postgres_data
 
 networks:
   app-network:

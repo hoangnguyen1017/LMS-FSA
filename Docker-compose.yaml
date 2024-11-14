@@ -4,27 +4,26 @@ services:
       context: ./nginx_service
     image: nginx_service:v1.6
     container_name: nginx_service
-    ports:
-      - "80:80"
-      # - "443:443"
-      - "8080:8080"
+    # ports:
+    #   - "80:80"
+    #   - "443:443"
+    #   - "8080:8080"
     networks:
       - app-network
     depends_on:
       - django
     volumes:
-      - ./django_backend/static:/static
+      - ./django_backend/staticfiles:/staticfiles
       - ./django_backend/media:/media
-    # extra_hosts:
-    #   - "host.docker.internal:host-gateway"
+
 
   django:
     build: 
       context: ./django_backend 
     container_name: django_backend
     image: django_backend:v1.2
-    ports:
-      - "8001:8001"
+    # ports:
+    #   - "8001:8001"
     volumes:
       - ./django_backend:/app
     environment:
@@ -42,8 +41,8 @@ services:
       context: ./model_api 
     container_name: model_api
     image: model_api:v1.1
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     volumes:
       - ./model_api:/app
     networks:
@@ -72,20 +71,20 @@ services:
     networks:
       - app-network
       
-  # database:
-  #   image: postgres:latest
-  #   container_name: postgres_container
-  #   environment:
-  #     POSTGRES_USER: root
-  #     POSTGRES_PASSWORD: 123
-  #     POSTGRES_DB: LMS_database
-  #   ports:
-  #     - "5433:5432"
-  #   volumes:
-  #     # - ./.database:/var/lib/postgresql/data # comment this line if you wanna switch back to old database 
-  #     - postgres_data:/var/lib/postgresql/data # uncomment this line if you wanna switch back to old database 
-  #   networks:
-  #     - app-network
+  database:
+    image: postgres:latest
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: LMS_database
+    # ports:
+    #   - "5433:5432"
+    volumes:
+      # - ./.database:/var/lib/postgresql/data # comment this line if you wanna switch back to old database 
+      - postgres_data:/var/lib/postgresql/data # uncomment this line if you wanna switch back to old database 
+    networks:
+      - app-network
 
 # volumes:
 #   db_data:

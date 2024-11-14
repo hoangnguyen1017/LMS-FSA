@@ -246,7 +246,7 @@ logging.basicConfig(
 # SECURE_HSTS_SECONDS = 31536000  # 1 year
 # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
-CSRF_TRUSTED_ORIGINS = ['https://lms.truong51972.id.vn']
+CSRF_TRUSTED_ORIGINS = ['https://*.truong51972.id.vn']
 
 AI_API_SERVER = {
     "HOST": os.environ.get("AI_API_SERVER_HOST"),

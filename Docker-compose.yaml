@@ -33,8 +33,15 @@ services:
       DATABASE_NAME: 'LMS_database'
       DATABASE_USER: 'root'
       DATABASE_PASSWORD: '123'
+      USING_REDIS: True
     networks:
       - app-network
+
+
+  redis:
+    image: redis:latest
+    # ports:
+    #   - "6379:6379"
 
   model_api:
     build: 

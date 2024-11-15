@@ -33,3 +33,4 @@ google-generativeai==0.8.3
 pydantic==2.9.2
 gunicorn==23.0.0
 psycopg2-binary==2.9.10
+gevent==24.11.1

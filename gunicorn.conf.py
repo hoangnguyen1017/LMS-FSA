@@ -4,8 +4,7 @@ import multiprocessing
 bind = "0.0.0.0:8001"
 
 # number of worker processes
-# workers = multiprocessing.cpu_count() * 2 + 1
-workers = 20
+workers = multiprocessing.cpu_count() * 2 + 1
 
 # Worker class
 worker_class = 'gevent'  # use gevent for async IO

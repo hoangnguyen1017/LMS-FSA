@@ -124,13 +124,16 @@ MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',  # Add this line
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'activity.activity_tracking_middleware.ActivityTrackingMiddleware'
+    'activity.activity_tracking_middleware.ActivityTrackingMiddleware',
 
+    # caching with redis if exist
+    'django.middleware.cache.UpdateCacheMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'LMS_SYSTEM.urls'
@@ -234,6 +237,28 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+if os.getenv("USING_REDIS"):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': 'redis://redis:6379/1',
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': 'django_backend',
+        }
+    }
+
+    CACHE_TTL = 60 * 15
+
+    # use cache for session
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+
+    # Cache settings
+    CACHE_MIDDLEWARE_SECONDS = 60 * 15  # 15'
+    CACHE_MIDDLEWARE_KEY_PREFIX = 'lms_system'
 
 
 logging.basicConfig(

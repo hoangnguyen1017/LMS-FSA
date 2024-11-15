@@ -8,8 +8,6 @@ services:
     #   - "80:80"
     #   - "443:443"
     #   - "8080:8080"
-    networks:
-      - app-network
     depends_on:
       - django
     volumes:
@@ -51,8 +49,6 @@ services:
       DATABASE_USER: 'root'
       DATABASE_PASSWORD: '123'
       USING_REDIS: True
-    networks:
-      - app-network
     deploy:
       resources:
         limits:
@@ -104,8 +100,6 @@ services:
     #   - "8000:8000"
     volumes:
       - ./model_api:/app
-    networks:
-      - app-network
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
@@ -145,8 +139,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-    networks:
-      - app-network
     deploy:
       resources:
         limits:
@@ -178,8 +170,6 @@ services:
     volumes:
       - ./.database:/var/lib/postgresql/data # comment this line if you wanna switch back to old database 
       # - postgres_data:/var/lib/postgresql/data # uncomment this line if you wanna switch back to old database 
-    networks:
-      - app-network
     deploy:
       resources:
         limits:
@@ -200,11 +190,6 @@ services:
       - net.ipv4.tcp_tw_reuse=1
 # volumes:
 #   postgres_data
-
-networks:
-  app-network:
-    driver: bridge
-
 
 #################
 # script inscrease buffer size

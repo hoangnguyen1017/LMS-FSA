@@ -15,5 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8001
 
-CMD ["gunicorn", "--workers", "10", "--bind", "0.0.0.0:8001", "LMS_SYSTEM.wsgi:application"]
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:8001"]
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "LMS_SYSTEM.wsgi:application"]

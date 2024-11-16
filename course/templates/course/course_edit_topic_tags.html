@@ -37,7 +37,7 @@
             <div class="form-group" style="flex: 1;">
                 <!-- Topic Dropdown -->
                 <div class="form-group">
-                    <h3>
+                    <h3 style="color: #2b59c3;">
                         Topic
                         <a href="{% url 'course:topic_add' %}" class="ms-2 text-decoration-none">
                             <i class="fas fa-plus-circle text-success" style="font-size: 0.8rem;"></i>
@@ -53,7 +53,7 @@
 
                 <!-- Tags Checkboxes -->
                 <div class="form-group" id="tags-container">
-                    <h3>
+                    <h3 style="color: #2b59c3;">
                         Tags
                         <a href="{% url 'course:tag_add' %}" class="ms-2 text-decoration-none">
                             <i class="fas fa-plus-circle text-success" style="font-size: 0.8rem;"></i>
@@ -66,7 +66,7 @@
 
                 <!-- Existing Tags Section -->
                 <div class="form-group">
-                    <h3>Current Existing Tags</h3>
+                    <h3 style="color: #2b59c3;">Current Existing Tags</h3>
                     {% if course.tags.all %}
                     <ul id="current-tags">
                         {% for tag in course.tags.all %}

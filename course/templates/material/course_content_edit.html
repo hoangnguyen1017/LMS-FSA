@@ -14,7 +14,7 @@
         }
     </style>
 </head>
-<body >
+<body>
     <div class="custom-container mx-auto p-8 bg-white rounded-lg shadow-xl" style="max-width: 87.5rem; width: 100%; margin: 0 auto;">
         <h2 class="text-2xl font-semibold text-teal-600 mb-4" style="font-size: 3.7rem; color: #072Ac8; text-transform: uppercase;">Edit {{ course.course_name }}</h2>
         <div class="tab-container mt-4" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 0.0625rem solid #ccc;">
@@ -117,7 +117,7 @@
                                 </div>
                                 <div class="material-actions">
                                     {% if '/media/course_pdf/' not in reading_material.content %}
-                                        <a href="{% url 'course:edit_reading_material' course.pk selected_session.id reading_material.id %}" class="btn btn-warning" style="padding: 0.3125rem 0.625rem; font-size: 0.875rem; line-height: 1;">
+                                        <a href="?edit={{ reading_material.id }}" class="btn btn-warning" style="padding: 0.3125rem 0.625rem; font-size: 0.875rem; line-height: 1;">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                     {% endif %}
@@ -135,12 +135,15 @@
                             <!-- Display the selected assessment if it exists -->
                             {% for assessment in current_assessments %}
                                 <div class="material-item">
-                                    <div class="material-info" style="display: flex; align-items: center;">
-                                        <span class="index-number" style="font-weight: bold; margin-right: 10px;">{{ forloop.counter }}.</span>
-                                        <a href="#" class="title" data-id="{{ assessment.id }}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 9.375rem; display: inline-block; font-weight: bold; margin-right: 10px;">{{ assessment.title }}</a>
-                                        <span class="material-type" style="margin-left: 0.625rem;">({{ assessment.material_type|capfirst }})</span>
-                                    </div>
-                                    <div class="material-actions">
+                                    <div class="material-info" style="display: flex; align-items: center; justify-content: space-between;">
+                                        <!-- Left Side: Index Number, Title, and Material Type -->
+                                        <div style="display: flex; align-items: center;">
+                                            <span class="index-number" style="font-weight: bold; margin-right: 10px;">{{ forloop.counter }}.</span>
+                                            <a href="#" class="title" data-id="{{ assessment.id }}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 9.375rem; display: inline-block; font-weight: bold; margin-right: 10px;">{{ assessment.title }}</a>
+                                            <span class="material-type">({{ assessment.material_type|capfirst }})</span>
+                                        </div>
+
+                                        <!-- Right Side: Trash Can Icon -->
                                         <span class="trash-can" style="cursor: pointer; color: gray; margin-left: 0.625rem;" data-id="{{ assessment.material_id }}" data-type="{{ assessment.material_type }}">
                                             <i class="fas fa-trash"></i>
                                         </span>
@@ -179,6 +182,26 @@
                         </div>
 
                         <div id="uploaded-pdfs" style="margin-bottom: 0.625rem;"></div>
+
+                        <div id="edit-reading-materials">
+                            {% if editing_material %}
+                            <h2>Edit Reading Material</h2>
+                            <div class="edit-reading-material-entry" style="display: flex; align-items: flex-start; margin-bottom: 0.625rem; font-size: 2.25rem; font-weight: bold;">
+                                <div style="flex-grow: 1;">
+                                    <input type="text" name="edit_reading_material_title[]" class="form-control" value="{{ editing_material.title }}" placeholder="Reading Material Title">
+                                    <textarea name="edit_reading_material_content[]" class="form-control ckeditor" placeholder="Content">{{ editing_material.content }}</textarea>
+                                    <select name="edit_reading_material_type[]" class="form-control" style="margin-top: 0.625rem;">
+                                        <option value="" disabled {% if material_types|length == 0 %}selected{% endif %}>Select Material Type</option>
+                                        {% for key, value in material_types.items %}
+                                            {% if key != 'assessments' %}
+                                                <option value="{{ key }}" {% if key == editing_material.material.material_type %}selected{% endif %}>{{ value }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-top: -0.625rem; padding-right: 3.4375rem; padding: 1.25rem; margin-right: 0.9375rem;">
@@ -275,6 +298,7 @@
     function addRMEntry(sessionName) {
         clearUploadedPdfs();
         clearContentPreview(); // Clear content display when adding new material
+        clearEditReadingMaterials();
         const container = document.getElementById('reading-materials');
         const newEntry = document.createElement('div');
         newEntry.className = 'reading-material-entry';
@@ -315,6 +339,7 @@
     function addPDFEntry() {
         clearReadingMaterials();
         clearContentPreview(); // Clear content display when adding new material
+        clearEditReadingMaterials();
         const container = document.getElementById('uploaded-pdfs');
         const newEntry = document.createElement('div');
         newEntry.className = 'pdf-upload-entry';
@@ -471,7 +496,6 @@
         attachMaterialClickEvent(materialLink, { id: materialId });
     });
 
-
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.material-item .title').forEach(materialLink => {
             materialLink.addEventListener('click', function(event) {
@@ -500,6 +524,7 @@
             });
         });
     });
+
 
     function clearContentPreview() {
         const contentDisplay = document.getElementById('content-display');

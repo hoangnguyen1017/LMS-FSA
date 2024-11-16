@@ -19,9 +19,6 @@ urlpatterns = [
     # Content
     path('<int:pk>/content/<int:session_id>/', views.course_content, name='course_content'),
     path('<int:pk>/content/edit/<int:session_id>/', views.course_content_edit, name='course_content_edit'),
-    #Export/Import
-    path('export/', views.export_course, name='export_course'),
-    path('import/', views.import_courses, name='import_course'),
     path('course/<int:pk>/toggle_publish/', views.toggle_publish, name='toggle_publish'),
     path('<int:pk>/toggle-completion/', views.toggle_completion, name='toggle_completion'),
     # Material

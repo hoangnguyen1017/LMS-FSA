@@ -1,12 +1,8 @@
 from django import forms
 from .models import *
-from django.contrib.auth import get_user_model
+from user.models import User
 #from ckeditor.widgets import CKEditorWidget
-
-User = get_user_model()
-
 # Form for creating and editing courses
-
 class CourseForm(forms.ModelForm):
     creator = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Creator")
     instructor = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Instructor")
@@ -20,7 +16,7 @@ class CourseForm(forms.ModelForm):
 
     class Meta:
         model = Course
-        fields = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'prerequisites', 'tags', 'image']  # sửa lại
+        fields = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'prerequisites', 'tags', 'image', 'price', 'discount']  # sửa lại
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

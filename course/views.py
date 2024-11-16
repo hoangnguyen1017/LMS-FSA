@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Course, Enrollment, ReadingMaterial, Completion, Session, SessionCompletion, Topic, Tag, CourseMaterial, UserCourseProgress
+from .models import Course, Enrollment, ReadingMaterial, Completion, Session, SessionCompletion, Topic, Tag, CourseMaterial, UserCourseProgress, MaterialViewingDuration, Transaction
 from .forms import CourseForm, EnrollmentForm, CourseSearchForm, SessionForm, TopicForm, TagForm, ReadingMaterialEditForm
 from module_group.models import ModuleGroup
 from django.contrib.auth.decorators import login_required
@@ -8,17 +8,12 @@ from django.contrib import messages
 import os
 from django.urls import reverse
 from feedback.models import CourseFeedback
-from .forms import ExcelImportForm
 from django.http import HttpResponse
-import openpyxl
-import pandas as pd
-from django.contrib.auth import get_user_model
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from datetime import datetime
 import base64
-import numpy as np
 from django.core.files.storage import default_storage
 import random
 import re
@@ -54,170 +49,6 @@ def complete_session(request, course_id, session_id):
     return HttpResponseRedirect(reverse('course:course_detail', args=[course.id]))
 
 
-def export_course(request):
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=lms_course.xlsx'
-
-    workbook = openpyxl.Workbook()
-
-    # Course sheet
-    course_worksheet = workbook.active
-    course_worksheet.title = 'Course'
-    course_columns = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'published', 'prerequisites']
-    course_worksheet.append(course_columns)
-
-    for course in Course.objects.all():
-        prerequisites_list = ', '.join([prerequisite.course_name for prerequisite in course.prerequisites.all()]) or None
-        course_worksheet.append([
-            course.course_name,
-            course.course_code,
-            course.description,
-            course.creator.username if course.creator else None,
-            course.instructor.username if course.instructor else None,
-            course.published,
-            prerequisites_list
-        ])
-
-    # Session sheet
-    session_worksheet = workbook.create_sheet(title='Session')
-    session_columns = ['id', 'course_name', 'session_name', 'session_order']
-    session_worksheet.append(session_columns)
-
-    for session in Session.objects.all():
-        session_worksheet.append([
-            session.id,  # Include session ID
-            session.course.course_name if session.course else None,
-            session.name,
-            session.order
-        ])
-
-    # Reading Material sheet
-    material_worksheet = workbook.create_sheet(title='Reading Material')
-    material_columns = ['session_id', 'title', 'material_type', 'order', 'content']
-    material_worksheet.append(material_columns)
-
-    for material in ReadingMaterial.objects.all():
-        material_worksheet.append([
-            material.session.id if material.session else None,
-            material.title,
-            material.material_type,
-            material.order,
-            material.content  # Depending on how you want to handle HTML content, you might want to sanitize it or limit the length.
-        ])
-
-    # Save the workbook to the response
-    workbook.save(response)
-    return response
-
-
-def to_none_if_nan(value):
-    """Convert value to None if it is NaN."""
-    return None if isinstance(value, float) and np.isnan(value) else value
-
-def import_courses(request):
-    if request.method == 'POST':
-        form = ExcelImportForm(request.POST, request.FILES)
-        if form.is_valid():
-            uploaded_file = request.FILES['excel_file']
-            try:
-                # Read necessary sheets
-                course_df = pd.read_excel(uploaded_file, sheet_name='Course')
-                session_df = pd.read_excel(uploaded_file, sheet_name='Session')
-                material_df = pd.read_excel(uploaded_file, sheet_name='Reading Material')
-
-                # Import courses
-                course_imported = 0
-                course_updated = 0
-
-                for index, row in course_df.iterrows():
-                    course_name = row['course_name']
-                    course_code = row['course_code']
-                    description = row['description']
-                    creator_username = to_none_if_nan(row.get('creator'))
-                    instructor_username = to_none_if_nan(row.get('instructor'))
-                    prerequisites = to_none_if_nan(row.get('prerequisites'))
-
-                    # Fetch User instances
-                    User = get_user_model()
-                    creator = User.objects.filter(username=creator_username).first() if creator_username else None
-                    instructor = User.objects.filter(username=instructor_username).first() if instructor_username else None
-
-                    # Get or create the course
-                    course, created = Course.objects.get_or_create(
-                        course_name=course_name,
-                        defaults={
-                            'course_code': course_code,
-                            'description': description,
-                            'creator': creator,
-                            'instructor': instructor,
-                        }
-                    )
-
-                    if created:
-                        course_imported += 1
-                    else:
-                        course_updated += 1
-
-                    # Handle prerequisites
-                    if prerequisites:
-                        prerequisite_names = [prerequisite.strip() for prerequisite in prerequisites.split(',')]
-                        course.prerequisites.clear()
-                        for prerequisite_name in prerequisite_names:
-                            prerequisite = Course.objects.filter(course_name=prerequisite_name).first()
-                            if prerequisite:
-                                course.prerequisites.add(prerequisite)
-                            else:
-                                messages.warning(request, f"Prerequisite '{prerequisite_name}' does not exist for course '{course_name}'.")
-
-                # Import sessions and create mapping
-                session_mapping = {}
-                for index, row in session_df.iterrows():
-                    course_name = row['course_name']
-                    session_name = row['session_name']
-                    session_order = row['session_order']
-
-                    course = Course.objects.filter(course_name=course_name).first()
-                    if course:
-                        session, _ = Session.objects.get_or_create(
-                            course=course,
-                            name=session_name,
-                            defaults={'order': session_order}
-                        )
-                        session_mapping[row['id']] = session  # Map original ID to the new session instance
-
-                # Import reading materials
-                material_imported = 0
-                for index, row in material_df.iterrows():
-                    original_session_id = row['session_id']  # Use the original session ID from the Excel file
-                    title = row['title']
-                    order = row['order']
-                    content = row['content']  # Assume this is HTML content
-
-                    session = session_mapping.get(original_session_id)  # Fetch the session using the mapping
-                    if session:
-                        ReadingMaterial.objects.get_or_create(
-                            session=session,
-                            title=title,
-                            defaults={
-                                'content': content,
-                                'order': order,
-                            }
-                        )
-                        material_imported += 1
-                    else:
-                        messages.warning(request, f"Session ID '{original_session_id}' does not exist for material '{title}'.")
-
-                messages.success(request, f"{course_imported} courses imported successfully! {course_updated} courses already existed. {material_imported} reading materials imported.")
-            except Exception as e:
-                messages.error(request, f"An error occurred during import: {e}")
-
-            return redirect('course:course_list')
-    else:
-        form = ExcelImportForm()
-
-    return render(request, 'course/course_list.html', {'form': form})
-
-
 @login_required
 def course_enroll(request, pk):
     course = get_object_or_404(Course, pk=pk)
@@ -226,26 +57,43 @@ def course_enroll(request, pk):
     form = EnrollmentForm(request.POST)
 
     if form.is_valid():
-        enrollment = form.save(commit=False)
-
-        # Fetch prerequisite courses from the Course model
         prerequisite_courses = course.prerequisites.all()
 
         # Check if the user is enrolled in all prerequisite courses
         enrolled_courses = Enrollment.objects.filter(
             student=request.user,
-            course__in=prerequisite_courses
+            course__in=prerequisite_courses,
+            is_active=True
         ).values_list('course', flat=True)
 
         if all(prereq.id in enrolled_courses for prereq in prerequisite_courses):
-            enrollment.student = request.user
-            enrollment.course = course
-            enrollment.save()
-            messages.success(request, f'You have been enrolled in {course.course_name}.')
+            if course.price > 0:
+                transaction, created = Transaction.objects.get_or_create(
+                    user=request.user,
+                    course=course,
+                    defaults={'is_successful': False}
+                )
+            else:
+                transaction, created = Transaction.objects.get_or_create(
+                    user=request.user,
+                    course=course,
+                    defaults={'is_successful': True}
+                )
+            if not transaction.is_successful:
+                messages.info(request, 'Transaction required. Please complete the payment to activate enrollment.')
+            else:
+                enrollment, created = Enrollment.objects.get_or_create(
+                    student=request.user,
+                    course=course,
+                    defaults={'is_active': True, 'date_enrolled': timezone.now()}
+                )
+                if not created and not enrollment.is_active:
+                    enrollment.is_active = True
+                    enrollment.date_enrolled = timezone.now()
+                    enrollment.save()
+                messages.success(request, f'You have been enrolled in {course.course_name}.')
         else:
             messages.error(request, 'You do not meet the prerequisites for this course.')
-            return redirect('course:course_list')  # Redirect to course list or another page
-
     return redirect('course:course_detail', pk=course.pk)
 
 
@@ -253,6 +101,7 @@ def course_enroll(request, pk):
 def course_unenroll(request, pk):
     course = get_object_or_404(Course, pk=pk)
     enrollment = Enrollment.objects.filter(student=request.user, course=course, is_active=True).first()
+    transaction = Transaction.objects.filter(user=request.user, course=course, is_successful=True).first()
 
     if request.method == 'POST':
         # Unenroll the user and redirect to course list with a message
@@ -263,11 +112,14 @@ def course_unenroll(request, pk):
             enrollment.is_active = False
             enrollment.date_unenrolled = timezone.now()
             enrollment.save()
+            transaction.is_successful = False
+            transaction.save()
             messages.success(request, f'You have been unenrolled from {course.course_name}.')
         return redirect('course:course_list')
 
     # Render confirmation page
     return render(request, 'course/course_unenroll.html', {'course': course})
+
 
 def duplicate_course(original_course):
     # Create a new instance for the duplicated course
@@ -276,7 +128,7 @@ def duplicate_course(original_course):
         course_code=original_course.course_code,
         instructor=original_course.instructor,
         description=original_course.description,
-        published=original_course.published,
+        published=False,
     )
 
     # Ensure unique course_name
@@ -360,6 +212,7 @@ def duplicate_course(original_course):
     duplicated_course.prerequisites.set(original_course.prerequisites.all())
 
     return duplicated_course
+
 
 def course_list(request):
     user_departments = Department.objects.filter(users=request.user)
@@ -451,6 +304,9 @@ def course_add(request):
             # Handle image upload
             if 'image' in request.FILES:
                 course.image = request.FILES['image']
+
+            course.price = course_form.cleaned_data['price']
+            course.discount = course_form.cleaned_data['discount']
 
             course.save()
 
@@ -570,7 +426,6 @@ def course_edit_detail(request, pk):
         'sessions': sessions,
         'first_session_id': first_session_id,
     })
-
 
 def course_edit_session(request, pk):
     course = get_object_or_404(Course, pk=pk)
@@ -865,52 +720,54 @@ def reading_material_detail(request, id):
     # Render normal detail page if not AJAX
     return render(request, 'material/reading_material_detail.html', {'reading_material': reading_material})
 
-def edit_reading_material(request, pk, session_id, reading_material_id):
-    # Retrieve the course
-    course = get_object_or_404(Course, pk=pk)
-    # Retrieve all sessions for the course
-    sessions = Session.objects.filter(course=course)
 
-    # Get the selected session
-    selected_session_id = session_id  # Use session_id parameter
-    session = get_object_or_404(Session, id=selected_session_id)
+def start_viewing(user, material, request):
+    # Get the last viewed material from the session
+    last_viewed_material = request.session.get('last_viewed_material', None)
 
-    # Retrieve the reading material to edit
-    reading_material = get_object_or_404(ReadingMaterial, id=reading_material_id)
+    # Only increment come_back if the material being viewed is different
+    # from the previously viewed material stored in the session
+    if last_viewed_material != str(material.id):
+        # The user is viewing a new material, so increment come_back
+        viewing_duration, created = MaterialViewingDuration.objects.get_or_create(
+            user=user,
+            material=material,
+            defaults={'start_time': timezone.now()}
+        )
 
-    # Retrieve the associated CourseMaterial instance
-    course_material = get_object_or_404(CourseMaterial, material_id=reading_material_id, session=session)
+        if not created:
+            viewing_duration.start_time = timezone.now()
 
-    if request.method == 'POST':
-        form = ReadingMaterialEditForm(request.POST, instance=reading_material)
-        selected_material_type = request.POST.get('material_type')
+        # Increment come_back since the material is being viewed from a different one
+            viewing_duration.come_back += 1
+        viewing_duration.save()
 
-        if form.is_valid():
-            reading_material = form.save()
-            course_material = CourseMaterial.objects.get(material_id=reading_material.id)
-            course_material.title=reading_material.title
-            # Update the material_type if it has been changed
-            if selected_material_type and selected_material_type != course_material.material_type:
-                course_material.material_type = selected_material_type
-                course_material.save()
-            course_material.save()
-
-            messages.success(request, 'Reading material updated successfully.')
-            return redirect('course:course_content_edit', pk=pk, session_id=session_id)
+        # Store the current material id in session to track the last viewed material
+        request.session['last_viewed_material'] = str(material.id)
     else:
-        form = ReadingMaterialEditForm(instance=reading_material)
+        # Material is being reloaded, do not increment come_back
+        print("Reloading the same material, no increment on come_back.")
 
-    context = {
-        'reading_material': reading_material,
-        'form': form,
-        'course': course,
-        'sessions': sessions,
-        'session': session,
-        'material_types': CourseMaterial.MATERIAL_TYPE_CHOICES,  # Pass material type choices to the template
-        'current_material_type': course_material.material_type,  # Current material type for default selection
-    }
+def end_viewing(user, material):
+    try:
+        # Get the MaterialViewingDuration object
+        viewing_duration = MaterialViewingDuration.objects.get(user=user, material=material)
 
-    return render(request, 'material/edit_reading_material.html', context)
+        # Update the end_time
+        viewing_duration.end_time = timezone.now()
+
+        # Calculate the time spent on this viewing session
+        if viewing_duration.start_time:
+            time_spent_now = viewing_duration.end_time - viewing_duration.start_time
+
+            # Add the new time spent to the total time_spent
+            viewing_duration.time_spent += time_spent_now
+
+        # Save the updated object
+        viewing_duration.save()
+    except MaterialViewingDuration.DoesNotExist:
+        # Handle the case where the object does not exist
+        pass
 
 @login_required
 def course_content(request, pk, session_id):
@@ -935,6 +792,20 @@ def course_content(request, pk, session_id):
             current_material = materials.first() if materials.exists() else None
     else:
         current_material = materials.first() if materials.exists() else None
+
+    if current_material:
+        # If the user has navigated away from a previous material, save the duration
+        previous_material_id = request.session.get('previous_material_id')
+        if previous_material_id and int(previous_material_id) != current_material.id:
+            try:
+                previous_material = CourseMaterial.objects.get(id=previous_material_id)
+                end_viewing(request.user, previous_material)
+            except CourseMaterial.DoesNotExist:
+                pass
+
+        # Start viewing the current material
+        start_viewing(request.user, current_material, request)
+        request.session['previous_material_id'] = current_material.id
 
     next_material = materials.filter(order__gt=current_material.order).first() if current_material else None
     next_session = None
@@ -1013,7 +884,6 @@ def course_content(request, pk, session_id):
 
     return render(request, 'course/course_content.html', context)
 
-
 @require_POST
 @login_required
 def toggle_completion(request, pk):
@@ -1070,6 +940,60 @@ def remove_accents(input_str):
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 
+
+def edit_reading_material(request, pk, session_id, reading_material_id):
+    # Retrieve the course
+    course = get_object_or_404(Course, pk=pk)
+    # Retrieve all sessions for the course
+    sessions = Session.objects.filter(course=course)
+
+    # Get the selected session
+    selected_session_id = session_id  # Use session_id parameter
+    session = get_object_or_404(Session, id=selected_session_id)
+
+    # Retrieve the reading material to edit
+    reading_material = get_object_or_404(ReadingMaterial, id=reading_material_id)
+
+    # Retrieve the associated CourseMaterial instance
+    course_material = get_object_or_404(CourseMaterial, material_id=reading_material_id, session=session)
+    # 14/11/2024
+    materials = CourseMaterial.objects.filter(session=session).order_by('order')
+    reading_materials = ReadingMaterial.objects.filter(material__in=materials).order_by('material__order')
+
+    if request.method == 'POST':
+        form = ReadingMaterialEditForm(request.POST, instance=reading_material)
+        selected_material_type = request.POST.get('material_type')
+
+        if form.is_valid():
+            reading_material = form.save()
+            course_material = CourseMaterial.objects.get(material_id=reading_material.id)
+            course_material.title = reading_material.title
+            # Update the material_type if it has been changed
+            if selected_material_type and selected_material_type != course_material.material_type:
+                course_material.material_type = selected_material_type
+                course_material.save()
+            course_material.save()
+
+            messages.success(request, 'Reading material updated successfully.')
+            return redirect('course:course_content_edit', pk=pk, session_id=session_id)
+    else:
+        form = ReadingMaterialEditForm(instance=reading_material)
+
+    context = {
+        'reading_material': reading_material,
+        'form': form,
+        'course': course,
+        'sessions': sessions,
+        'session': session,
+        'material_types': CourseMaterial.MATERIAL_TYPE_CHOICES,  # Pass material type choices to the template
+        'current_material_type': course_material.material_type,  # Current material type for default selection
+        'reading_materials': reading_materials,  # Add this line to include reading_materials
+
+    }
+
+    return render(request, 'material/edit_reading_material.html', context)
+
+
 @login_required
 def course_content_edit(request, pk, session_id):
     course = get_object_or_404(Course, pk=pk)
@@ -1094,7 +1018,30 @@ def course_content_edit(request, pk, session_id):
     # Filter out already selected assessments from the available assessments
     available_assessments = Assessment.objects.filter(course=course).exclude(id__in=current_assessment_ids)
 
+    editing_material = None
+    if request.GET.get('edit'):
+        reading_material_id = request.GET['edit']
+        editing_material = get_object_or_404(ReadingMaterial.objects.exclude(material__material_type='assessments'),id=reading_material_id)
+        editing_course_material = get_object_or_404(CourseMaterial, material_id=reading_material_id)
+
     if request.method == 'POST':
+        if editing_material is not None:
+            edit_reading_material_titles = request.POST.getlist('edit_reading_material_title[]')
+            edit_reading_material_contents = request.POST.getlist('edit_reading_material_content[]')
+            edit_reading_material_types = request.POST.getlist('edit_reading_material_type[]')
+
+            for title, content, material_type in zip(edit_reading_material_titles, edit_reading_material_contents,
+                                                     edit_reading_material_types):
+                if title and content and material_type:
+                    editing_material.title = title
+                    editing_material.content = content
+                    editing_material.save()
+                    editing_course_material.title = title
+                    if material_type and material_type != editing_course_material.material_type:
+                        editing_course_material.material_type = material_type
+                        editing_course_material.save()
+                    editing_course_material.save()
+
         # Process materials for deletion using marked_for_deletion with material_type
         marked_items = request.POST.get('marked_for_deletion', '').split(',')
         for item in marked_items:
@@ -1211,9 +1158,11 @@ def course_content_edit(request, pk, session_id):
         'assessments': available_assessments,  # Changed to available_assessments
         'selected_assessment_ids': selected_assessment_ids,
         'current_assessments': current_assessments,
+        'editing_material': editing_material,
     }
 
     return render(request, 'material/course_content_edit.html', context)
+
 
 @login_required
 def toggle_publish(request, pk):

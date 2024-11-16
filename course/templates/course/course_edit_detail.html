@@ -28,29 +28,29 @@
         <div id="Tab1" class="tabcontent" style="display: none; padding: 1.25rem; border: 0.125rem solid #ccc; border-top: none;">
             <div class="form-row" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 1.25rem;">
                 <div class="form-group">
-                    {{ course_form.course_name.label_tag }}
+                    <label style="color: #2b59c3;">{{ course_form.course_name.label }}</label>
                     {{ course_form.course_name|add_class:"form-control" }}
                 </div>
                 <div class="form-group">
-                    {{ course_form.course_code.label_tag }}
+                    <label style="color: #2b59c3;">{{ course_form.course_code.label }}</label>
                     {{ course_form.course_code|add_class:"form-control" }}
                 </div>
                 <div class="form-group">
-                    {{ course_form.creator.label_tag }}
+                    <label style="color: #2b59c3;">{{ course_form.creator.label }}</label>
                     {{ course_form.creator|add_class:"form-control" }}
                 </div>
                 <div class="form-group">
-                    {{ course_form.instructor.label_tag }}
+                    <label style="color: #2b59c3;">{{ course_form.instructor.label }}</label>
                     {{ course_form.instructor|add_class:"form-control" }}
                 </div>
             </div>
             <div class="form-row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
                 <div class="form-group">
-                    {{ course_form.description.label_tag }}
+                    <label style="color: #2b59c3;">{{ course_form.description.label }}</label>
                     {{ course_form.description|add_class:"form-control description-input" }}
                 </div>
                 <div class="form-group">
-                    <h3>Course Image</h3>
+                    <h3 style="color: #2b59c3;">Course Image</h3>
                     {% if course.image %}
                         <img src="{{ course.image.url }}" alt="{{ course.course_name }}" style="max-width: 12.5rem;">
                         <br>
@@ -64,7 +64,7 @@
                     <input type="file" name="image" class="form-control-file" id="id_image">
                 </div>
                 <div class="form-group">
-                    <h3>Prerequisite Courses</h3>
+                    <h3 style="color: #2b59c3;">Prerequisite Courses</h3>
                     <div class="mb-4">
                         <select name="prerequisite_courses" class="form-select select2" multiple>
                             {% if prerequisites %}
@@ -78,6 +78,17 @@
                         </select>
                     </div>
                     <input type="hidden" name="deleted_prerequisite_ids" id="delete-prerequisite-ids">
+                </div>
+            </div>
+            <!-- Added fields for Price and Discount -->
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div class="form-group">
+                    <h3 style="color: #2b59c3;">Price</h3>
+                    {{ course_form.price|add_class:"form-control" }}
+                </div>
+                <div class="form-group">
+                    <h3 style="color: #2b59c3;">Discount</h3>
+                    {{ course_form.discount|add_class:"form-control" }}
                 </div>
             </div>
         </div>
@@ -95,7 +106,6 @@
         </div>
     </form>
 </div>
-</body>
 {% endblock %}
 
 {% block extra_js %}

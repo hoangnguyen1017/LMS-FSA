@@ -28,27 +28,81 @@ from django.http import Http404
 User = get_user_model()
 
 def feedback_list(request):
+    # Dữ liệu ban đầu của feedback list
     module_groups = ModuleGroup.objects.all()
     modules = Module.objects.all()
     instructor_feedbacks = InstructorFeedback.objects.all()
     course_feedbacks = CourseFeedback.objects.all()
-    training_feedbacks = TrainingProgramFeedback.objects.all()
 
-    # Fetch instructors and courses
-    instructors = User.objects.filter(id__in=Course.objects.values_list('instructor_id', flat=True)).distinct() # Assuming you have a role model for instructors
+    instructors = User.objects.filter(id__in=Course.objects.values_list('instructor_id', flat=True)).distinct()
     courses = Course.objects.all()
-    training_programs = TrainingProgram.objects.all()
 
+    # Thêm phân trang cho mỗi loại feedback
+    instructor_paginator = Paginator(instructor_feedbacks, 8)
+    course_paginator = Paginator(course_feedbacks, 8)
+
+    instructor_page_number = request.GET.get('instructor_page')
+    course_page_number = request.GET.get('course_page')
+
+    instructor_page_obj = instructor_paginator.get_page(instructor_page_number)
+    course_page_obj = course_paginator.get_page(course_page_number)
+
+    # Thêm logic tính toán phân phối đánh giá và phần trăm
+    total_feedbacks = course_feedbacks.count()
+
+    # Khởi tạo số lượng đánh giá cho từng tiêu chí
+    criteria = ['course_material', 'practical_applications', 'clarity_of_explanation',
+                'course_structure', 'support_materials']
+    rating_counts = {criterion: {star: 0 for star in range(1, 6)} for criterion in criteria}
+
+    # Tính tổng các đánh giá
+    for feedback in course_feedbacks:
+        for criterion in criteria:
+            rating = getattr(feedback, criterion, 0)
+            if 1 <= rating <= 5:
+                rating_counts[criterion][rating] += 1
+
+    # Chuyển đổi số lượng đánh giá thành phần trăm
+    rating_percentages = {}
+    for criterion, counts in rating_counts.items():
+        total = sum(counts.values())
+        if total > 0:
+            rating_percentages[criterion] = {star: (count / total) * 100 for star, count in counts.items()}
+        else:
+            rating_percentages[criterion] = {star: 0 for star in range(1, 6)}
+
+    # Các tiêu chí cho Instructor feedback
+    instructor_criteria = ['course_knowledge', 'communication_skills', 'approachability', 'engagement', 'professionalism']
+    instructor_rating_counts = {criterion: {star: 0 for star in range(1, 6)} for criterion in instructor_criteria}
+
+    # Tính tổng số đánh giá cho từng tiêu chí
+    for feedback in instructor_feedbacks:
+        for criterion in instructor_criteria:
+            rating = getattr(feedback, criterion, 0)
+            if 1 <= rating <= 5:
+                instructor_rating_counts[criterion][rating] += 1
+
+    # Chuyển đổi số lượng đánh giá thành phần trăm
+    instructor_rating_percentages = {}
+    for criterion, counts in instructor_rating_counts.items():
+        total = sum(counts.values())
+        if total > 0:
+            instructor_rating_percentages[criterion] = {star: (count / total) * 100 for star, count in counts.items()}
+        else:
+            instructor_rating_percentages[criterion] = {star: 0 for star in range(1, 6)}
+
+
+    # Trả về dữ liệu cho template `feedback_list.html`
     return render(request, 'feedback_list.html', {
-        'instructor_feedbacks': instructor_feedbacks,
-        'course_feedbacks': course_feedbacks,
-        'training_feedbacks': training_feedbacks,
-        'module_groups': module_groups,
-        'modules': modules,
-        'instructors': instructors,
-        'courses': courses,
-        'training_programs': training_programs  # Add training programs as well
-    })
+    'instructor_page_obj': instructor_page_obj,
+    'course_page_obj': course_page_obj,
+    'module_groups': module_groups,
+    'modules': modules,
+    'instructors': instructors,
+    'courses': courses,
+    'rating_percentages': rating_percentages,  # Dữ liệu phần trăm cho biểu đồ của course
+    'instructor_rating_percentages': instructor_rating_percentages,  # Dữ liệu phần trăm cho biểu đồ của giảng viên
+})
 
 def give_instructor_feedback(request, instructor_id):
     instructor = User.objects.get(pk=instructor_id)
@@ -199,3 +253,4 @@ def helpful_rate(request, pk):
     else:
         feedback.helpful_rate.add(request.user)
     return redirect('feedback:course_all_feedback', course_id=feedback.course.id)
+

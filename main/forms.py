@@ -1,11 +1,6 @@
 from django import forms
-from user.models import User  # Sử dụng model User của Django
-from django.contrib.auth.hashers import make_password
-from django.core.mail import send_mail  # Thêm hàm gửi email
-from django.conf import settings  # Để lấy email mặc định từ settings
-from role.models import Role
-from user.models import Profile
-import random
+from user.models import User    
+from django.conf import settings  
 from django.contrib.auth import authenticate
 
 class EmailForm(forms.Form):
@@ -61,7 +56,6 @@ class PasswordResetForm(forms.Form):
         if password and confirm_password and password != confirm_password:
             raise forms.ValidationError("Password and Confirm password is not match.")
 
-
 class CustomLoginForm(forms.Form):
     username = forms.CharField(
         max_length=100,
@@ -85,7 +79,18 @@ class CustomLoginForm(forms.Form):
         password = cleaned_data.get('password')
 
         if username and password:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                self.add_error('username', "Username does not exist.")
+            
+            # Kiểm tra mật khẩu
             user = authenticate(username=username, password=password)
             if user is None:
-                raise forms.ValidationError("Invalid login credentials.")
+                self.add_error('password', "Password is incorrect.")
+            
+            # Kiểm tra nếu tài khoản bị khóa
+            if hasattr(user, 'is_locked') and user.is_locked:
+                self.add_error('username', "Your account has been locked. Please contact the administrator.")
+
         return cleaned_data

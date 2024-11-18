@@ -12,6 +12,14 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+import logging
+
+# Load environment variables from the .env file
+load_dotenv()
+
+# Now you can access environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,8 +29,17 @@ LOGIN_URL = 'login'  # Default URL to redirect if not logged in
 LOGIN_REDIRECT_URL = ''
 
 # Add or update media settings for handling uploaded files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+#for PDF
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+XS_SHARING_ALLOWED_METHODS = ['POST','GET','OPTIONS', 'PUT', 'DELETE']
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+# STATIC_URL = '/staticfiles/'
+# STATIC_URL for development
 
 # settings.py
 AUTH_USER_MODEL = 'user.User'  # Change 'user' to the name of your app
@@ -30,13 +47,22 @@ AUTH_USER_MODEL = 'user.User'  # Change 'user' to the name of your app
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
+#Send email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'codinglmsfsa@gmail.com'  # Your email address
+EMAIL_HOST_PASSWORD = 'adst vdek luiv zkny'  # Your email password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Set the default from email
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-h+p6t3%50m)_a15%4&i*q_ule5a_$566#wu=f_5uvlapiqq%5v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 #ALLOWED_HOSTS = ['codinglmsfsa.pythonanywhere.com']
 
 AUTHENTICATION_BACKENDS = [
@@ -68,33 +94,34 @@ INSTALLED_APPS = [
     'ckeditor',
     'ckeditor_uploader',  #Optional: if you want to allow image uploads
     'widget_tweaks',
+
     'module_group',
     'training_program',
-    'student_performance',
-    'training_program_subjects',
-    
     'subject', 'student_materials', #for FSA subject
 
     'main', #for hompage
 
     'exercises', #Binh_Thang
-    'assessments', #Cuong
+    #ngattt
+    'assessments', 'reports', 'group_enrollment', 'mylearning', 'certification', 
+    'learning_path', 'backup', 'student_portal', #'quiz_generator',
 
-    'user', 'role', 'department','team', #group01
+    #group01
+    'user', 'role', 'department', 'team',
 
     #group02
     'course', 'feedback', 'forum', 
 
     #group03
-    'quiz', 'std_quiz', # 'std_course',
+    'quiz', 'tools', # 'std_course', 'course_Truong', 'std_quiz', 
 
     #group04
     'chat', 'chatapp', 'thread', 'collaboration_group', 
 
     #group05 
-    'activity', 'ai_insights', 'analytics_report','assignment', 'certificate',
-    'performance_analytics', 'progress_notification', 
-    'user_progress', 'user_summary',
+    'activity', 'analytics_report', 'book', 'progress_notification',
+    'achievement', 'quiz_bank', # -- add this app
+
 ]
 
 MIDDLEWARE = [
@@ -106,7 +133,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'activity.activity_tracking_middleware.ActivityTrackingMiddleware'
+    'activity.activity_tracking_middleware.ActivityTrackingMiddleware',
+    'main.middleware.SiteLockMiddleware'
 
 ]
 
@@ -115,7 +143,7 @@ ROOT_URLCONF = 'LMS_SYSTEM.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'main' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,11 +151,11 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'main.context_processors.site_status',  # Thêm dòng này
             ],
         },
     },
 ]
-
 
 WSGI_APPLICATION = 'LMS_SYSTEM.wsgi.application'
 
@@ -135,34 +163,19 @@ WSGI_APPLICATION = 'LMS_SYSTEM.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'LMS',
+#         'USER': 'postgres',
+#         'PASSWORD': '1234567890',
+#         'HOST': 'localhost',  # Set to the appropriate host if using a remote server
+#         'PORT': '5432',       # Default PostgreSQL port
 #     }
 # }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'data_teach',
-        'USER': 'root',
-        'PASSWORD': '123456',
-        'HOST': 'localhost',
-        'PORT': '3307',
-    },
-}
-
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'nguyenvinhkhang26042003@gmail.com'  # Thay bằng email của bạn
-EMAIL_HOST_PASSWORD = 'bnti zhff goch tkzc'  # Thay bằng mật khẩu email của bạn
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
-# Password validation 
+# Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -180,35 +193,62 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LANGUAGE_CODE = 'en-us'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-# STATIC_URL = '/static/'
-STATIC_URL = '/staticfiles/'
-
-# Define the directory where static files will be collected (if you run `collectstatic`)
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # used for production
-
-# Define additional directories to look for static files
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # Custom static files directory
-]
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# SERVER CONFIG, DO NOT MODIFY!!!!!
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
+USE_TZ = False
+USE_I18N = True
+
+
+if os.getenv("DATABASE_USER") is not None:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv("DATABASE_NAME"),
+            'USER': os.getenv("DATABASE_USER"),
+            'PASSWORD': os.getenv("DATABASE_PASSWORD"),
+            'HOST': os.getenv("DATABASE_HOST_NAME"),  # Set to the appropriate host if using a remote server
+            'PORT': '5432',       # Default PostgreSQL port
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+
+logging.basicConfig(
+    level=logging.INFO, format='%(levelname)-4s - "%(name)s": %(message)s'
+)
+
+# secure config
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_HSTS_SECONDS = 31536000  # 1 year
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+CSRF_TRUSTED_ORIGINS = ['https://lms.truong51972.id.vn']

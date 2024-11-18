@@ -34,7 +34,7 @@
                     <div id="studentReports" class="accordion-collapse collapse" aria-labelledby="studentReportsHeader" data-bs-parent="#reportsAccordion">
                         <div class="accordion-body">
                             <a href="{% url 'reports:student_enrollment_report' %}" class="btn btn-outline-success btn-lg mb-3 w-100">Student Enrollment</a>
-                            <a href="{% url 'reports:user_progress_report' %}" class="btn btn-outline-success btn-lg w-100">User Progress</a>
+                            <a href="{% url 'reports:user_progress_report' %}" class="btn btn-outline-success btn-lg mb-3 w-100">User Progress</a>
                         </div>
                     </div>
                 </div>
@@ -74,7 +74,12 @@
                             <a href="{% url 'reports:user_statistics_report' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">User Statistics</a>
                             <a href="{% url 'reports:role_report' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">Role</a>
                             <a href="{% url 'reports:login_frequency_report' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">Login Frequency</a>
-                            <a href="{% url 'reports:user_duration_login' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">User Duration Login</a>
+                            <a href="{% url 'reports:engagement_activity_report' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">Engagement and Activity Report</a>
+                            <a href="{% url 'reports:user_progress_and_milestones_report' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">Use Progress And Milestones Report</a>
+                            <a href="{% url 'reports:warning_student_report' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">Warning Student Report</a>
+                            <a href="{% url 'reports:authentication_security_report' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">Authentication security report</a>
+                            <a href="{% url 'reports:password_change_report' %}" class="btn btn-outline-warning btn-lg mb-3 w-100">Password Change Report</a>
+
                         </div>
                     </div>
                 </div>

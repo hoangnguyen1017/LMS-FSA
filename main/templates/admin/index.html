@@ -1,0 +1,21 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+    <!-- Lock/Unlock Website Button at the top of the content -->
+    <div class="site-lock-button" style="margin-bottom: 20px;">
+        {% if is_site_locked %}
+            <!-- Unlock Button -->
+            <a href="{% url 'main:unlock_site' %}" class="button" style="background-color: #00CC00; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none;">
+                Unlock Website
+            </a>
+        {% else %}
+            <!-- Lock Button -->
+            <a href="{% url 'main:lock_site' %}" class="button" style="background-color: #de0034; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none;">
+                Lock Website
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Continue with the default admin content -->
+    {{ block.super }}
+{% endblock %}

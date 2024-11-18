@@ -5,25 +5,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.http import JsonResponse
+from module_group.models import ModuleGroup
 
-# @login_required
-# def notifications_view(request):
-#     # Fetch unread messages for the logged-in user
-#     unread_messages = Chat.objects.filter(receiver=request.user, is_read=False)
-
-#     notifications = [
-#         {
-#             'sender': message.sender.username,
-#             'message': message.message,
-#             'timestamp': message.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-#         }
-#         for message in unread_messages
-#     ]
-
-#     return JsonResponse({
-#         'unread_count': unread_messages.count(),
-#         'notifications': notifications,  # Return notifications with sender info
-#     })
 
 def send_message_form(request):
     if request.method == "POST":
@@ -155,6 +138,7 @@ def delete_message_view(request, message_id):
     return render(request, 'chat/delete_message.html', {'message': message})
 
 def chat_view(request, username=None, group_id=None):
+    module_groups = ModuleGroup.objects.all()
     current_user = request.user  # Get the current logged-in user
     
     # Get the search query from the request
@@ -194,7 +178,6 @@ def chat_view(request, username=None, group_id=None):
 
         # Fetch group messages
         messages = Chat.objects.filter(group=group).order_by('timestamp')
-
         if request.method == "POST":
             message_text = request.POST.get('message', '').strip()
             if message_text:
@@ -207,7 +190,8 @@ def chat_view(request, username=None, group_id=None):
             'messages': messages,
             'users': users,
             'group_chats': group_chats,
-            'user': current_user  # Pass the current logged-in user
+            'user': current_user,  # Pass the current logged-in user
+            'module_groups' : module_groups
         }
     
     elif username:
@@ -238,118 +222,16 @@ def chat_view(request, username=None, group_id=None):
             'messages': messages,
             'users': users,
             'group_chats': group_chats,
-            'user': current_user  # Pass the current logged-in user
+            'user': current_user,
+            'module_groups' : module_groups  # Pass the current logged-in user
         }
     else:
         # If no username or group_id is provided, just render the user list and group chats
         context = {
             'users': users,
             'group_chats': group_chats,
-            'user': current_user
+            'user': current_user,
+            'module_groups' : module_groups
         }
 
     return render(request, 'chat/chat_view.html', context)
-# @login_required
-# def chat_view(request, username=None, group_id=None):
-#     current_user = request.user  # Get the current logged-in user
-
-#     # Get the search query from the request
-#     search_query = request.GET.get('q', '').strip()
-    
-#     # Filter users based on the search query, excluding the current user
-#     if search_query:
-#         users = User.objects.filter(
-#             Q(username__icontains=search_query) | 
-#             Q(email__icontains=search_query) | 
-#             Q(full_name__icontains=search_query)  # Assuming full_name exists
-#         ).exclude(id=current_user.id)
-#     else:
-#         # If no search query, list all users except the current user
-#         users = User.objects.exclude(id=current_user.id)
-
-#     # Filter group chats based on the search query
-#     if search_query:
-#         group_chats = GroupChat.objects.filter(
-#             Q(name__icontains=search_query) &
-#             (Q(created_by=current_user) | Q(members=current_user))
-#         ).distinct()
-#     else:
-#         # Get all group chats where the user is either the creator or a member
-#         group_chats = GroupChat.objects.filter(
-#             Q(created_by=current_user) | Q(members=current_user)
-#         ).distinct()
-
-#     if group_id:
-#         # Handle group chat
-#         group = get_object_or_404(GroupChat, id=group_id)
-
-#         # Ensure the current user is part of the group (either the creator or a member)
-#         if current_user not in group.members.all() and group.created_by != current_user:
-#             return redirect('some_error_page')  # Unauthorized access
-
-#         # Fetch group messages
-#         messages = Chat.objects.filter(group=group).order_by('timestamp')
-
-#         # Mark messages as read
-#         Chat.objects.filter(group=group, receiver=current_user).update(is_read=True)
-
-#         if request.method == "POST":
-#             message_text = request.POST.get('message', '').strip()
-#             if message_text:
-#                 # Create a new message for the group
-#                 Chat.objects.create(sender=current_user, group=group, message=message_text)
-#                 return redirect('chat:chat_view', group_id=group.id)
-
-#         context = {
-#             'group': group,
-#             'messages': messages,
-#             'users': users,
-#             'group_chats': group_chats,
-#             'user': current_user  # Pass the current logged-in user
-#         }
-    
-#     elif username:
-#         # Handle one-on-one chat
-#         other_user = get_object_or_404(User, username=username)  # The receiver (other participant in the chat)
-
-#         if current_user.username == username:
-#             # Prevent a user from chatting with themselves
-#             return redirect('some_error_page')  # Redirect to an error page or a relevant message
-
-#         # Filter messages between the logged-in user and the selected receiver
-#         messages = Chat.objects.filter(
-#             (Q(sender=current_user) & Q(receiver=other_user)) |
-#             (Q(sender=other_user) & Q(receiver=current_user))
-#         ).order_by('timestamp')
-
-#         # Mark messages as read
-#         Chat.objects.filter(
-#             Q(sender=other_user, receiver=current_user) |
-#             Q(sender=current_user, receiver=other_user)
-#         ).update(is_read=True)
-
-#         if request.method == "POST":
-#             message_text = request.POST.get('message', '').strip()
-#             selected_receiver_username = request.POST.get('receiver', other_user.username)
-#             receiver = get_object_or_404(User, username=selected_receiver_username)
-            
-#             if message_text and receiver:
-#                 Chat.objects.create(sender=current_user, receiver=receiver, message=message_text)
-#                 return redirect('chat:chat_view', username=other_user.username)
-
-#         context = {
-#             'other_user': other_user,
-#             'messages': messages,
-#             'users': users,
-#             'group_chats': group_chats,
-#             'user': current_user  # Pass the current logged-in user
-#         }
-#     else:
-#         # If no username or group_id is provided, just render the user list and group chats
-#         context = {
-#             'users': users,
-#             'group_chats': group_chats,
-#             'user': current_user
-#         }
-
-#     return render(request, 'chat/chat_view.html', context)

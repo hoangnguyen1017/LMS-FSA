@@ -298,7 +298,6 @@
     function addRMEntry(sessionName) {
         clearUploadedPdfs();
         clearContentPreview(); // Clear content display when adding new material
-        clearEditReadingMaterials();
         const container = document.getElementById('reading-materials');
         const newEntry = document.createElement('div');
         newEntry.className = 'reading-material-entry';
@@ -339,7 +338,6 @@
     function addPDFEntry() {
         clearReadingMaterials();
         clearContentPreview(); // Clear content display when adding new material
-        clearEditReadingMaterials();
         const container = document.getElementById('uploaded-pdfs');
         const newEntry = document.createElement('div');
         newEntry.className = 'pdf-upload-entry';

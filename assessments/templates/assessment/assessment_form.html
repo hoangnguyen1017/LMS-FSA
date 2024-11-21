@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Assessment{% endblock %}
+{% block title %}{% if assessment %}Edit Assessment{% else %}Create New Assessment{% endif %}{% endblock %}
 
 {% block content %}
 <head>
@@ -85,32 +85,35 @@
                             </div>  
                             <!-- Exercise List Section -->
                             <div class="col-md-6">
-                                <div class="mb-3">
+                                <div class="mb-1">
                                     <label for="search-exercises" class="form-label">Exercises</label>                           
                                 </div>
                                 <div class="exercise-list" id="exercise-list" style="height: 300px; overflow-y: auto; border: 1px solid #f5ebeb;">
-                                    {% for exercise in exercises %}
-                                        <div class="d-flex align-items-center justify-content-between exercise-item border mb-1 p-2 cursor-pointer" data-exercise-id="{{ exercise.id }}">
+                                    {% for exercise in exercises %} 
+                                        <div class="d-flex align-items-center exercise-item border mb-1 p-2 cursor-pointer" data-exercise-id="{{ exercise.id }}">
                                             <input type="checkbox" name="exercises" value="{{ exercise.id }}" id="exercise-{{ exercise.id }}"
-                                                {% if exercise.id in selected_exercises %}checked{% endif %}>
-                                            <label for="exercise-{{ exercise.id }}" class="me-2">{{ exercise.title }}</label>
-                                
-                                            <!-- Nút biểu tượng mắt -->
-                                            <button type="button" class="view-button btn btn-link text-secondary" 
-                                                onmouseover="if (!this.classList.contains('active')) { this.classList.remove('text-secondary'); this.classList.add('text-primary'); }" 
-                                                onmouseout="if (!this.classList.contains('active')) { this.classList.remove('text-primary'); this.classList.add('text-secondary'); }"
-                                                onclick="toggleViewButton(this, {{ exercise.id }})">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
+                                                {% if exercise.id in selected_exercises %}checked{% endif %} class="me-4">
+                                            <label for="exercise-{{ exercise.id }}" >{{ exercise.title }}</label>
+                                                                
+                                            <div class="d-flex align-items-center ms-auto">  
+                                                <span class="badge rounded-pill bg-light text-dark small me-2 border border-primary">{{ exercise.language|capfirst }}</span>
+                                                <button type="button" class="view-button btn btn-link text-secondary" 
+                                                    onmouseover="if (!this.classList.contains('active')) { this.classList.remove('text-secondary'); this.classList.add('text-primary'); }" 
+                                                    onmouseout="if (!this.classList.contains('active')) { this.classList.remove('text-primary'); this.classList.add('text-secondary'); }"
+                                                    onclick="toggleViewButton(this, {{ exercise.id }})">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     {% endfor %}
                                 </div>
+                                <div id="filtered-exercises" style="height: 300px; overflow-y: auto; border: 1px solid #f5ebeb; display: none;"></div>
                             </div>
 
                             <!-- Exercise Preview Section -->
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <div class="mb-3">
+                                <div class="mb-1">
+                                    <div class="mb-1">
                                         <label for="search-exercises2" class="form-label">Preview Selected Exercise</label>                                       
                                     </div>                            
                                     <div id="exercise-content" class="border p-2" style="height: 300px; overflow-y: auto;">
@@ -147,23 +150,22 @@
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header" id="heading{{ quiz_option.id }}">
                                                     <div class="quiz-dropdown border rounded p-2 mb-2 bg-light" id="quizDropdown{{ quiz_option.id }}" style="cursor: pointer;">
-                                                        <div class="quiz-header d-flex justify-content-between align-items-center border-bottom pb-1 mb-1">
+                                                        <div class="quiz-header d-flex justify-content-between align-items-center border-bottom pb-1 mb-1" style="font-size: 0.8rem;">
                                                             <div class="position-relative">
-                                                                <span class="quiz-title h6 fw-bold" style="font-size: 18px; margin-right: 10px;">
+                                                                <span class="quiz-title h6 fw-bold" style="font-size: 16px; margin-right: 10px;">
                                                                     {{ quiz_option.quiz_title }}
+                                                                    <span class="badge bg-success" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">{{ quiz_option.total_questions }} questions</span>
                                                                 </span>
-                                                                <span class="badge" style="background-color: #4CAF50; color: #FFFFFF; font-size: 12px; position: absolute; top: 1px; right: -30px; padding: 2px 5px; border-radius: 3px; font-weight: bold;">
-                                                                    Easy
-                                                                </span>
-                                                                <div class="quiz-info d-flex gap-3" style="font-size: 0.9rem; color: #666;">
-                                                                    <span class="badge bg-success">{{ quiz_option.total_questions }} questions</span>
-                                                                    <div style="position: absolute; left: 200px; margin-top: 5px; transform: rotate(180deg);">
-                                                                        <svg width="12" height="12" viewBox="0 0 24 24">
-                                                                            <path d="M 12 4 L 20 16 L 4 16 Z" fill="#999999" stroke="#999999" stroke-width="5" stroke-linejoin="round" style="filter: drop-shadow(0 0 3px cyan);"/>
+                                                                
+                                                                <div class="quiz-info d-flex gap-3" style="font-size: 0.7rem; color: #666;">
+                                                                    <div style="position: absolute; left: 200px; margin-top: 12px; transform: rotate(180deg);">
+                                                                        <svg width="10" height="10" viewBox="0 0 24 24">
+                                                                            <path d="M 12 4 L 20 16 L 4 16 Z" fill="#999999" stroke="#999999" stroke-width="4" stroke-linejoin="round" style="filter: drop-shadow(0 0 3px cyan);"/>
                                                                         </svg>
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                        
                                                             <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center position-relative btn-add-question add-questions" 
                                                                     data-quiz-id="{{ quiz_option.id }}" 
                                                                     data-question-id="{{ question.id }}" 
@@ -660,9 +662,12 @@
             });
 
         
+            // Determine the URL based on the presence of assessment.id
+            const url = "{% if assessment and assessment.id %}{% url 'assessment:assessment_edit' assessment.id %}{% else %}{% url 'assessment:assessment_create' %}{% endif %}";
+
             // Send collected data
             if (savedData.length > 0 || deletedIds.length > 0) {
-                fetch("{% url 'assessment:assessment_edit' assessment.id %}", {
+                fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -670,7 +675,6 @@
                     },
                     body: JSON.stringify({
                         questions: savedData,
-                        
                     })
                 })
                 .then(response => response.json())
@@ -679,7 +683,7 @@
                     if (data.status === 'success') {
                         location.reload(); // Reload the page if saved successfully
                     } else {
-                        alert('Failed to update questions and answers.');
+                        alert('Failed to save questions and answers.');
                     }
                 })
                 .catch(error => console.error('Error:', error));
@@ -736,64 +740,108 @@
     function filterExercises() {
         const input = document.getElementById('search-exercises').value.toLowerCase();
         const exercises = document.querySelectorAll('.exercise-item');
+        const filteredExercisesContainer = document.getElementById('filtered-exercises');
+        filteredExercisesContainer.innerHTML = '';
+
+        if (input.trim() === "") {
+            filteredExercisesContainer.style.display = 'none';
+            document.getElementById('exercise-list').style.display = 'block';
+            exercises.forEach(exercise => exercise.style.display = 'flex');
+            return;
+        }
+
+        let filteredExercises = [];
+        let addedExerciseIds = new Set(); // Dùng Set để lưu ID của các exercise đã thêm
 
         exercises.forEach(exercise => {
-            const label = exercise.querySelector('label').textContent.toLowerCase();
-            if (label.includes(input)) {
-                exercise.style.visibility = 'visible';
-            } else {
-                exercise.style.visibility = 'hidden';
+            const title = exercise.querySelector('label').textContent.toLowerCase();
+            const language = exercise.querySelector('.badge').textContent.toLowerCase();
+            const exerciseId = exercise.dataset.exerciseId; // Lấy ID của exercise
+
+            // Kiểm tra nếu exercise đã được thêm hay chưa
+            if ((title.includes(input) || language.includes(input)) && !addedExerciseIds.has(exerciseId)) {
+                filteredExercises.push(exercise.cloneNode(true));
+                addedExerciseIds.add(exerciseId); // Thêm ID vào Set
             }
         });
+
+
+        if (filteredExercises.length > 0) {
+            document.getElementById('exercise-list').style.display = 'none';
+            filteredExercisesContainer.style.display = 'block';
+            filteredExercises.forEach(exercise => filteredExercisesContainer.appendChild(exercise));
+        } else {
+            filteredExercisesContainer.style.display = 'none';
+            document.getElementById('exercise-list').style.display = 'block';
+            exercises.forEach(exercise => {
+                const title = exercise.querySelector('label').textContent.toLowerCase();
+                const language = exercise.querySelector('.badge').textContent.toLowerCase();
+                if (title.includes(input) || language.includes(input)) {
+                    exercise.style.display = 'flex';
+                } else {
+                    exercise.style.display = 'none';
+                }
+            });
+        }
     }
 
     document.getElementById('search-exercises').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                filterExercises(); // Gọi hàm filter khi nhấn Enter
-            }
-        });
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            filterExercises();
+        }
+    });
 
     function filterQuestions() {
         const input = document.getElementById('search-questions').value.toLowerCase();
         const quizAccordion = document.getElementById('quizAccordion');
         const accordionItems = quizAccordion.querySelectorAll('.accordion-item');
-
+    
         accordionItems.forEach(item => {
             const questionsList = item.querySelector('.list-group');
+            const accordionCollapse = item.querySelector('.accordion-collapse');
+            let anyMatchInQuiz = false;
+    
             if (questionsList) {
                 const questions = questionsList.querySelectorAll('.list-group-item');
-                let anyMatchInQuiz = false;
-
+    
+                // Hide all questions initially
+                questions.forEach(question => {
+                    question.style.display = 'none';
+                });
+    
+                // Loop through each question to check if it matches the search term
                 questions.forEach(question => {
                     const questionText = question.querySelector('.question-text').textContent.toLowerCase();
                     const isMatch = questionText.includes(input);
-
-                    // Nếu input rỗng (không tìm kiếm), hiển thị tất cả câu hỏi
-                    if (input === "") {
-                        question.style.display = 'block'; // Or 'flex'
-                        anyMatchInQuiz = true; // Hiển thị cả accordion item
-                    } else {
-                        question.style.display = isMatch ? 'block' : 'none'; // Or 'flex'
-                        if (isMatch) {
-                            anyMatchInQuiz = true;
-                        }
+    
+                    if (isMatch) {
+                        question.style.display = 'block'; // Show only the matching question
+                        anyMatchInQuiz = true;
                     }
                 });
-
-                // Logic ẩn/hiện accordion item dựa trên input và kết quả tìm kiếm
+    
+                // Show only quizzes that contain a matching question
                 const quizHeader = item.querySelector('.quiz-dropdown');
                 if (input === "") {
-                    item.style.display = 'block'; // Hiển thị accordion item khi input rỗng
-                    quizHeader.style.display = 'block'; 
+                    // Show all quizzes and questions if input is empty
+                    item.style.display = 'block';
+                    quizHeader.style.display = 'block';
+                    accordionCollapse.classList.remove('show'); // Collapse quiz if input is empty
+                    questions.forEach(question => {
+                        question.style.display = 'block'; // Show all questions
+                    });
                 } else {
+                    // Show only quizzes with at least one matching question
                     item.style.display = anyMatchInQuiz ? 'block' : 'none';
                     quizHeader.style.display = anyMatchInQuiz ? 'block' : 'none';
+                    accordionCollapse.classList.toggle('show', anyMatchInQuiz); // Expand quiz only if it has a matching question
                 }
             }
         });
     }
-
+        
+    
 
     fullscreenPreview.appendChild(closeFullscreenButton);
 

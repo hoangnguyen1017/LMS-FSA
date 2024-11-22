@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
-from course.models import Course, Enrollment, Session, Completion, Tag, CourseMaterial
-from django.db.models import Count, F, Q
+from course.models import Course, Enrollment, Session, Completion, Tag, CourseMaterial, MaterialViewingDuration
+from django.db.models import Count, F, Q, Sum
 from module_group.models import ModuleGroup
 from user.models import User, Student, Profile
 from collections import Counter
@@ -11,11 +11,7 @@ from datetime import datetime, timedelta
 from django.utils.dateparse import parse_date
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.utils.dateformat import DateFormat
 from django.shortcuts import render
-import plotly.graph_objs as go
-from django.utils.timezone import make_aware
-from django.db.models.functions import ExtractQuarter, ExtractYear
 from django.http import Http404
 from collections import defaultdict
 import calendar
@@ -332,34 +328,43 @@ def enrollment_trends_report(request):
         enrollments_query = enrollments_query.filter(date_enrolled__month=month)
         unenrollments_query = unenrollments_query.filter(date_enrolled__month=month)
 
-        # Group by week
+        _, num_days = calendar.monthrange(year, month)
+        week_ranges = []
+        weekly_enrollment_data = {}
+        weekly_unenrollment_data = {}
+
+        current_start = 1
+        while current_start <= num_days:
+            current_end = min(current_start + 6, num_days)  # 7-day week
+            week_label = f"Day {current_start}-{current_end}"
+            week_ranges.append((current_start, current_end))
+            weekly_enrollment_data[week_label] = 0
+            weekly_unenrollment_data[week_label] = 0
+            current_start += 7
+
+        # Group enrollments by weekly ranges
         for enrollment in enrollments_query:
-            week_number = enrollment.date_enrolled.isocalendar()[1]
-            weekly_enrollment_data[week_number] += 1
+            day_of_month = enrollment.date_enrolled.day
+            for start, end in week_ranges:
+                if start <= day_of_month <= end:
+                    week_label = f"Day {start}-{end}"
+                    weekly_enrollment_data[week_label] += 1
+                    break
 
         for unenrollment in unenrollments_query:
-            week_number = unenrollment.date_enrolled.isocalendar()[1]
-            weekly_unenrollment_data[week_number] += 1
+            day_of_month = unenrollment.date_enrolled.day
+            for start, end in week_ranges:
+                if start <= day_of_month <= end:
+                    week_label = f"Day {start}-{end}"
+                    weekly_unenrollment_data[week_label] += 1
+                    break
 
-        # Get all weeks in the selected month
-        _, num_days = calendar.monthrange(year, month)
-        start_date = make_aware(datetime(year, month, 1))
-        end_date = make_aware(datetime(year, month, num_days))
-
-        # Generate week labels
-        week_labels = []
-        current_date = start_date
-        while current_date <= end_date:
-            week_num = current_date.isocalendar()[1]
-            if f"Week {week_num}" not in week_labels:
-                week_labels.append(f"Week {week_num}")
-            current_date += timedelta(days=1)
-
-        chart_labels = week_labels
-        chart_enrollment_data = [weekly_enrollment_data.get(week, 0) for week in range(1, len(week_labels) + 1)]
-        chart_unenrollment_data = [weekly_unenrollment_data.get(week, 0) for week in range(1, len(week_labels) + 1)]
+        # Prepare chart data
+        chart_labels = list(weekly_enrollment_data.keys())
+        chart_enrollment_data = list(weekly_enrollment_data.values())
+        chart_unenrollment_data = list(weekly_unenrollment_data.values())
     else:
-        # Show monthly data
+        # Show monthly data when no month is selected
         for enrollment in enrollments_query:
             enrollment_data[enrollment.date_enrolled.month] += 1
 
@@ -391,7 +396,6 @@ def enrollment_trends_report(request):
 
     return render(request, 'reports/enrollment_trends_report.html', context)
 
-
 @login_required
 def material_type_distribution_report(request):
     materials = CourseMaterial.objects.values('material_type').annotate(count=Count('id'))
@@ -418,3 +422,83 @@ def instructor_performance_report(request):
     ).order_by('instructor__username', '-enrollment_count')
 
     return render(request, 'reports/instructor_performance_report.html', {'instructors': instructors})
+
+
+def round_to_nearest_half(hour):
+    return round(hour * 2) / 2
+
+def course_duration_report(request):
+    # Get the selected course from the GET parameters
+    selected_course_id = request.GET.get('course', None)
+
+    # Query to group durations by user and course
+    user_course_durations = (
+        MaterialViewingDuration.objects
+        .values('material__session__course', 'user')  # Group by course and user
+        .annotate(total_time=Sum(F('time_spent')))  # Sum the duration for each group
+    )
+
+    # Filter by selected course if provided
+    if selected_course_id:
+        user_course_durations = user_course_durations.filter(
+            material__session__course=selected_course_id
+        )
+
+    # Prepare data for rendering
+    course_durations = {}
+    for entry in user_course_durations:
+        course_id = entry['material__session__course']
+        user_id = entry['user']
+        total_time = entry['total_time']
+
+        # Convert time_spent (which is timedelta) to hours (float)
+        total_hours = total_time.total_seconds() / 3600 if total_time else 0
+
+        # Round to the nearest 0.5 hour
+        rounded_hours = round_to_nearest_half(total_hours)
+
+        if course_id not in course_durations:
+            course_durations[course_id] = {}
+
+        # Store rounded duration by user for the course in hours
+        course_durations[course_id][user_id] = rounded_hours
+
+    # Group users by the same time spent on the course
+    grouped_durations = {}
+    for course_id, user_data in course_durations.items():
+        for user_id, total_time in user_data.items():
+            if total_time not in grouped_durations:
+                grouped_durations[total_time] = 0
+            grouped_durations[total_time] += 1  # Count how many users spent this amount of time
+
+    # Prepare data for the chart
+    chart_labels = [f'{time} hours' for time in grouped_durations.keys()]
+    chart_data = list(grouped_durations.values())
+
+    # Optionally, retrieve course and user details for display
+    all_courses = Course.objects.in_bulk(course_durations.keys())
+    all_users = User.objects.in_bulk({user_id for user_data in course_durations.values() for user_id in user_data})
+
+    # Build human-readable data structure for the template
+    readable_durations = {}
+    for course_id, user_data in course_durations.items():
+        course_name = all_courses[course_id].course_name  # Get the course name
+        readable_durations[course_name] = {
+            all_users[user_id].username: total_time  # Get the username for each user
+            for user_id, total_time in user_data.items()
+        }
+
+    # Convert the Python dictionary to a JSON-serializable string
+    readable_durations_json = json.dumps(readable_durations)
+
+    # Get all courses for the filter dropdown
+    all_courses_names = Course.objects.values('id', 'course_name')
+
+    return render(request, 'reports/course_duration_report.html', {
+        'readable_durations_json': readable_durations_json,
+        'readable_durations': readable_durations,
+        'all_courses_names': all_courses_names,
+        'selected_course_id': selected_course_id,
+        'chart_labels': chart_labels,
+        'chart_data': chart_data,
+    })

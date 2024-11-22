@@ -15,26 +15,28 @@
     <form method="post" class="space-y-4" enctype="multipart/form-data">
         {% csrf_token %}
         <div id="course-form" class="form-row form-group-inline" style="display: flex; gap: 1rem; color: #072Ac8;">
-            <div class="form-group" style="flex: 1 1 calc(25% - 0.625rem); padding-right: 0.3125rem; padding-left: 0.3125rem; margin-bottom: 1rem;">
+            <div class="form-group" style="flex: 1 1 50%; padding-right: 0.3125rem; padding-left: 0.3125rem; margin-bottom: 1rem;">
                 <label for="course_name" class="block text-sm font-medium mb-1" style="color: #2b59c3;">{{ course_form.course_name.label }}</label>
-                {{ course_form.course_name|add_class:"w-full p-0.5rem border border-gray-300 rounded transition duration-300 ease-in-out" }}
+                {{ course_form.course_name|add_class:"w-75 p-0.5rem border border-gray-300 rounded transition duration-300 ease-in-out" }}
             </div>
             <div class="form-group" style="flex: 1 1 calc(25% - 0.625rem); padding-right: 0.3125rem; padding-left: 0.3125rem; margin-bottom: 1rem;">
                 <label for="course_code" class="block text-sm font-medium mb-1" style="color: #2b59c3;">{{ course_form.course_code.label }}</label>
                 {{ course_form.course_code|add_class:"w-full p-0.5rem border border-gray-300 rounded transition duration-300 ease-in-out" }}
             </div>
-            <div class="form-group" style="flex: 1 1 calc(25% - 0.625rem); padding-right: 0.3125rem; padding-left: 0.3125rem; margin-bottom: 1rem;">
+        </div>
+        <div class="form-container" style="display: flex; gap: 0.625rem; margin-bottom: 1rem; align-items: flex-start;">
+            <div class="form-group" style="flex: 1; padding-right: 0.3125rem; padding-left: 0.3125rem;">
+                <label for="{{ course_form.image.id_for_label }}" class="block text-sm font-medium mb-1" style="color: #2b59c3;">{{ course_form.image.label }}</label>
+                {{ course_form.image|add_class:"w-75 p-0.5rem border border-gray-300 rounded transition duration-300 ease-in-out" }}
+            </div>
+            <div class="form-group" style="flex: 1; padding-right: 0.3125rem; padding-left: 0.3125rem;">
                 <label for="creator" class="block text-sm font-medium mb-1" style="color: #2b59c3;">{{ course_form.creator.label }}</label>
                 {{ course_form.creator|add_class:"w-full p-0.5rem border border-gray-300 rounded transition duration-300 ease-in-out" }}
             </div>
-            <div class="form-group" style="flex: 1 1 calc(25% - 0.625rem); padding-right: 0.3125rem; padding-left: 0.3125rem; margin-bottom: 1rem;">
+            <div class="form-group" style="flex: 1; padding-right: 0.3125rem; padding-left: 0.3125rem;">
                 <label for="instructor" class="block text-sm font-medium mb-1" style="color: #2b59c3;">{{ course_form.instructor.label }}</label>
                 {{ course_form.instructor|add_class:"w-full p-0.5rem border border-gray-300 rounded transition duration-300 ease-in-out" }}
             </div>
-        </div>
-        <div class="form-group" style="flex: 1 1 100%; padding-right: 0.3125rem; padding-left: 0.3125rem; margin-bottom: 1rem;">
-            <label for="{{ course_form.image.id_for_label }}" class="block text-sm font-medium mb-1" style="color: #2b59c3;">{{ course_form.image.label }}</label>
-            {{ course_form.image|add_class:"w-full p-0.5rem border border-gray-300 rounded transition duration-300 ease-in-out" }}
         </div>
         <div class="description-container" style="width: 100%; font-weight: bold;">
             <h3 class="text-xl font-semibold mb-4" style="color: #072Ac8;">Description</h3>

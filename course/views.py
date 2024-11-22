@@ -25,6 +25,7 @@ from django.http import HttpResponseRedirect
 from department.models import Department
 from django.utils import timezone
 import shutil
+import json
 
 
 @login_required
@@ -68,13 +69,13 @@ def course_enroll(request, pk):
 
         if all(prereq.id in enrolled_courses for prereq in prerequisite_courses):
             if course.price > 0:
-                transaction, created = Transaction.objects.get_or_create(
+                transaction, created = Transaction.objects.update_or_create(
                     user=request.user,
                     course=course,
                     defaults={'is_successful': False}
                 )
             else:
-                transaction, created = Transaction.objects.get_or_create(
+                transaction, created = Transaction.objects.update_or_create(
                     user=request.user,
                     course=course,
                     defaults={'is_successful': True}
@@ -769,6 +770,18 @@ def end_viewing(user, material):
         # Handle the case where the object does not exist
         pass
 
+
+def end_viewing_ajax(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            material_id = data.get('material_id')
+            material = get_object_or_404(CourseMaterial, id=material_id)
+            end_viewing(request.user, material)
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
 @login_required
 def course_content(request, pk, session_id):
     module_groups = ModuleGroup.objects.all()
@@ -794,15 +807,6 @@ def course_content(request, pk, session_id):
         current_material = materials.first() if materials.exists() else None
 
     if current_material:
-        # If the user has navigated away from a previous material, save the duration
-        previous_material_id = request.session.get('previous_material_id')
-        if previous_material_id and int(previous_material_id) != current_material.id:
-            try:
-                previous_material = CourseMaterial.objects.get(id=previous_material_id)
-                end_viewing(request.user, previous_material)
-            except CourseMaterial.DoesNotExist:
-                pass
-
         # Start viewing the current material
         start_viewing(request.user, current_material, request)
         request.session['previous_material_id'] = current_material.id
@@ -940,58 +944,6 @@ def remove_accents(input_str):
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-
-def edit_reading_material(request, pk, session_id, reading_material_id):
-    # Retrieve the course
-    course = get_object_or_404(Course, pk=pk)
-    # Retrieve all sessions for the course
-    sessions = Session.objects.filter(course=course)
-
-    # Get the selected session
-    selected_session_id = session_id  # Use session_id parameter
-    session = get_object_or_404(Session, id=selected_session_id)
-
-    # Retrieve the reading material to edit
-    reading_material = get_object_or_404(ReadingMaterial, id=reading_material_id)
-
-    # Retrieve the associated CourseMaterial instance
-    course_material = get_object_or_404(CourseMaterial, material_id=reading_material_id, session=session)
-    # 14/11/2024
-    materials = CourseMaterial.objects.filter(session=session).order_by('order')
-    reading_materials = ReadingMaterial.objects.filter(material__in=materials).order_by('material__order')
-
-    if request.method == 'POST':
-        form = ReadingMaterialEditForm(request.POST, instance=reading_material)
-        selected_material_type = request.POST.get('material_type')
-
-        if form.is_valid():
-            reading_material = form.save()
-            course_material = CourseMaterial.objects.get(material_id=reading_material.id)
-            course_material.title = reading_material.title
-            # Update the material_type if it has been changed
-            if selected_material_type and selected_material_type != course_material.material_type:
-                course_material.material_type = selected_material_type
-                course_material.save()
-            course_material.save()
-
-            messages.success(request, 'Reading material updated successfully.')
-            return redirect('course:course_content_edit', pk=pk, session_id=session_id)
-    else:
-        form = ReadingMaterialEditForm(instance=reading_material)
-
-    context = {
-        'reading_material': reading_material,
-        'form': form,
-        'course': course,
-        'sessions': sessions,
-        'session': session,
-        'material_types': CourseMaterial.MATERIAL_TYPE_CHOICES,  # Pass material type choices to the template
-        'current_material_type': course_material.material_type,  # Current material type for default selection
-        'reading_materials': reading_materials,  # Add this line to include reading_materials
-
-    }
-
-    return render(request, 'material/edit_reading_material.html', context)
 
 
 @login_required

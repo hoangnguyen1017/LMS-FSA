@@ -10,7 +10,10 @@ from tablib import Dataset
 from django.db.models import Q
 from unidecode import unidecode
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from module_group.models import ModuleGroup
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def team_list(request):
     query = request.GET.get('q', '')
     selected_role = request.GET.get('role', '')  # Lấy giá trị vai trò từ request
@@ -41,7 +44,10 @@ def team_list(request):
     # Lấy tất cả các vai trò để đưa vào dropdown
     roles = Member.ROLE_CHOICES
 
+    #For menu
+    module_groups = ModuleGroup.objects.all()
     return render(request, 'team_list.html', {
+        'module_groups': module_groups,
         'members': members,
         'query': query,
         'selected_role': selected_role,
@@ -49,7 +55,7 @@ def team_list(request):
         'page_obj': members,  # Thêm page_obj để sử dụng trong template
     })
 
-
+@login_required
 def add_member(request):
     if request.method == 'POST':
         form = MemberForm(request.POST, request.FILES)
@@ -60,10 +66,12 @@ def add_member(request):
         form = MemberForm()
     return render(request, 'add_member.html', {'form': form})
 
+@login_required
 def member_detail(request, pk):
     member = get_object_or_404(Member, pk=pk)
     return render(request, 'member_detail.html', {'member': member})
 
+@login_required
 def edit_member(request, pk):
     member = get_object_or_404(Member, pk=pk)
     if request.method == 'POST':
@@ -75,6 +83,7 @@ def edit_member(request, pk):
         form = MemberForm(instance=member)
     return render(request, 'edit_member.html', {'form': form})
 
+@login_required
 def delete_member(request, pk):
     member = get_object_or_404(Member, pk=pk)
     if request.method == 'POST':
@@ -82,6 +91,7 @@ def delete_member(request, pk):
         return redirect('team:team_list')
     return render(request, 'confirm_delete.html', {'member': member})
 
+@login_required
 def search_members(request):
     query = request.GET.get('q', '').strip()  # Sửa đổi 'query' thành 'q'
     if query:
@@ -94,6 +104,7 @@ def search_members(request):
 
     return render(request, 'team_list.html', {'members': members, 'query': query})
 
+@login_required
 def export_members(request):
     member_resource = MemberResource()
     dataset = member_resource.export()
@@ -101,6 +112,7 @@ def export_members(request):
     response['Content-Disposition'] = 'attachment; filename="members.xlsx"'
     return response
 
+@login_required
 def import_members(request):
     if request.method == 'POST' and request.FILES['myfile']:
         member_resource = MemberResource()

@@ -8,6 +8,7 @@ from collaboration_group.models import CollaborationGroup, GroupMember
 from django.db import IntegrityError
 from module_group.models import ModuleGroup
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 
 def fetch_enrolled_users(request):
     course_id = request.GET.get('course_id')
@@ -29,20 +30,25 @@ def fetch_enrolled_users(request):
     ]
     return JsonResponse(users_data, safe=False)
 
-
-@user_passes_test(lambda u: u.is_superuser)  # Restrict access to superusers only
+@user_passes_test(lambda u: u.is_superuser)
 def enrollment_list(request):
     enrollments = Enrollment.objects.filter(student=request.user)
-    print(enrollments)
-    all_enrollments = Enrollment.objects.all()  # Fetch all enrollments for admin view
+    all_enrollments = Enrollment.objects.all()  # Tất cả enrollments cho admin
     module_groups = ModuleGroup.objects.all()
-    
+
+    # Lấy giá trị từ request.GET
+    # items_per_page = int(request.GET.get('items_per_page', 10))  # Mặc định 10 mục trên mỗi trang
+
+    # Pagination
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(all_enrollments, 10)  # Dùng items_per_page từ client
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'enrollment/enrollment_list.html', {
         'module_groups': module_groups,
         'enrollments': enrollments,
-        'all_enrollments': all_enrollments,
+        'all_enrollments': page_obj,
     })
-
 
 def admin_enroll_users(request):
     groups = CollaborationGroup.objects.all()

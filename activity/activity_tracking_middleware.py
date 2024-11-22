@@ -21,14 +21,14 @@ class ActivityTrackingMiddleware:
         # Process the request
         response = self.get_response(request)
 
-        # Log activity if the user is authenticated
-        if request.user.is_authenticated:
+        # Log activity if the user is authenticated and the request is GET
+        if request.user.is_authenticated and request.method == 'GET':
             current_url = resolve(request.path_info).url_name
             
-            # Check if the user has already accessed the activity page
-            if current_url == 'activity_view':  # Replace with the actual URL name for activity view
+            # Check if the user has already accessed the activity view
+            if current_url == 'activity_view':
+                # Only log the activity if this is the first access during the session
                 if not request.session.get('activity_page_accessed', False):
-                    # Log the activity
                     UserActivityLog.objects.create(
                         user=request.user,
                         activity_type='page_visit',
@@ -38,7 +38,16 @@ class ActivityTrackingMiddleware:
                     # Set the flag in the session to True
                     request.session['activity_page_accessed'] = True
             else:
+                # For all other pages, log every access
+                UserActivityLog.objects.create(
+                    user=request.user,
+                    activity_type='page_visit',
+                    activity_details=f"Accessed {current_url}",
+                    activity_timestamp=timezone.now()
+                )
+
                 # Reset the flag if they navigate away from the activity page
-                request.session['activity_page_accessed'] = False
+                if 'activity_page_accessed' in request.session:
+                    del request.session['activity_page_accessed']
 
         return response

@@ -1,5 +1,3 @@
-
-
 {% extends "base.html" %}
 {% load static %}
 
@@ -63,7 +61,7 @@
                                     <div class="progress-bar" role="progressbar" style="width: {{ item.assessment.qualified_count }}%;" aria-valuenow="{{ item.assessment.qualified_count }}" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                                 <strong>{{ item.assessment.qualified_count }}%</strong>
-                             </div>
+                            </div>
                             
                             <div class="col-md-4 text-end">
                                 <p class="mb-1">{{ item.assessment.invited_count }} Invited <i class="fa-regular fa-circle"></i></p>

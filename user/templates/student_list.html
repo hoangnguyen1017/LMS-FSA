@@ -13,6 +13,9 @@
         <li class="nav-item">
             <a class="nav-link active" href="{% url 'user:student_list' %}">Students</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'user:instructor_list' %}">Instructors</a>
+        </li>
     </ul>
     <div class="mt-3">
         <div class="d-flex justify-content-between align-items-center">
@@ -22,26 +25,26 @@
                         <a href="{% url 'user:user_add' %}" class="btn btn-primary" title="Add New User">
                             <i class="fas fa-plus"></i> Add Student
                         </a>
+                        <button type="submit" id="delete_button" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
                         <a href="{% url 'user:export_users' %}?role=Student&q={{ query }}" class="btn btn-info" title="Export Students to Excel" data-bs-toggle="tooltip">
                             <i class="fas fa-file-export"></i> Export
                         </a>
                     {% endif %}
                 {% endif %}
-                <a href="{% url 'user:student_list' %}" class="btn btn-warning" title="Refresh Student List">
+                <a id="refresh_button_student" href="{% url 'user:student_list' %}" class="btn btn-warning" title="Refresh Student List">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </a>
-                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the selected students?');">
-                    <i class="fas fa-trash-alt"></i> Delete
-                </button>
             </div>
-            <form method="GET" action="{% url 'user:user_list' %}" class="d-flex">
-                <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control me-1" placeholder="Search users..." aria-label="Search users">
+            <form method="GET" action="{% url 'user:student_list' %}" class="d-flex">
+                <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control me-1" placeholder="Search students..." aria-label="Search students">
                 <button type="submit" class="btn btn-outline-success">Search</button>
             </form>  
         </div>
 
         <!-- Form to delete selected users -->
-        <form method="POST" action="{% url 'user:user_delete' %}">
+        <form id="delete_form" method="POST" action="{% url 'user:user_delete' %}">
             {% csrf_token %}
             <input type="hidden" name="origin" value="student_list">
             <table class="table table-striped mt-3">
@@ -169,9 +172,36 @@
             });
             localStorage.setItem('selectedUsers', JSON.stringify(storedCheckboxes));
         });
+        // Xóa người dùng đã chọn
+        document.getElementById('delete_button').addEventListener('click', function() {
+            const selectedUsers = Object.keys(storedCheckboxes).filter(userId => storedCheckboxes[userId]);
+            
+            if (selectedUsers.length === 0) {
+                alert('Please select at least one user to delete.');
+                return;
+            }
+            if (confirm('Are you sure you want to delete the selected users?')) {
+                const deleteForm = document.getElementById('delete_form');
     
+                // Tạo các input ẩn để gửi các giá trị đã chọn
+                selectedUsers.forEach(userId => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'selected_users'; // Tên phải khớp với tên trong form
+                    input.value = userId;
+                    deleteForm.appendChild(input);
+                });
+    
+                // Reset trạng thái checkbox trong localStorage
+                selectedUsers.forEach(userId => {
+                    delete storedCheckboxes[userId]; // Xóa người dùng đã chọn khỏi localStorage
+                });
+                localStorage.setItem('selectedUsers', JSON.stringify(storedCheckboxes));
+                deleteForm.submit(); // Gửi form xóa
+            }
+        });
         // Xóa dữ liệu localStorage khi bấm nút Refresh
-        document.querySelector('.btn-warning').addEventListener('click', function() {
+        document.getElementById('refresh_button_student').addEventListener('click', function() {
             localStorage.removeItem('selectedUsers');
         });
     
@@ -181,6 +211,6 @@
             new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
-    </script>
+</script>
     
 {% endblock %}

@@ -13,74 +13,90 @@
     
     <div class="card mb-4">
         <div class="card-header">
-            <h3 class="mb-0">Quiz Answers</h3>
+        <button class="btn btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#questionsCollapse" aria-expanded="false" aria-controls="questionsCollapse">
+            <h3 class="text-primary mb-0">Quiz Answers</h3>
+        </button>
         </div>
-    
-        <div class="alert alert-info text-center p-4 shadow-sm">
-            <h3 class="mb-0">Quiz Score: 
-                <strong class="text-primary">{{ score_quiz }}</strong> 
-            </h3>
-        </div>
-            
-        <div class="mt-4">
-            <div class="card-body" style="max-height: 500px; overflow-y: auto;">
-                <ul class="list-group">
-                    {% for answer in user_answers %}
-                        <li class="list-group-item">
-                            <strong>{{ forloop.counter }}. </strong> {{ answer.question.question_text }}<br>
-                            <ul class="list-group">
-                                {% for option in answer.question.answer_options.all %}
-                                    <li class="list-group-item 
-                                        {% if option in answer.selected_options.all %}
-                                            {% if option.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}
-                                        {% endif %}
-                                    ">
-                                        - {{ option.option_text }} 
-                                        {% if option in answer.selected_options.all %}
-                                            {% if option.is_correct %}
-                                                <span class="badge bg-success">Your Answer: Correct</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Your Answer: Incorrect</span>
+        <div id="questionsCollapse" class="collapse show">
+            <div class="alert alert-info text-center p-2 shadow-sm">
+                <h3 class="mb-0">Quiz Score: 
+                    <strong class="text-primary">{{ score_quiz }} / 100</strong> 
+                </h3>
+            </div>
+                
+            <div class="mt-4">
+                <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                    <ul class="list-group">
+                        {% for answer in user_answers %}
+                            <li class="list-group-item">
+                                <strong>{{ forloop.counter }}. </strong> {{ answer.question.question_text }}<br>
+                                <ul class="list-group">
+                                    {% for option in answer.question.answer_options.all %}
+                                        <li class="list-group-item 
+                                            {% if option in answer.selected_options.all %}
+                                                {% if option.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}
                                             {% endif %}
-                                        {% elif option.is_correct %}
-                                            <span class="badge bg-success">Correct</span>
-                                        {% endif %}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                            {% if not answer.selected_options.exists and answer.question.question_type == 'MCQ' %}
-                                <strong>Text Response:</strong> {{ answer.text_response|default:"No text response." }}
-                            {% endif %}
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item text-muted">No answers submitted.</li>
-                    {% endfor %}
-                </ul>
+                                        ">
+                                            - {{ option.option_text }} 
+                                            {% if option in answer.selected_options.all %}
+                                                {% if option.is_correct %}
+                                                    <span class="badge bg-success">Your Answer: Correct</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Your Answer: Incorrect</span>
+                                                {% endif %}
+                                            {% elif option.is_correct %}
+                                                <span class="badge bg-success">Correct</span>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                {% if not answer.selected_options.exists and answer.question.question_type == 'MCQ' %}
+                                    <strong>Text Response:</strong> {{ answer.text_response|default:"No text response." }}
+                                {% endif %}
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">No answers submitted.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="card mb-4">
         <div class="card-header">
-            <h3 class="mb-0">Exercise Submissions</h3>
+        <button class="btn btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#exercisesCollapse" aria-expanded="false" aria-controls="exercisesCollapse">
+            <h3 class="text-success mb-0">Exercise Submissions</h3>
+        </button>
         </div>
-        <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-            <ul class="list-group">
-                {% for submission in user_submissions %}
-                    <li class="list-group-item">
-                        <strong>Exercise:</strong> {{ submission.exercise.title }}<br>
-                        <strong>Code Submitted:</strong>
-                        <pre class="bg-light p-2">{{ submission.code }}</pre>
-                    </li>
-                {% empty %}
-                    <li class="list-group-item text-muted">No submissions made.</li>
+        <div id="exercisesCollapse" class="collapse show">
+            <div class="alert alert-info text-center p-2 shadow-sm">
+                <h3 class="alert-heading mb-0">Exercise Score:
+                    <strong class="text-primary">{{ score_ass }} / 100</strong>
+                </h3>
+            </div>
+
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                {% for exercise, submissions in submissions_by_exercise.items %}
+                    <div class="mb-3">
+                        <h5 class="text-dark">Exercise {{ forloop.counter }}: {{ exercise.title }}</h5>
+                        <ul class="list-group">
+                            {% for submission in submissions %}
+                                <li class="list-group-item">
+                                    <strong class="bg-light p-2">Score:</strong>{{ submission.score }} / 100
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-muted">No submissions made.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
     </div>
 
-    <div class="alert alert-primary" role="alert">
-        <h4 class="alert-heading">Total Assessment Score: {{ score_asm }}</h4>
+    <div class="alert alert-success" role="alert">
+        <h2 class="alert-heading">Total Assessment Score: {{ total_score }} / 100</h2>
     </div>
 </div>
 {% endblock %}

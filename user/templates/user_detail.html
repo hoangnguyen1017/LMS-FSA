@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}{{ user.first_name }} {{ user.last_name }} | Profile{% endblock %}
 {% load custome_filters %}
 
@@ -9,12 +10,11 @@
             <!-- Sidebar với thông tin người dùng -->
             <div class="card shadow-sm p-3 mb-4" style="position: sticky; top: 2rem;">
                 <div class="avatar-wrapper mb-3 d-flex justify-content-center align-items-center mt-4">
-                    {% if user.profile.profile_picture_url and user.profile.profile_picture_url != "http://127.0.0.1:8000/user/add/" %}
-                        <img src="{{ user.profile.profile_picture_url }}" class="img-fluid rounded-circle" style="width: 10rem; height: 10rem; object-fit: cover;">
-                    {% else %}
-                        <i class="fas fa-user img-fluid rounded-circle" style="font-size: 7rem;"></i>
-                    {% endif %}
+                    <img src="{% if user.profile.profile_picture_url %}{{ user.profile.profile_picture_url }}{% else %}{% static 'images/avatar.png' %}{% endif %}" 
+                         class="img-fluid rounded-circle" style="width: 10rem; height: 10rem; object-fit: cover;" alt="{{ user.username }}">
                 </div>
+                
+                
 
                 <h5 class="text-center">{{ user.first_name }} {{ user.last_name }}</h5>
 
@@ -99,6 +99,24 @@
                     {% endif %}
                 </div>
             </div>
+            {% if is_instructor %}
+                <div class="card mb-4 shadow-sm" id="CourseCard">
+                    <div class="card-header bg-dark text-white text-center">
+                        <strong>Taught Courses</strong>
+                    </div>
+                    <div class="card-body">
+                        {% if taught_courses %}
+                            <ul class="list-group list-group-flush fw-bold">
+                                {% for course in taught_courses %}
+                                    <li class="list-group-item">{{ course.course_name }} ({{ course.course_code }})</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">No Taught Course</p>  <!-- Hiển thị "None" nếu không có khóa học -->
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
 
             {% if is_student %}
                 <!-- Quiz Results Card -->

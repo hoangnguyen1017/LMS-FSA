@@ -1,13 +1,8 @@
 from django import forms
 from .models import *
-from django.contrib.auth import get_user_model
+from user.models import User
 #from ckeditor.widgets import CKEditorWidget
-from .models import ReadingMaterial
-User = get_user_model()
-
 # Form for creating and editing courses
-# forms.py
-
 class CourseForm(forms.ModelForm):
     creator = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Creator")
     instructor = forms.ModelChoiceField(queryset=User.objects.all(), required=False, empty_label="Select Instructor")
@@ -21,7 +16,7 @@ class CourseForm(forms.ModelForm):
 
     class Meta:
         model = Course
-        fields = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'prerequisites', 'tags', 'image']  # sửa lại
+        fields = ['course_name', 'course_code', 'description', 'creator', 'instructor', 'prerequisites', 'tags', 'image', 'price', 'discount']  # sửa lại
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -52,16 +47,11 @@ class CompletionForm(forms.ModelForm):
         fields = ['completed', 'material']
 
 
-# class ReadingMaterialForm(forms.ModelForm):
-#     class Meta:
-#         model = ReadingMaterial
-#         fields = ['title', 'content', 'pdf_file']  # Include pdf_file for file uploads
-
 class ReadingMaterialForm(forms.ModelForm):
     #content = forms.CharField(widget=CKEditorWidget(config_name='default'))
     class Meta:
         model = ReadingMaterial
-        fields = ['title', 'content', 'material', 'pdf_file']
+        fields = ['title', 'content', 'material']
 
 class UploadFileForm(forms.Form):
     file = forms.FileField()

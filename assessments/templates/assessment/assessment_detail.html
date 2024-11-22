@@ -4,118 +4,222 @@
 {% load custom_filters %}
 
 {% block content %}
-<div class="container mt-4">
+
+<style>
+    /* Define specific widths for each column */
+    .table th:nth-child(1), .table td:nth-child(1) { width: 10%; } /* First column */
+    .table th:nth-child(2), .table td:nth-child(2) { width: 20%; } /* Second column */
+    .table th:nth-child(3), .table td:nth-child(3) { width: 15%; } /* Third column */
+    .table th:nth-child(4), .table td:nth-child(4) { width: 15%; } /* Fourth column */
+    .table th:nth-child(5), .table td:nth-child(5) { width: 15%; } /* Fifth column */
+    .table th:nth-child(6), .table td:nth-child(6) { width: 15%; } /* Fifth column */
+    .table th:nth-child(7), .table td:nth-child(7) { width: 10%; } /* Fifth column */
+    /* Default to 80vh */
+    .custom-max-height {
+        max-height: 75vh;
+    }
+
+    /* Apply 50vh for screens with a max height of around 14 inches (typically 900px in height or below) */
+    @media (max-height: 900px) {
+        .custom-max-height {
+            max-height: 55vh;
+        }
+    }
+
+</style>
+<div class="mt-2">
     <!-- Assessment Details Section -->
     <div class="card mb-4">
         <div class="card-header">
-            <h2>{{ assessment.title }}</h2>
-            <a href="{% url 'assessment:assessment_edit' assessment.pk %}" class="btn btn-sm btn-outline-secondary float-right">Edit</a>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <!-- Left Column -->
-                <div class="col-md-6">
-                    <p><strong>Course:</strong> {{ assessment.course }}<br>
-                    <strong>Assessment Type:</strong> {{ assessment.assessment_type }}</p>
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <h2 class="m-0">{{ assessment.title }}</h2>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'assessment:assessment_edit' assessment.pk %}" class="btn btn-primary">Edit</a>
+                    <a href="{% url 'assessment:assessment_list' %}" class="btn btn-secondary">Back to Assessments</a>
                 </div>
+            </div>
+        </div>        
         
-                <!-- Right Column -->
-                <div class="col-md-6">
-                    <p><strong>Due Date:</strong> {{ assessment.due_date|date:"F d, Y" }}<br>
-                    <strong>Total Score:</strong> {{ assessment.total_score }}</p>
-                </div>
+        <div class="row ">
+            <!-- Left Column -->
+            <div class="col-md-6">
+                <p class="ms-2"><strong>Course:</strong> {{ assessment.course }}<br>
+                <strong>Assessment Type:</strong> {{ assessment.assessment_type }}</p>
             </div>
-        </div>
-        
-    </div>
-
-    <!-- Two-Column Layout for Exercises and Questions -->
-    <div class="row mb-4">
-        <!-- Exercises Section -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Exercises</h3>
-                </div>
-                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                    <ul class="list-group">
-                        {% for exercise in assessment.exercises.all %}
-                        <li class="list-group-item">
-                           
-                            <a href="{% url 'exercises:exercise_detail' exercise.id assessment.id %}" target="_blank">{{ exercise.title }}</a>
-                            
-                        </li>
-                        {% empty %}
-                        <li class="list-group-item text-muted">No exercises assigned.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <!-- Questions Section -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Multiple Choice</h3>
-                </div>
-                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                    <ul class="list-group">
-                        {% for question in assessment.questions.all %}
-                        <li class="list-group-item">{{ forloop.counter }}. {{ question.question_text }}</li>
-                        {% empty %}
-                        <li class="list-group-item text-muted">No questions assigned.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Invited Candidates Section at the Bottom -->
-     
-    <div class="card">
-        <div class="card-header">
-            <h3>Invited Candidates</h3>
-        </div>
-        <div class="card-body">
-            <table class="table table-sm table-bordered">
-                <thead class="thead-light">
-                    <tr>
-                        <th>#</th>
-                        <th>Candidate</th>
-                        <th>Email</th>
-                        <th>Invitation Date</th>
-                        <th>Expiration Date</th>
-                        <th>Quiz Score</th>
-                        <th>Assignment Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for candidate in invited_candidates %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ candidate.email }}</td>
-                        <td>{{ candidate.email }}</td>
-                        <td>{{ candidate.invitation_date }}</td>
-                        <td>{{ candidate.expiration_date }}</td>
-                        
-                        <!-- Use the custom filter here -->
-                     
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">No candidates have been invited yet.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
     
+            <!-- Right Column -->
+            <div class="col-md-6">
+                <p><strong>Due Date:</strong> {{ assessment.due_date|date:"F d, Y" }}<br>
+                <strong>Total Score:</strong> {{ assessment.total_score }}</p>
+            </div>
+        </div> 
+    </div>
+    <div class="overflow-auto custom-max-height">
+        <!-- Two-Column Layout for Exercises and Questions -->
+        <div class="row mb-4">
+            <!-- Exercises Section -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Exercises</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        <ul class="list-group">
+                            {% for exercise in assessment.exercises.all %}
+                            <li class="list-group-item">
+                            
+                                <a href="{% url 'exercises:exercise_detail' exercise.id assessment.id %}" target="_blank">{{ exercise.title }}</a>
+                                
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item text-muted">No exercises assigned.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Questions Section -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Multiple Choice</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        <ul class="list-group">
+                            {% for question in assessment.questions.all %}
+                            <li class="list-group-item">{{ forloop.counter }}. {{ question.question_text }}</li>
+                            {% empty %}
+                            <li class="list-group-item text-muted">No questions assigned.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
-    <a href="{% url 'assessment:assessment_list' %}" class="btn btn-secondary mt-4">Back to Assessments</a>
+        </div>
+
+        <!-- Quiz Results -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Quiz Results</h5>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                <ul class="list-group">
+                    {% for answer in user_answers %}
+                        <li class="list-group-item">
+                            <strong>{{ forloop.counter }}. </strong> {{ answer.question.question_text }}<br>
+                            <ul class="list-group">
+                                {% for option in answer.question.answer_options.all %}
+                                    <li class="list-group-item 
+                                        {% if option in answer.selected_options.all %}
+                                            {% if option.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}
+                                        {% endif %}
+                                    ">
+                                        - {{ option.option_text }} 
+                                        {% if option in answer.selected_options.all %}
+                                            {% if option.is_correct %}
+                                                <span class="badge bg-success">Your Answer: Correct</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Your Answer: Incorrect</span>
+                                            {% endif %}
+                                        {% elif option.is_correct %}
+                                            <span class="badge bg-success">Correct Answer</span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No quiz answers found.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Exercise Submissions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Exercise Submissions</h5>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                <ul class="list-group">
+                    {% for submission in user_submissions %}
+                        <li class="list-group-item">
+                            <strong>Exercise:</strong> {{ submission.exercise.title }}<br>
+                            <strong>Code Submitted:</strong>
+                            <pre class="bg-light p-2">{{ submission.code }}</pre>
+                            <strong>Score:</strong> {{ submission.score }}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No submissions found.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Invited Candidates Section at the Bottom -->
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Invited Candidates</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>#</th>
+                            <!-- <th>Candidate</th> -->
+                            <th>Email</th>
+                            <th>Invitation Date</th>
+                            <!-- <th>Expiration Date</th> -->
+                            <th>Quiz Score</th>
+                            <th title="Assignment Score">Challenge Score</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                </table>
+
+                <!-- Scrollable second table (content) -->
+                <div class="overflow-auto" style="max-height: 53vh;"> <!-- Adjust height as needed -->
+                    <table class="table table-striped">
+                    <tbody>
+                        
+                        {% with found_candidates=False %}
+                            {% for attempt in registered_attempts %}
+                                {% for candidate in invited_candidates %}
+                                    {% if attempt.email == candidate.email and candidate.assessment == attempt.assessment%}
+                                        {% if not found_candidates %}
+                                            {% with found_candidates=True %}
+                                            {% endwith %}
+                                        {% endif %}
+                                        <tr>
+                                            <td>{{ forloop.parentloop.counter }}</td>  <!-- Sử dụng giá trị count từ context -->
+                                            <!-- <td>&nbsp;{{ name }}</td> -->
+                                            <td>{{ candidate.email }}</td>
+                                            <td>{{ candidate.invitation_date|date:"d/m/Y" }}</td>
+                                            <!-- <td>{{ candidate.expiration_date }}</td> -->
+                                            <td>{{ attempt.score_quiz|floatformat:0 }}</td>
+                                            <td>{{ attempt.score_ass|floatformat:0 }}</td>
+                                            <td>
+                                                <a href="{% url 'assessment:assessment_report' assessment.id attempt.id candidate.email %}">View report</a>
+                                            </td>
+                                        </tr>
+                                        
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            {% if not found_candidates %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">No candidates have been invited yet.</td>
+                                </tr>
+                            {% endif %}
+                        {% endwith %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
 </div>
 {% endblock %}

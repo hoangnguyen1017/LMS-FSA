@@ -3,7 +3,16 @@
 {% block title %}Module List{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<style>
+    /* Define specific widths for each column */
+    .table th:nth-child(1), .table td:nth-child(1) { width: 10%; } /* First column */
+    .table th:nth-child(2), .table td:nth-child(2) { width: 30%; } /* Second column */
+    .table th:nth-child(3), .table td:nth-child(3) { width: 20%; } /* Third column */
+    .table th:nth-child(4), .table td:nth-child(4) { width: 20%; } /* Fourth column */
+    .table th:nth-child(5), .table td:nth-child(5) { width: 20%; } /* Fifth column */
+</style>
+
+<div class="mt-1">
     <h2>Modules</h2>
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
       <form method="GET" class="flex-grow-1 mb-2 mb-md-0">
@@ -19,11 +28,11 @@
           </div>
       </form>
       <div class="d-flex gap-2">
-          <button class="btn btn-outline-secondary" title="Import Module from Excel" 
+          <button class="btn btn-outline-primary" title="Import Module from Excel" 
                     data-bs-toggle="modal" data-bs-target="#importModal" data-bs-toggle="tooltip">
                 <i class="fas fa-file-import"></i> Import
             </button>
-          <a href="{% url 'module_group:export_modules' %}" class="btn btn-outline-secondary" 
+          <a href="{% url 'module_group:export_modules' %}" class="btn btn-outline-primary" 
              title="Export Users to Excel" data-toggle="tooltip">
               <i class="fas fa-file-export"></i> Export
           </a>
@@ -33,17 +42,22 @@
       </div>
   </div>
 
+<!-- First table (header) -->
+<table class="table table-striped mb-0"> 
+    <thead>
+        <tr>
+            <th class="text-center">#</th>
+            <th>Module Name</th>
+            <th>Module Group</th>
+            <th>Icon</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+</table>
 
+<!-- Scrollable second table (content) -->
+<div class="overflow-auto" style="max-height: 53vh;"> <!-- Adjust height as needed -->
     <table class="table table-striped">
-        <thead>
-            <tr>
-                <th class="text-center">#</th>
-                <th>Module Name</th>
-                <th>Module Group</th>
-                <th>Icon</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
         <tbody>
             {% for module in modules %}
             <tr>
@@ -51,17 +65,18 @@
                 <td>{{ module.module_name }}</td>
                 <td>{{ module.module_group }}</td>
                 <td><i class="{{ module.icon }} text-secondary"></i></td>
-
                 <td>
                     <a title="Details" href="{% url 'module_group:module_detail' module.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-info-circle"></i></a>
-                    <a title="Edit"  href="{% url 'module_group:module_edit' module.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-edit"></i></a>
+                    <a title="Edit" href="{% url 'module_group:module_edit' module.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-edit"></i></a>
                     <a title="Delete" href="{% url 'module_group:module_delete' module.pk %}" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash-alt"></i></a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    
+</div>
+
+
 </div>
 
 <!-- Import Modal -->

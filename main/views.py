@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from .forms import RegistrationForm, CustomLoginForm, EmailForm, ConfirmationCodeForm
 from django.contrib.auth import authenticate, login
 from user.models import User, Profile, Role
@@ -17,130 +17,9 @@ from django.views.decorators.csrf import csrf_exempt
 import random
 from django.core.cache import cache
 from django.conf import settings
-from course.models import Course  
 from .module_utils import get_grouped_modules
-
-@login_required
-def home(request):
-    roles = Role.objects.all() 
-    query = request.GET.get('q')
-    temporary_role_id = request.session.get('temporary_role')
-
-    module_groups, grouped_modules = get_grouped_modules(request.user, temporary_role_id)
-
-    # Lọc modules dựa trên truy vấn tìm kiếm
-    if query:
-        modules = [module for modules in grouped_modules.values() for module in modules]
-        modules = [module for module in modules if query.lower() in module.module_name.lower() or query.lower() in module.module_group.group_name.lower()]
-    else:
-        modules = [module for modules in grouped_modules.values() for module in modules]
-    return render(request, 'home.html', {
-        'module_groups': module_groups,
-        'modules': modules,
-        'grouped_modules': grouped_modules,
-        'roles': roles,
-        'temporary_role': temporary_role_id,
-    })
-
-def home_module(request):
-    roles = Role.objects.all() 
-    query = request.GET.get('q')
-    temporary_role_id = request.session.get('temporary_role')
-
-    module_groups, grouped_modules = get_grouped_modules(request.user, temporary_role_id)
-
-    # Lọc modules dựa trên truy vấn tìm kiếm
-    if query:
-        modules = [module for modules in grouped_modules.values() for module in modules]
-        modules = [module for module in modules if query.lower() in module.module_name.lower() or query.lower() in module.module_group.group_name.lower()]
-    else:
-        modules = [module for modules in grouped_modules.values() for module in modules]
-
-    form = ExcelImportForm()
-
-    return render(request, 'home.html', {
-        'module_groups': module_groups,
-        'modules': modules,
-        'grouped_modules': grouped_modules,
-        'form': form,
-        'roles': roles,
-        'temporary_role': temporary_role_id,
-    })
-
-
-from course.models import Course 
-def home_course(request):
-    query = request.GET.get('q')
-    module_groups = ModuleGroup.objects.all()
-    
-    # Get all courses for the authenticated user
-    if request.user.is_authenticated:
-        enrolled_courses = request.user.enrollments.select_related('course').all()
-        for enrollment in enrolled_courses:
-            # Calculate completion percentage for each course
-            enrollment.completion_percent = enrollment.course.get_completion_percent(request.user)
-    else:
-        enrolled_courses = Course.objects.none()
-
-    # Apply search query if present
-    if query:
-        enrolled_courses = enrolled_courses.filter(
-            Q(course__course_name__icontains=query) |
-            Q(course__description__icontains=query)
-        )
-
-    # Get the active module URL name
-    active_module_url = request.resolver_match.url_name
-
-    return render(request, 'home.html', {
-        'courses': enrolled_courses,
-        'active_module_url': active_module_url,
-        'module_groups': module_groups
-    })
-
-
-
-# def home(request):
-#     query = request.GET.get('q')
-#     all_modules = Module.objects.all()
-#     module_groups = ModuleGroup.objects.all()
-
-#     # Filter modules based on user role
-#     if request.user.is_authenticated:
-#         user_role = getattr(request.user.profile, 'role', None) if hasattr(request.user, 'profile') else None
-        
-#         if request.user.is_superuser:
-#             filtered_modules = all_modules
-#         elif user_role:
-#             # Only include modules assigned to this user's role
-#             filtered_modules = all_modules.filter(role_modules=user_role).distinct()
-#         else:
-#             messages.error(request, "Invalid role or no modules available for this role.")
-#             filtered_modules = Module.objects.none()
-#     else:
-#         filtered_modules = Module.objects.none()
-
-#     # Filter module groups based on filtered modules
-#     module_groups_with_access = module_groups.filter(modules__in=filtered_modules).distinct()
-
-#     # Apply search query if present
-#     if query:
-#         filtered_modules = filtered_modules.filter(
-#             Q(module_name__icontains=query) |
-#             Q(module_group__group_name__icontains=query)
-#         )
-
-#     # form = ExcelImportForm()  # Assuming this form is already defined elsewhere
-
-#     # Get the active module URL name
-#     active_module_url = request.resolver_match.url_name
-
-#     return render(request, 'home.html', {
-#         'module_groups': module_groups_with_access,
-#         'modules': filtered_modules,
-#         # 'form': form,
-#         'active_module_url': active_module_url,  # Pass the active module URL
-#     })
+from .models import SiteStatus
+from django.contrib.auth.decorators import user_passes_test
 
 
 def password_reset_request(request):
@@ -189,7 +68,7 @@ def get_remaining_time(created_at, expiration_duration_minutes):
 
 def password_reset_code(request):
     created_at = request.session.get('code_created_at')
-    expiration_duration_minutes = 0.5  
+    expiration_duration_minutes = 3
 
     
     remaining_time, minutes, seconds = get_remaining_time(created_at, expiration_duration_minutes)
@@ -347,7 +226,7 @@ def register_user_info(request):
             profile = Profile.objects.create(user=user)  # Chỉ tạo Profile
             
             # Gán vai trò mặc định là User
-            default_role = Role.objects.get(role_name='User')  # Thay 'User' bằng tên vai trò đúng nếu cần
+            default_role = Role.objects.get(role_name='Student')  
             profile.role = default_role
             profile.email_verified = True  # Đánh dấu email là đã xác thực
             profile.save()  # Lưu Profile với vai trò mặc định
@@ -363,42 +242,265 @@ def register_user_info(request):
     return render(request, 'register_user_info.html', {'form': user_form})
 
 
-def login_view(request):
-    if request.method == 'POST':
-        form = CustomLoginForm(request.POST)
+def home(request):
+    roles = Role.objects.all() 
+    query = request.GET.get('q')
+    temporary_role_id = request.session.get('temporary_role')
 
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
+    module_groups, grouped_modules = get_grouped_modules(request.user, temporary_role_id)
 
-            user = authenticate(request, username=username, password=password)
-
-            if user is not None:
-                # Đăng nhập người dùng
-                login(request, user)
-
-                if user.is_superuser:
-                    return redirect('main:home')
-
-                user_role = user.profile.role.role_name
-
-                # Hiển thị thông báo đăng nhập thành công
-                messages.success(request, "Đăng nhập thành công!")
-                next_url = request.GET.get('next', 'main:home')
-                return redirect(next_url)
-
-            else:
-                messages.error(request, "Tên đăng nhập hoặc mật khẩu không hợp lệ.")
-        else:
-            messages.error(request, "Mẫu không hợp lệ.")
+    # Lọc modules dựa trên truy vấn tìm kiếm
+    if query:
+        modules = [module for modules in grouped_modules.values() for module in modules]
+        modules = [module for module in modules if query.lower() in module.module_name.lower() or query.lower() in module.module_group.group_name.lower()]
     else:
-        form = CustomLoginForm()
+        modules = [module for modules in grouped_modules.values() for module in modules]
 
-    return render(request, 'login.html', {
+    form = ExcelImportForm()
+
+    return render(request, 'home.html', {
+        'module_groups': module_groups,
+        'modules': modules,
+        'grouped_modules': grouped_modules,
         'form': form,
+        'roles': roles,
+        'temporary_role': temporary_role_id,
     })
 
 
+from django.contrib.auth import authenticate, login
+from user.models import User
+from activity.models import UserActivityLog
+def login_view(request):
+    current_week = timezone.now().isocalendar()[1]  # Lấy tuần hiện tại trong năm
+    user_sessions = request.session.get('user_login_stats', {})
+
+    if request.method == 'POST':
+        form = CustomLoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            user = authenticate(request, username=username, password=password)
+
+            if user is not None:
+                # Đăng nhập thành công
+                if str(current_week) not in user_sessions:
+                    user_sessions[str(current_week)] = {'successful_logins': 0, 'failed_logins': 0}
+
+                user_sessions[str(current_week)]['successful_logins'] += 1
+                request.session['user_login_stats'] = user_sessions  # Lưu lại vào session
+
+                # Thêm bản ghi vào UserActivityLog khi đăng nhập thành công
+                UserActivityLog.objects.create(
+                    user=user,
+                    activity_type='login',
+                    activity_details='success',
+                    activity_timestamp=timezone.now()
+                )
+
+                request.session['username'] = username
+                request.session['password'] = password
+
+                # Kiểm tra tài khoản có bị khóa hay không không cần thiết nữa vì đã kiểm tra trong form
+                if user.is_superuser:
+                    login(request, user)
+                    messages.success(request, "Đăng nhập thành công!")
+                    return redirect('main:home')
+
+                # Check for user profile and 2FA
+                try:
+                    profile = Profile.objects.get(user=user)
+                    is_2fa_enabled = profile.two_fa_enabled
+                except Profile.DoesNotExist:
+                    is_2fa_enabled = False
+                
+                user_role = user.profile.role.role_name if hasattr(user, 'profile') and hasattr(user.profile, 'role') else None
+
+                # Handle 2FA if enabled
+                if is_2fa_enabled:
+                    verification_code = get_random_string(length=2, allowed_chars='0123456789')
+                    request.session['verification_code'] = verification_code
+                    request.session['verification_code_created_at'] = timezone.now().timestamp()
+                    send_mail(
+                        'Xác thực 2FA',
+                        f'Mã xác thực của bạn là: {verification_code}',
+                        'your-email@example.com',
+                        [user.email],
+                        fail_silently=False,
+                    )
+                    return redirect('main:verify_2fa')
+
+                # Redirect based on user role
+                else:
+                    login(request, user)  # Log in the user
+                    if user_role == 'Student':
+                        return redirect('student_portal:course_list')
+                    else:
+                        next_url = request.GET.get('next', 'main:home')
+                        return redirect(next_url)
+            else:
+                messages.error(request, "Thông tin đăng nhập không chính xác.")
+        else:
+            for field in form.errors:
+                for error in form.errors[field]:
+                    messages.error(request, error)
+    else:
+        form = CustomLoginForm()
+
+    return render(request, 'login.html', {'form': form})
+
+
+def verify_2fa(request):
+    # Kiểm tra nếu người dùng chưa đăng nhập
+    if not request.user.is_authenticated:
+        username = request.session.get('username')
+        password = request.session.get('password')
+        
+        if username and password:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+            else:
+                messages.error(request, "Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.")
+                return redirect('main:login')
+        else:
+            messages.error(request, "Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.")
+            return redirect('main:login')
+
+    try:
+        profile = Profile.objects.get(user=request.user)
+        is_2fa_enabled = profile.two_fa_enabled
+    except Profile.DoesNotExist:
+        is_2fa_enabled = False
+
+    if not is_2fa_enabled:
+        messages.success(request, "Xác thực 2FA bị tắt. Đăng nhập thành công.")
+        return redirect('main:home')
+
+    if request.method == 'POST':
+        selected_code = request.POST.get('selected_code')
+        session_code = request.session.get('verification_code')
+        code_created_at = request.session.get('verification_code_created_at')
+        failed_attempts = request.session.get('failed_2fa_attempts', 0)
+
+        current_time = timezone.now().timestamp()
+        if code_created_at is None or (current_time - code_created_at) > 20:
+            messages.error(request, "Mã xác thực đã hết hạn. Vui lòng đăng nhập lại.")
+            return redirect('main:login')
+
+        if selected_code == session_code:
+            # Xóa session sau khi xác thực thành công
+            for key in ['username', 'password', 'verification_code', 'verification_code_created_at', 'failed_2fa_attempts', 'resend_count']:
+                request.session.pop(key, None)
+            messages.success(request, "Đăng nhập thành công với 2FA!")
+            return redirect('main:home')
+
+        else:
+            # Tăng số lần nhập sai và lưu lại
+            failed_attempts += 1
+            request.session['failed_2fa_attempts'] = failed_attempts
+
+            # Nếu người dùng nhập sai, gửi mã xác thực mới
+            if failed_attempts < 3:
+                verification_code = str(random.randint(10, 99))
+                request.session['verification_code'] = verification_code
+                request.session['verification_code_created_at'] = timezone.now().timestamp()
+                request.session['resend_count'] = request.session.get('resend_count', 0) + 1
+
+                user_email = request.user.email
+                send_mail(
+                    'Mã xác thực mới',
+                    f'Mã xác thực của bạn là: {verification_code}. Vui lòng thử lại.',
+                    'your-email@example.com',
+                    [user_email],
+                    fail_silently=False,
+                )
+                messages.error(request, "Mã xác thực không đúng. Một mã mới đã được gửi tới email của bạn.")
+                return redirect('main:verify_2fa')
+
+            # Nếu sai quá 3 lần, gửi cảnh báo qua email
+            if failed_attempts >= 3:
+                user_email = request.user.email
+                send_mail(
+                    'Cảnh báo: Nhiều lần nhập sai mã xác thực',
+                    'Bạn đã nhập sai mã xác thực quá 3 lần. Vui lòng kiểm tra tài khoản của mình.',
+                    'your-email@example.com',
+                    [user_email],
+                    fail_silently=False,
+                )
+
+                # Lưu log hoạt động
+                UserActivityLog.objects.create(
+                    user=request.user,
+                    activity_type='2fa_email_notification',
+                    activity_details='Email sent after multiple failed 2FA attempts',
+                    activity_timestamp=timezone.now()
+                )
+
+                # Đặt lại số lần thử
+                request.session['failed_2fa_attempts'] = 0
+                messages.error(request, "Bạn đã nhập sai mã xác thực quá nhiều lần. Một email đã được gửi để thông báo.")
+                return redirect('main:login')
+
+            messages.error(request, "Mã xác thực không đúng. Vui lòng thử lại.")
+            return redirect('main:verify_2fa')
+
+    # Gửi mã xác thực nếu chưa có trong session
+    if is_2fa_enabled and 'verification_code' not in request.session:
+        verification_code = str(random.randint(10, 99))
+        request.session['verification_code'] = verification_code
+        request.session['verification_code_created_at'] = timezone.now().timestamp()
+        request.session['resend_count'] = 1  # Bắt đầu đếm lại
+
+        user_email = request.user.email
+        send_mail(
+            'Mã xác thực 2FA của bạn',
+            f'Mã xác thực của bạn là: {verification_code}',
+            'your-email@example.com',
+            [user_email],
+            fail_silently=False,
+        )
+
+    verification_code = request.session.get('verification_code')
+    choices = [verification_code] + [str(random.randint(10, 99)) for _ in range(5)]
+    random.shuffle(choices)
+
+    return render(request, 'verify_2fa.html', {'choices': choices})
 
 
 
+def toggle_2fa(request):
+    # Get the profile for the logged-in user
+    profile = Profile.objects.get(user=request.user)
+    
+    # Toggle the two_fa_enabled field
+    profile.two_fa_enabled = not profile.two_fa_enabled
+    profile.save()
+
+    # Provide feedback to the user
+    messages.success(request, "Trạng thái 2FA đã thay đổi.")
+    return redirect('main:home')
+
+@user_passes_test(lambda u: u.is_superuser)
+def lock_site(request):
+    # Lấy bản ghi SiteStatus hoặc tạo mới nếu không có
+    site_status, created = SiteStatus.objects.get_or_create(id=1)
+
+    # Đặt trạng thái thành True (Khóa)
+    site_status.status =  False
+    site_status.save()
+
+    # Quay lại trang admin sau khi cập nhật
+    return redirect('admin:index')
+
+@user_passes_test(lambda u: u.is_superuser)
+def unlock_site(request):
+    # Lấy bản ghi SiteStatus hoặc tạo mới nếu không có
+    site_status, created = SiteStatus.objects.get_or_create(id=1)
+
+    # Đặt trạng thái thành False (Mở)
+    site_status.status = True
+    site_status.save()
+
+    # Quay lại trang admin sau khi cập nhật
+    return redirect('admin:index')

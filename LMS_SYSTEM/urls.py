@@ -25,7 +25,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('ckeditor/', include('ckeditor_uploader.urls')),  # for file upload
-    
+    path('grappelli/', include('grappelli.urls')), # grappelli URLS
     path('admin/', admin.site.urls),
     path('', include('main.urls')),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
@@ -41,6 +41,7 @@ urlpatterns = [
     path('learning_path/', include('learning_path.urls')),
     path('backup/', include('backup.urls')),
     path('student_portal/', include('student_portal.urls')),
+    path('survey/', include('survey_app.urls')),
     #path('quiz_generator/', include('quiz_generator.urls')),
     
     #group01
@@ -52,11 +53,11 @@ urlpatterns = [
     #group02
     path('course/', include('course.urls')),
     path('feedback/', include('feedback.urls', namespace='feedback')),
-    path('forum/', include('forum.urls', namespace='forum')),
+    path('forum/', include('forum.urls', namespace='forum')), #
+    path('department_course/', include('department_course.urls', namespace='department_course')),
 
     #group03
     path('quiz/', include('quiz.urls')),  
-    # path('std_quiz/', include('std_quiz.urls')),
     # path('course_Truong/', include('course_Truong.urls')),
     path('tools/', include('tools.urls')),
     
@@ -66,6 +67,8 @@ urlpatterns = [
     path('chatapp/', include('chatapp.urls')),
     path('thread/', include('thread.urls')),
     path('collaboration_group/', include('collaboration_group.urls')),
+    path('notifications/', include('notifications.urls')), #
+    path('Application/', include('Application.urls')),
 
     #group05
     path('activity/', include('activity.urls', namespace='activity')),  # Ensure this line exists
@@ -77,7 +80,9 @@ urlpatterns = [
 
     #group06 - Binh_Thang - Coding
     path('exercises/', include('exercises.urls')), 
-    path('assessments/', include('assessments.urls')),
-    path('reports/', include('reports.urls'))
+    path('assessments/', include('assessments.urls', namespace='assessments')),
+    path('reports/', include('reports.urls')),
+
+    path('cheat_logger/', include('cheat_logger.urls'))
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

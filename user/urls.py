@@ -17,6 +17,7 @@ urlpatterns = [
     path('users/delete/', views.user_delete, name='user_delete'),
     path('user/<int:user_id>/edit-password/', user_edit_password, name='user_edit_password'),
     path('students/', views.student_list, name='student_list'),
+    path('instructors/', views.instructor_list, name='instructor_list'),
 ]
 
 if settings.DEBUG:

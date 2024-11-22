@@ -23,9 +23,9 @@ urlpatterns = [
     path('invite/<uidb64>/<token>/', operations.Assessment_invite_accept.as_view(), name='assessment_invite_accept'),
     path('anonymous_info/<int:invited_candidate_id>/', operations.Handle_anonymous_info.as_view(), name='handle_anonymous_info'),  # Add this line
     path('create_asm_attempt/<int:assessment_id>/', operations.Create_asm_attempt.as_view(), name='create_asm_attempt'),
-    path('take/<int:assessment_id>/', operations.Take_assessment.as_view(), name='take_assessment'),
+    path('<int:assessment_id>/take/', operations.Take_assessment.as_view(), name='take_assessment'),
 
     path('<int:assessment_id>/result/attempt-id=<int:attempt_id>/', operations.Assessment_result.as_view(), name='assessment_result'),
+    
+    path('report/<int:assessment_id>/<int:attempt_id>/<str:email>/', operations.Assessment_report.assessment_report, name='assessment_report'),
 ]
-
-

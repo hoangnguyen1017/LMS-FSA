@@ -1,78 +1,140 @@
 {% extends 'base.html' %}
-{% load static %}  
+{% load static %}
 {% block title %}AI Insights{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'css/achievement.css' %}">
-<main class="container">
+<link rel="stylesheet" href="{% static 'css/achievement.css' %}">
+<main class="m-auto bg-white p-3 rounded shadow">
     {% include "achievement_tab.html" %}
-    <div class="card">
-        <h2>User Progress</h2>
-        <p><strong>Name:</strong> {{ user.username }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Total Courses:</strong> {{ course_count }}</p>
-        <p><strong>Completed Courses:</strong> {{ completed }}</p>
-        {% if not percent_complete == 0 %}
-        <div class="progress-container">
-            <div class="progress-bar-progress" style="width: {{ percent_complete }}%"> <center>{{ percent_complete }}%</center> </div>
-        </div>
-        {% else %}
-        <div class="progress-container">
-            <center style="color: red;">0%</center>
-        </div>
-        {% endif %}
-    </div>
-
-    {% for course in page_obj_pro %}
-        <div class="course-container">
-            <div class="course-info">
-                <div class="course-icon">
-                    <img src='https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://d2j5ihb19pt1hq.cloudfront.net/certificates/cert-course.png?auto=format%2Ccompress&dpr=2&h=72'>
+    <div class="bg-light rounded border border-3 p-3 mb-3">
+        <div class="row">
+            <!-- User Information Section -->
+            <div class="col-md-4">
+                <div class="h-100">
+                    <h2 class="fs-2">User Progress</h2>
+                    <p class="mb-2"><span class="fw-bold">Name:</span> {{ user.username }}</p>
+                    <p class="mb-2"><span class="fw-bold">Email:</span> {{ user.email }}</p>
                 </div>
-                <div class="course-details">
-                    <p class="course-title" style="padding-right: 0px;">{{ course.course.course_name }}</p>
-                    {% if not course.progress_percentage == 0 %}
-                    <div class="progress-container" style="width: 90vh;">
-                        <div class="progress-bar-progress" style="width: {{ course.progress_percentage }}%"> <center>{{ course.progress_percentage }}%</center> </div>
+            </div>
+
+            <!-- Course Information Section -->
+            <div class="col-md-4">
+                <div class="h-100 d-flex flex-column justify-content-end">
+                    <p class="mb-2"><span class="fw-bold">Total Courses:</span> {{ course_count }}</p>
+                    <p class="mb-2"><span class="fw-bold">Completed Courses:</span> {{ completed }}</p>
+                </div>
+            </div>
+
+            <!-- Progress Circle Section -->
+            <div class="col-md-4">
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    {% if percent_complete > 0 %}
+                    <div class="d-flex justify-content-center align-items-center rounded-circle position-relative"
+                        style="
+                            width: 100px; 
+                            height: 100px; 
+                            background: conic-gradient(#4caf50 calc({{ percent_complete }}* 1%), #e0e0e0 calc({{ percent_complete }}* 1%));
+                        ">
+                        <span class="fs-5 fw-bold text-dark">{{ percent_complete }}%</span>
                     </div>
                     {% else %}
-                    <div class="progress-container" style="width: 90vh;">
-                        <center style="color: red;">0%</center>
+                    <div class="d-flex justify-content-center align-items-center rounded-circle position-relative"
+                        style="
+                            width: 100px; 
+                            height: 100px; 
+                            background: #e0e0e0;
+                        ">
+                        <span class="fs-5 fw-bold text-danger">0%</span>
                     </div>
                     {% endif %}
                 </div>
             </div>
-            <!-- <button class="add-linkedin">Add to LinkedIn</button> -->
-            <a href="{% url 'course:course_detail' course.course.id %}" class="add-linkedin">Go to Course</a>
         </div>
-    {% empty %}
-        <p>No courses found.</p>
-    {% endfor %}
+    </div>
+
+    <div class="p-3">   
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 gx-3">
+        {% for course in page_obj_pro %}
+            <div class="bg-white rounded border p-3 my-2">
+                <div class="d-flex align-items-start gap-3">
+                    <!-- Course Image -->
+                    <div class="flex-shrink-0">
+                        <img src='https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://d2j5ihb19pt1hq.cloudfront.net/certificates/cert-course.png?auto=format%2Ccompress&dpr=2&h=72'
+                            alt="Course Icon" 
+                            class="rounded" 
+                            style="width: 64px; height: 64px; object-fit: cover;">
+                    </div>
+            
+                    <!-- Course Content -->
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-start justify-content-between mb-2">
+                            <p class="m-0 fw-bold">{{ course.course.course_name }}</p>
+                            <!-- <button class="add-linkedin">Add to LinkedIn</button> -->
+                            <a href="{% url 'course:course_detail' course.course.id %}" 
+                            class="btn btn-primary btn-sm text-nowrap">Go to Course</a>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        {% if not course.progress_percentage == 0 %}
+                        <div class="mt-2">
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar bg-primary" 
+                                    role="progressbar" 
+                                    style="width: {{ course.progress_percentage }}%;" 
+                                    aria-valuenow="{{ course.progress_percentage }}" 
+                                    aria-valuemin="0" 
+                                    aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="mt-2">
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar" 
+                                    role="progressbar" 
+                                    style="width: 0%;" 
+                                    aria-valuenow="0" 
+                                    aria-valuemin="0" 
+                                    aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <p class="h5 text-muted">No courses found.</p>
+        </div>
+        {% endfor %}
+        </div>
+    </div>
 
     <div class="pagination">
-            <span class="step-links">
+        <span class="step-links">
 
-                {% if page_obj_pro.has_previous %}
-                    <a href="?page=1">&laquo; First</a>
-                    <a href="?page={{ page_obj_pro.previous_page_number }}">Previous</a>
-                {% else %}
-                    <span class="disabled">&laquo; First</span>
-                    <span class="disabled">Previous</span>
-                {% endif %}
+            {% if page_obj_pro.has_previous %}
+            <a href="?page=1">&laquo; First</a>
+            <a href="?page={{ page_obj_pro.previous_page_number }}">Previous</a>
+            {% else %}
+            <span class="disabled">&laquo; First</span>
+            <span class="disabled">Previous</span>
+            {% endif %}
 
-                <span class="current">
-                    Page {{ page_obj_pro.number }} of {{ page_obj_pro.paginator.num_pages }}.
-                </span>
-
-                {% if page_obj_pro.has_next %}
-                    <a href="?page={{ page_obj_pro.next_page_number }}">Next</a>
-                    <a href="?page={{ page_obj_pro.paginator.num_pages }}">Last &raquo;</a>
-                {% else %}
-                    <span class="disabled">Next</span>
-                    <span class="disabled">Last &raquo;</span>
-                {% endif %}
-
+            <span class="current">
+                Page {{ page_obj_pro.number }} of {{ page_obj_pro.paginator.num_pages }}.
             </span>
+
+            {% if page_obj_pro.has_next %}
+            <a href="?page={{ page_obj_pro.next_page_number }}">Next</a>
+            <a href="?page={{ page_obj_pro.paginator.num_pages }}">Last &raquo;</a>
+            {% else %}
+            <span class="disabled">Next</span>
+            <span class="disabled">Last &raquo;</span>
+            {% endif %}
+
+        </span>
     </div>
 </main>
 

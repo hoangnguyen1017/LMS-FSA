@@ -6,9 +6,11 @@ from assessments.models import StudentAssessmentAttempt
 from .utils.encryption_handler import Data_Encryption
 import json
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode, urlencode
+from django.shortcuts import render
 
 from .utils.request_to_server import _request
 import datetime
+from .utils.get_statistics import get_statistics
 
 
 models_mapping = {
@@ -102,3 +104,20 @@ class Log(View):
             return JsonResponse({"status": "ok"})
         except AssertionError as error:
             return JsonResponse({"status": f'error: {error}'})
+
+
+class Get_Statistics(View):
+    def get(self, request):
+        try:
+            # /cheat_logger/statistics/?attempt_model_name=StudentAssessmentAttempt&attempt_id=63
+            attempt_model_name = request.GET.get("attempt_model_name")
+            attempt_id = request.GET.get("attempt_id")
+            print(attempt_model_name)
+            print(attempt_id)
+
+            statistics = get_statistics(attempt_model_name, attempt_id)
+            return render(request, 'cheat_logger/detail.html', statistics[int(attempt_id)])
+        except AssertionError as error:
+            return JsonResponse({"status": f'error: {error}'})
+
+

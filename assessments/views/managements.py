@@ -17,7 +17,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.db import transaction
 from django.views import View
-
+from quiz.models import *
+from django.db.models import Count
 from exercises.libs.submission import grade_submission, precheck
 
 from ..models import *
@@ -53,10 +54,13 @@ class Assessment_list(View):
                 'exercise_count': exercise_count,
                 'question_count': question_count,
             })
-        module_groups = ModuleGroup.objects.all()
+        
+        module_groups = ModuleGroup.objects.all()  # Thay đổi theo cách bạn lấy dữ liệu
+        grouped_modules = {group: group.modules.all() for group in module_groups}
         # Pass the assessments with their exercise and question counts to the template
         return render(request, 'assessment/assessment_list.html', {
             'module_groups': module_groups,
+            'grouped_modules': grouped_modules,
             'courses': courses,
             'assessments_with_counts': assessments_with_counts,
         })
@@ -66,49 +70,112 @@ class Assessment_create(View):
     @method_decorator(login_required)
     def get(self, request):
         query = request.GET.get('search', '')
-        exercises = Exercise.objects.filter(title__icontains=query)  # Filter exercises based on search query
-        questions = Question.objects.filter(question_text__icontains=query)  # Filter questions based on search query
-    
+        exercises = Exercise.objects.filter(title__icontains=query)
         paginator = Paginator(exercises, 5)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
+        all_quizzes = Quiz.objects.annotate(total_questions=Count('questions'))
+        quiz_questions = []
+        total_questions_selected_quiz = 0
+        selected_quiz = None
+
+        selected_quiz_id = request.GET.get('selected_quiz')
+        if selected_quiz_id:
+            selected_quiz = get_object_or_404(Quiz, id=selected_quiz_id)
+            questions = selected_quiz.questions.prefetch_related('answer_options')
+            for question in questions:
+                answers = question.answer_options.all()
+                quiz_questions.append({
+                    'id': question.id,
+                    'text': question.question_text,
+                    'answers': [{'id': answer.id, 'text': answer.option_text, 'is_correct': answer.is_correct} for answer in answers]
+                })
+            total_questions_selected_quiz = questions.count()
+
         form = AssessmentForm()
-        
+
         return render(request, 'assessment/assessment_form.html', {
             'form': form,
             'exercises': exercises,
-            'questions': questions,
             'page_obj': page_obj,
-            'selected_exercises': [],  # Initially no exercises selected
-            'selected_questions': [],  # Initially no questions selected
-            'search': query
+            'selected_exercises': [],
+            'selected_questions': [],
+            'search': query,
+            'all_quizzes': all_quizzes,
+            'selected_quiz': selected_quiz,
+            'quiz_questions': quiz_questions,
+            'total_questions_selected_quiz': total_questions_selected_quiz,
         })
     
     @method_decorator(login_required)
     def post(self, request):
         form = AssessmentForm(request.POST)
-        selected_exercises = request.POST.getlist('selected_exercises')  # Get selected exercises from form
-        selected_questions = request.POST.getlist('selected_questions')  # Get selected questions from the form
         if form.is_valid():
             assessment = form.save(commit=False)
             assessment.created_by = request.user
             assessment.save()
-            form.save_m2m()  # Save ManyToMany relationships
 
-            # Add selected exercises to the assessment
-            for exercise_id in selected_exercises:
-                exercise = get_object_or_404(Exercise, id=exercise_id)
-                assessment.exercises.add(exercise)  # Add the exercises to assessment
+            selected_exercise_ids = request.POST.getlist('exercises')
+            assessment.exercises.set(selected_exercise_ids)
 
-            # Add selected questions to the assessment
-            for question_id in selected_questions:
-                question = get_object_or_404(Question, id=question_id)
-                print(question)
-                assessment.questions.add(question)  # Add questions to the assessment
+            selected_question_ids = request.POST.getlist('selected_questions[]')
+            if selected_question_ids:
+                assessment.questions.set(selected_question_ids)
 
-            messages.success(request, 'Assessment created successfully with exercises!')
+            assessment.save()
+            messages.success(request, 'Assessment created successfully with exercises and questions!')
+
+            if request.content_type == 'application/json' and request.body:
+                try:
+                    data = json.loads(request.body)
+                    received_questions = data.get('questions', [])
+                    for item in received_questions:
+                        question_id = item.get('id')
+                        question_text = item.get('text')
+                        answers = item.get('answers', [])
+                        received_answer_ids = {answer.get('id') for answer in answers if 'id' in answer}
+
+                        if question_id:
+                            try:
+                                question = Question.objects.get(id=question_id)
+                                question.question_text = question_text
+                                question.save()
+
+                                existing_answer_ids = set(question.answer_options.values_list('id', flat=True))
+                                answers_to_delete = existing_answer_ids - received_answer_ids
+                                AnswerOption.objects.filter(id__in=answers_to_delete).delete()
+                            except Question.DoesNotExist:
+                                return JsonResponse({'status': 'error', 'message': f'Question with ID {question_id} not found.'}, status=400)
+                        else:
+                            question = Question.objects.create(quiz=self.selected_quiz, question_text=question_text)
+
+                        for answer_data in answers:
+                            answer_id = answer_data.get('id')
+                            answer_text = answer_data.get('text')
+                            is_correct = answer_data.get('is_correct', True)
+
+                            if answer_id:
+                                try:
+                                    answer = AnswerOption.objects.get(id=answer_id)
+                                    answer.option_text = answer_text
+                                    answer.is_correct = is_correct
+                                    answer.save()
+                                except AnswerOption.DoesNotExist:
+                                    return JsonResponse({'status': 'error', 'message': f'Answer with ID {answer_id} not found.'}, status=400)
+                            else:
+                                AnswerOption.objects.create(question=question, option_text=answer_text, is_correct=is_correct)
+
+                    return JsonResponse({'status': 'success', 'message': 'Questions updated successfully.'})
+
+                except json.JSONDecodeError:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
+
             return redirect('assessment:assessment_list')
+
+        else:
+            messages.error(request, 'Form submission failed. Please correct the errors and try again.')
+            return render(request, 'assessment/assessment_form.html', {'form': form})
         
 
 class Assessment_detail(View):
@@ -132,61 +199,169 @@ class Assessment_detail(View):
             # 'non_registered_attempts': non_registered_attempts,
         })
 
+# class Assessment_edit(View):
+#     @method_decorator(login_required)
+#     def get(self, request, pk):
+#         assessment = get_object_or_404(Assessment, id=pk)
+    
+#         # Fetch all available exercises and questions
+#         exercises = Exercise.objects.all()
+#         questions = Question.objects.all()
+        
+#         # Fetch selected exercises and questions for the assessment
+#         selected_exercises = assessment.exercises.values_list('id', flat=True)
+#         #print(selected_exercises)
+#         # print("selected_exercise is:  {selected_exercises}")
+#         # selected_questions = assessment.questions.values_list('id', flat=True)
+#         selected_question_ids = assessment.questions.values_list('id', flat=True)
+#         # print("selected_question_ids is:  {selected_question_ids}")
+#         selected_questions = Question.objects.filter(id__in=selected_question_ids)  # Fetching the actual Question objects
+#         # print(f"selected_questions is: {selected_questions}")
+#         # selected_questions = assessment.questions.all()  # Fetching selected Question objects
+#         form = AssessmentForm(instance=assessment)
+
+#         return render(request, 'assessment/assessment_form.html', {
+#             'form': form,
+#             'assessment': assessment,
+#             'exercises': exercises,
+#             'questions': questions,
+#             'selected_exercises': selected_exercises,
+#             'selected_questions': selected_questions,
+#         })
+#     @method_decorator(login_required)
+#     def post(self, request, pk):
+#         assessment = get_object_or_404(Assessment, id=pk)
+
+#         form = AssessmentForm(request.POST, instance=assessment)
+        
+#         if form.is_valid():
+#             form.save()
+#             # print("-----------------")
+#             # Update associated exercises
+#             selected_exercise_ids = request.POST.getlist('selected_exercises')
+
+#             # print(f"form after post.getlist exercise {selected_exercise_ids}")
+#             assessment.exercises.set(selected_exercise_ids)  # Update the associated exercises
+#             # print(f"assessment is:  {assessment}")
+#             # print(f"assessment is:  { assessment.exercises}")
+#             # Update associated questions from the selected questions in the HTML
+#             selected_question_ids = request.POST.get('selected_questions', '').split(',')
+#             # print(f"selected_question_ids is {selected_question_ids}")
+#             selected_question_ids = [q_id for q_id in selected_question_ids if q_id]  # Filter out empty strings
+            
+#             assessment.questions.set(selected_question_ids)  # Update the associated questions
+            
+#             assessment.save()
+
+#             messages.success(request, 'The assessment has been successfully saved.')
+#             return redirect('assessment:assessment_list') 
+
 class Assessment_edit(View):
     @method_decorator(login_required)
     def get(self, request, pk):
         assessment = get_object_or_404(Assessment, id=pk)
-    
-        # Fetch all available exercises and questions
-        exercises = Exercise.objects.all()
-        questions = Question.objects.all()
-        
-        # Fetch selected exercises and questions for the assessment
-        selected_exercises = assessment.exercises.values_list('id', flat=True)
-        print("selected_exercise is:  {selected_exercises}")
-        # selected_questions = assessment.questions.values_list('id', flat=True)
-        selected_question_ids = assessment.questions.values_list('id', flat=True)
-        print("selected_question_ids is:  {selected_question_ids}")
-        selected_questions = Question.objects.filter(id__in=selected_question_ids)  # Fetching the actual Question objects
-        print(f"selected_questions is: {selected_questions}")
-        # selected_questions = assessment.questions.all()  # Fetching selected Question objects
         form = AssessmentForm(instance=assessment)
 
-        return render(request, 'assessment/assessment_form.html', {
+        # Fetch all available exercises and quizzes
+        exercises = Exercise.objects.all()
+        selected_exercises = assessment.exercises.values_list('id', flat=True)
+
+        all_quizzes = Quiz.objects.annotate(total_questions=Count('questions'))
+        quiz_questions = []
+        total_questions_selected_quiz = 0
+        selected_quiz = None
+
+        # Check if another quiz is selected to pull questions from
+        selected_quiz_id = request.GET.get('selected_quiz')
+        if selected_quiz_id:
+            selected_quiz = get_object_or_404(Quiz, id=selected_quiz_id)
+            questions = selected_quiz.questions.prefetch_related('answer_options')
+            for question in questions:
+                answers = question.answer_options.all()
+                quiz_questions.append({
+                    'id': question.id,
+                    'text': question.question_text,
+                    'answers': [{'id': answer.id, 'text': answer.option_text, 'is_correct': answer.is_correct} for answer in answers]
+                })
+            total_questions_selected_quiz = questions.count()
+
+        context = {
             'form': form,
             'assessment': assessment,
             'exercises': exercises,
-            'questions': questions,
             'selected_exercises': selected_exercises,
-            'selected_questions': selected_questions, 
-        })
+            'all_quizzes': all_quizzes,
+            'selected_quiz': selected_quiz,
+            'quiz_questions': quiz_questions,
+            'total_questions_selected_quiz': total_questions_selected_quiz,
+        }
+
+        return render(request, 'assessment/assessment_form.html', context)
+
     @method_decorator(login_required)
     def post(self, request, pk):
         assessment = get_object_or_404(Assessment, id=pk)
-
         form = AssessmentForm(request.POST, instance=assessment)
-        
+
         if form.is_valid():
-            form.save()
-            print("-----------------")
+            assessment = form.save()
+
             # Update associated exercises
-            selected_exercise_ids = request.POST.getlist('selected_exercises')
-            print(f"form after post.getlist exercise {selected_exercise_ids}")
-            assessment.exercises.set(selected_exercise_ids)  # Update the associated exercises
-            print(f"assessment is:  {assessment}")
-            print(f"assessment is:  { assessment.exercises}")
-            # Update associated questions from the selected questions in the HTML
-            selected_question_ids = request.POST.get('selected_questions', '').split(',')
-            print(f"selected_question_ids is {selected_question_ids}")
-            selected_question_ids = [q_id for q_id in selected_question_ids if q_id]  # Filter out empty strings
-            
-            assessment.questions.set(selected_question_ids)  # Update the associated questions
-            
-            assessment.save()
+            selected_exercise_ids = request.POST.getlist('exercises')
+            assessment.exercises.set(selected_exercise_ids)
+
+            # Update associated questions from selected questions in the HTML
+            selected_question_ids = request.POST.getlist('selected_questions[]')
+            if selected_question_ids:
+                assessment.questions.set(selected_question_ids)
+                assessment.save()
 
             messages.success(request, 'The assessment has been successfully saved.')
-            return redirect('assessment:assessment_list') 
+            return redirect('assessment:assessment_list')
 
+        # Process questions and answers updates if provided in the body
+        data = json.loads(request.body) if request.body else {}
+        received_questions = data.get('questions', [])
+        
+        for item in received_questions:
+            question_id = item.get('id')
+            question_text = item.get('text')
+            answers = item.get('answers', [])
+            received_answer_ids = {answer.get('id') for answer in answers if 'id' in answer}
+
+            if question_id:
+                try:
+                    question = Question.objects.get(id=question_id)
+                    question.question_text = question_text
+                    question.save()
+
+                    # Delete answers not present in received answers
+                    existing_answer_ids = set(question.answer_options.values_list('id', flat=True))
+                    answers_to_delete = existing_answer_ids - received_answer_ids
+                    AnswerOption.objects.filter(id__in=answers_to_delete).delete()
+
+                except Question.DoesNotExist:
+                    return JsonResponse({'status': 'error', 'message': f'Question with ID {question_id} not found.'}, status=400)
+            else:
+                question = Question.objects.create(quiz=assessment, question_text=question_text)
+
+            for answer_data in answers:
+                answer_id = answer_data.get('id')
+                answer_text = answer_data.get('text')
+                is_correct = answer_data.get('is_correct', True)
+
+                if answer_id:
+                    try:
+                        answer = AnswerOption.objects.get(id=answer_id)
+                        answer.option_text = answer_text
+                        answer.is_correct = is_correct
+                        answer.save()
+                    except AnswerOption.DoesNotExist:
+                        return JsonResponse({'status': 'error', 'message': f'Answer with ID {answer_id} not found.'}, status=400)
+                else:
+                    AnswerOption.objects.create(question=question, option_text=answer_text, is_correct=is_correct)
+
+        return JsonResponse({'status': 'success', 'message': 'Questions updated successfully.'})
 
 class Assessment_Type_List_View(View):
     def get(self, request):

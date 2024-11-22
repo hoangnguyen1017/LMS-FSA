@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load user_form_filters %}
+{% load static %}
 {% block title %}{{ form.instance.pk|yesno:"Edit User, Add New User" }}{% endblock %}
 
 {% block content %}
@@ -79,39 +80,43 @@
             </div>
 
             {% if request.user.is_authenticated %}
-            <div class="form-group">
-                {{ form.role.label_tag }}
-                {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %}
-                    {{ form.role|add_class:"form-control" }} <!-- Editable for Managers and superusers -->
-                {% else %}
-                    <input type="text" class="form-control" value="{{ request.user.profile.role.role_name }}" readonly> <!-- Readonly for normal users -->
-                    <input type="hidden" name="role" value="{{ request.user.profile.role.id }}"> <!-- Gửi ID của role để biểu mẫu vẫn hợp lệ -->
-                {% endif %}
-                {% if form.role.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.role.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-            
-            <!-- Trường student_code, ẩn theo mặc định -->
-            <div class="form-group" id="student-code-group" style="display: none;">
-                {{ form.student_code.label_tag }}
-                {{ form.student_code|add_class:"form-control" }}
-                {% if form.student_code.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.student_code.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-        {% endif %}
+                <div class="form-group">
+                    {{ form.role.label_tag }}
+                    {% if request.user.is_superuser or request.user.profile.role.role_name == 'Manager' and request.user.pk != user.pk %}
+                        {{ form.role|add_class:"form-control" }} <!-- Editable for Manager editing other users -->
+                    {% else %}
+                        <input type="text" class="form-control" value="{{ request.user.profile.role.role_name }}" readonly> <!-- Readonly for normal users -->
+                        <input type="hidden" name="role" value="{{ request.user.profile.role.id }}"> <!-- Hidden input to keep the role ID valid -->
+                    {% endif %}
+                    {% if form.role.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.role.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <!-- Trường student_code, ẩn theo mặc định -->
+                <div class="form-group" id="student-code-group" style="display: none;">
+                    {{ form.student_code.label_tag }}
+                    {{ form.student_code|add_class:"form-control" }}
+                    {% if form.student_code.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.student_code.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endif %}
 
-            <div class="form-group">
-                <label class="h5 mt-2">Profile Picture URL:</label>
+            <div class="form-group text-center mb-3">
+                <label class="h5 mt-2">Profile Picture:</label>
+                <div class="avatar-wrapper d-flex justify-content-center align-items-center mb-2">
+                    <img src="{% if user.profile.profile_picture_url %}{{ user.profile.profile_picture_url }}{% else %}{% static 'img/default-profile.png' %}{% endif %}" 
+                        class="img-fluid rounded-circle" style="width: 10rem; height: 10rem; object-fit: cover;" alt="{{ user.username }}">
+                </div>
                 <input type="url" name="profile_picture_url" id="id_profile_picture_url" class="form-control" placeholder="Enter profile picture URL" value="{{ form.fields.profile_picture_url.initial|default:'' }}">
                 {% if form.fields.profile_picture_url.initial %}
                     <small class="form-text text-muted">Current: <a href="{{ form.fields.profile_picture_url.initial }}" target="_blank">{{ form.fields.profile_picture_url.initial }}</a></small>
@@ -124,6 +129,8 @@
                     </div>
                 {% endif %}
             </div>
+        
+        
             
             <div class="form-group">
                 <label class="h5 mt-2">{{ form.bio.label_tag }}</label>

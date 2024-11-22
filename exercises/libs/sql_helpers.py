@@ -1,34 +1,60 @@
-import mysql.connector
+import psycopg2
+from psycopg2 import sql, OperationalError, DataError, IntegrityError, ProgrammingError
 import re
 import random
 import string
-from mysql.connector import Error, ProgrammingError, OperationalError, DataError, IntegrityError
 
-def get_mysql_connection():
+# def get_mysql_connection():
+#     """
+#     Establish a connection to the MySQL database.
+#     Returns the connection object if successful, otherwise raises an exception.
+#     """
+#     db_config = {
+#         'host': '103.174.213.139',
+#         'port': 3323,
+#         'user': 'coderbyte',
+#         'password': 'HBjTcb1y7!5rq',
+#         'database': 'coderbyte_db',
+#         'charset': 'utf8mb4'
+#     }
+
+#     try:
+#         conn = mysql.connector.connect(
+#             host=db_config['host'],
+#             port=db_config['port'],
+#             user=db_config['user'],
+#             password=db_config['password'],
+#             database=db_config['database'],
+#             charset=db_config['charset']
+#         )
+#         return conn
+#     except mysql.connector.Error as err:
+#         #print(f"Error: {err}")
+#         raise
+
+def get_postgres_connection():
     """
-    Establish a connection to the MySQL database.
+    Establish a connection to the PostgreSQL database.
     Returns the connection object if successful, otherwise raises an exception.
     """
     db_config = {
-        'host': '103.174.213.139',
-        'port': 3323,
-        'user': 'coderbyte',
-        'password': 'HBjTcb1y7!5rq',
-        'database': 'coderbyte_db',
-        'charset': 'utf8mb4'
+        'host': 'localhost',
+        'port': 5432,
+        'user': 'postgres',
+        'password': '12345678',
+        'database': 'LMS_FSA_database'
     }
 
     try:
-        conn = mysql.connector.connect(
+        conn = psycopg2.connect(
             host=db_config['host'],
             port=db_config['port'],
             user=db_config['user'],
             password=db_config['password'],
-            database=db_config['database'],
-            charset=db_config['charset']
+            database=db_config['database']
         )
         return conn
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         #print(f"Error: {err}")
         raise
 
@@ -127,10 +153,10 @@ def truncate_and_drop_tables(cursor, table_names):
         # Reverse the order of table names to drop them in reverse order of their creation
         for table_name in reversed(table_names):
             # Truncate the table to remove all data
-            cursor.execute(f"TRUNCATE TABLE {table_name};")
+            cursor.execute(sql.SQL("TRUNCATE TABLE {} CASCADE").format(sql.Identifier(table_name)))
             # Drop the table to remove it from the database
-            cursor.execute(f"DROP TABLE {table_name};")
-    except mysql.connector.Error as e:
+            cursor.execute(sql.SQL("DROP TABLE {}").format(sql.Identifier(table_name)))
+    except Exception as e:
         print(f"Error truncating and dropping table {table_name}: {e}")
 
 def execute_sql(code, test_cases):
@@ -148,7 +174,7 @@ def execute_sql(code, test_cases):
     table_names = []  # To store table names in the order they were created
     try:
         # Connect to the MySQL database
-        conn = get_mysql_connection()
+        conn = get_postgres_connection()
         cursor = conn.cursor()
 
         # Loop through each query in the student's dict_query_student
@@ -222,7 +248,7 @@ def execute_sql(code, test_cases):
                             f'</div>'
                         )
                     else:
-                        error_msg = student_result.get('error',"Please check the expected Result !!!")
+                        error_msg = student_result.get('error',"Please check the expected Result!!!")
                         #print(f'{query_key}: Fail - Error: {error_msg}')
                         # Thêm nội dung vào thẻ alert danger khi fail
                         message.append(
@@ -232,7 +258,7 @@ def execute_sql(code, test_cases):
                         )
         header_msg = f"""
         <div style="text-align: center;">
-        <h5> <span style="color: black;"> &lt;&lt;&lt;&lt;&lt;&lt;RUNNING TEST CASES&gt;&gt;&gt;&gt;&gt;&gt;</span></h5>
+        <h5> <span style="color: white;"> &lt;&lt;&lt;RUNNING TEST CASES&gt;&gt;&gt;</span></h5>
         <h6> <span style="color: red;">You have passed {passed_tests} out of 
         {total_tests} total test cases. </span></h6></div><br>
         
@@ -242,7 +268,7 @@ def execute_sql(code, test_cases):
         # Truncate and drop the tables in reverse order to avoid foreign key constraint issues
         truncate_and_drop_tables(cursor, table_names)
 
-    except mysql.connector.Error as e:
+    except psycopg2.Error as e:
         return {'error': f"SQL Error: {e}"}
     
     finally:
@@ -285,7 +311,7 @@ def execute_student_query(cursor, query):
     Executes a student's SQL query and handles possible errors.
 
     Args:
-        cursor: The MySQL cursor object used to execute the query.
+        cursor: The PostgreSQL cursor object used to execute the query.
         query (str): The SQL query to be executed.
 
     Returns:
@@ -307,9 +333,6 @@ def execute_student_query(cursor, query):
     except OperationalError as e:
         #print(f"Operational Error executing student's query: {e}")
         return {'error': f"Operational Error: {e}"}
-    except Error as e:
-        #print(f"General SQL Error executing student's query: {e}")
-        return {'error': f"General SQL Error: {e}"}
     except Exception as e:
         # This will catch any other type of exception that is not caught by the specific mysql.connector errors
         #print(f"Unexpected error: {e}")

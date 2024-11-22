@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.db import transaction
 from django.views import View
-
+from django.http import Http404
 from exercises.libs.submission import grade_submission, precheck
 
 from ..models import *
@@ -29,14 +29,12 @@ from exercises.models import Exercise, Submission
 from user.models import User
 
 from ..forms import *
-
 from .tokens import invite_token_generator  # Adjust the import path as necessary
-
 from django.utils.decorators import decorator_from_middleware
 from django.utils.decorators import decorator_from_middleware_with_args
-
 from cheat_logger.utils.encryption_handler import Data_Encryption
 
+import datetime
 
 
 def no_cache(view):
@@ -185,45 +183,73 @@ class Take_assessment(View):
         attempt = get_object_or_404(StudentAssessmentAttempt, id=attempt_id)
 
         correct_answers = 0
+        duration = round(
+            datetime.datetime.now().timestamp()
+            - attempt.attempt_date.timestamp()
+        )
 
         # Process each question
-        for question in questions:
-            # Fetch all selected option IDs for the question (adjust if using checkboxes or other multi-select elements)
-            selected_option_ids = request.POST.getlist(f'question_{question.id}')
-            text_response = request.POST.get(f'text_response_{question.id}')
+        if total_questions != 0:
+            for question in questions:
+                # Fetch all selected option IDs for the question (adjust if using checkboxes or other multi-select elements)
+                selected_option_ids = request.POST.getlist(f'question_{question.id}')
+                text_response = request.POST.get(f'text_response_{question.id}')
 
-            # Initialize selected_options as an empty list to store AnswerOption instances
-            selected_options = []
+                # Initialize selected_options as an empty list to store AnswerOption instances
+                selected_options = []
 
-            # Populate selected_options with AnswerOption instances if IDs are valid
-            if selected_option_ids:
-                selected_options = AnswerOption.objects.filter(id__in=selected_option_ids)
+                # Populate selected_options with AnswerOption instances if IDs are valid
+                if selected_option_ids:
+                    selected_options = AnswerOption.objects.filter(id__in=selected_option_ids)
 
-            # Create a UserAnswer instance for the question, excluding selected_options for now
-            student_answer = UserAnswer.objects.create(
-                attempt=attempt,
-                question=question,
-                text_response=text_response  # Keep text_response field
-            )
+                # Create a UserAnswer instance for the question, excluding selected_options for now
+                student_answer = UserAnswer.objects.create(
+                    attempt=attempt,
+                    question=question,
+                    text_response=text_response  # Keep text_response field
+                )
 
-            # Set the selected options using the ManyToManyField's set method
-            student_answer.selected_options.set(selected_options)
+                # Set the selected options using the ManyToManyField's set method
+                student_answer.selected_options.set(selected_options)
 
-            # Optional: Count correct answers if selected options are supposed to be evaluated for correctness
-            correct_answers += sum(1 for option in selected_options if option.is_correct)
+                # Optional: Count correct answers if selected options are supposed to be evaluated for correctness
+                correct_answers += sum(1 for option in selected_options if option.is_correct)
+            total_quiz_score = (total_marks / total_questions) * correct_answers
+        else:
+            total_quiz_score = 0
 
-        total_quiz_score = (total_marks / total_questions) * correct_answers
-
+        # Calculate total number of exercises in the assessment
+        total_exercises = exercises.count()
+        
         # Calculate and save exercise scores
-        total_exercise_score = sum(
-            submission.score for exercise in exercises
-            for submission in Submission.objects.filter(exercise=exercise, assessment=assessment)
-            if submission.score is not None
-        )
+        total_exercise_score = 0
+
+        if not request.user.is_authenticated:  # Nếu người dùng không đăng nhập, sử dụng email từ attempt
+            email = attempt.email
+        else:  # Nếu người dùng đăng nhập, sử dụng thông tin người dùng
+            email = request.user.email
+
+        # Lặp qua từng bài tập và tính điểm cho từng bài tập
+        for exercise in exercises:
+            submissions = Submission.objects.filter(
+                exercise=exercise,
+                assessment=assessment,
+                email=email  # Lọc submission theo email
+            )
+            # Tính tổng điểm cho các submission của bài tập này
+            exercise_total_score = sum(
+                submission.score for submission in submissions if submission.score is not None
+            )
+            total_exercise_score += exercise_total_score
+        print(total_exercise_score)
+        # Divide total exercise score by the total number of exercises
+        if total_exercises > 0:
+            total_exercise_score /= total_exercises  # Avoid division by zero
 
         attempt.score_quiz = total_quiz_score
         attempt.score_ass = total_exercise_score
         attempt.is_submitted = True
+        attempt.duration = duration
         attempt.save()
         attempt_id = attempt.id  # Store the attempt_id after saving the attempt
         # Redirect to the results page with attempt details
@@ -265,18 +291,27 @@ class Assessment_result(View):
     def get(self, request, assessment_id, attempt_id):
         assessment = get_object_or_404(Assessment, id=assessment_id)
         attempt = get_object_or_404(StudentAssessmentAttempt, id=attempt_id)
-
+        exercises = assessment.exercises.all()
+        
+        # Lấy danh sách submissions theo từng exercise
+        submissions_by_exercise = {
+            exercise: Submission.objects.filter(exercise=exercise, assessment=assessment, user=attempt.user)
+            for exercise in exercises
+        }
         user_answers = attempt.quiz_answers.all()
     
         score_ass = attempt.score_ass
         score_quiz = attempt.score_quiz
+        total_score = attempt.total_score
 
         context = {
             'assessment': assessment,
             'attempt': attempt,
             'user_answers': user_answers,
+            'submissions_by_exercise': submissions_by_exercise,
             'score_ass': score_ass,
             'score_quiz': score_quiz,
+            'total_score': total_score,
         }
 
         # Render the result page
@@ -415,3 +450,90 @@ class Student_assessment_attempt(View):
             attempt.save()
             messages.success(request, 'Your attempt has been recorded.')
             return redirect('assessment:assessment_detail', pk=assessment.id)
+
+class Assessment_report(View):
+    @staticmethod
+    def assessment_report(request, assessment_id, attempt_id, email=None):
+        print("Starting assessment_report")
+        
+        # Get the assessment
+        assessment = get_object_or_404(Assessment, id=assessment_id)
+        print(f"Assessment: {assessment}")
+        
+        # Get the attempt associated with the assessment and user (or email)
+        try:
+            attempt = get_object_or_404(StudentAssessmentAttempt, id=attempt_id, assessment_id=assessment.id, user__email=email)
+            print(f"Attempt: {attempt}")
+            
+            # Fetch the UserAnswer instances associated with this attempt
+            user_answers = UserAnswer.objects.filter(attempt=attempt)
+            print(f"User answers: {user_answers}")
+            
+            # Fetch any other user submissions as needed
+            user_submissions = Submission.objects.filter(exercise__assessments=assessment, user__email=email)
+            print(f"User submissions: {user_submissions}")
+            
+            # Calculate the total scores
+            score_ass = attempt.score_ass
+            score_quiz = attempt.score_quiz
+
+            context = {
+                'assessment': assessment,
+                'attempt': attempt,
+                'user_answers': user_answers,
+                'user_submissions': user_submissions,
+                'score_ass': score_ass,
+                'score_quiz': score_quiz,
+            }
+
+            # Render the result page
+            return render(request, 'assessment/assessment_report.html', context)
+
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return render(request, 'assessment/error.html', {'error': 'Attempt not found. Please ensure you have provided a valid email.'})
+
+    # def assessment_report(request, assessment_id, attempt_id, email=None):
+    #     print("bắt đầu thực hiện assessment_report")
+    #     assessment = get_object_or_404(Assessment, id=assessment_id)
+    #     print(f"assessment làaaa: {assessment}")
+        
+    #     try:
+    #         attempt = get_object_or_404(StudentAssessmentAttempt, id=attempt_id, assessment_id=assessment.id, user__email=email)
+    #         print(f"Attempt: {attempt}")
+            
+    #         # Fetch the UserAnswer instances associated with this attempt
+    #         user_answers = UserAnswer.objects.filter(attempt=attempt)
+    #         print(f"User answers: {user_answers}")
+
+    #         if request.user.is_authenticated:
+    #             attempt = get_object_or_404(StudentAssessmentAttempt, id=attempt_id, assessment_id=assessment)
+    #             print(f"Attempt with if :{attempt}")
+    #         if request.user.is_authenticated and email:
+    #             attempt = get_object_or_404(StudentAssessmentAttempt, id=attempt_id, email=email, assessment_id=assessment)
+    #             print(f"attempt with email :{attempt}")
+    #         else:
+    #             raise Http404("No email provided for anonymous user.")  # Or redirect to an error page
+    #             print("loi rồi ne")
+    #         # Access the StudentAssessmentAttempt directly since Submission.attempt is defined.
+    #         user_submissions = Submission.objects.filter(exercise__assessments=assessment, user__email=email)
+    #         print(f"user_submission lafff : {user_submissions}")   
+
+    #         # Calculate the total score (already stored in the attempt object)
+    #         score_ass = attempt.score_ass
+    #         score_quiz = attempt.score_quiz
+
+    #         context = {
+    #             'assessment': assessment,
+    #             'attempt': attempt,
+    #             'user_answers': user_answers,
+    #             'user_submissions': user_submissions,
+    #             'score_ass': score_ass,
+    #             'score_quiz': score_quiz,
+    #         }
+
+    #         # Render the result page
+    #         return render(request, 'assessment/assessment_report.html', context)
+    #     except Exception as e:
+    #         print(f"Error: {str(e)}")
+    #         return render(request, 'assessment/error.html', {'error': 'Attempt not found. Please ensure you have provided a valid email.'})

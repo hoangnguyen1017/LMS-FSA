@@ -8,12 +8,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <link rel="stylesheet" type="text/css" href="{% static 'css/achievement.css' %}">
-    
+    <style>
+
+    </style>
 </head>
 <body>
-    <div class="container bg-white py-4">
-        <!-- Sticky Header -->
-        <div class="sticky-top bg-white py-2 border-bottom">
+    <div class="container bg-white">
+        <div class="sticky-top bg-white border-bottom custom-padding-top" style="z-index: 1;padding-top: 0px;">
             {% include "achievement_tab.html" %}
         </div>
     

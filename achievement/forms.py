@@ -1,6 +1,6 @@
 from django import forms
 from .models import AIInsights, UserProgress
-from .models import Course
+from .models import Course ,Enrollment
 # Form for creating and editing users
 class AI_InsightsForm(forms.ModelForm):
     class Meta:
@@ -28,6 +28,12 @@ class AIInsightsFilterForm(forms.Form):
         required=False,
         label="Filter by Course"
     )
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')  # Lấy user từ tham số
+        super().__init__(*args, **kwargs)
+        # Giới hạn QuerySet cho user hiện tại
+        user_enroll = Enrollment.objects.filter(student=user).values_list('course', flat=True)
+        self.fields['courses'].queryset = Course.objects.filter(id__in=user_enroll)
 
 class UserProgressForm(forms.Form):
     search_user = forms.CharField(label='Search User')

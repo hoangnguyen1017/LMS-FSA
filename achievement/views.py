@@ -133,6 +133,7 @@ def performance_analytics(request):
         data.qualified_attempts = 0
         assessments = Assessment.objects.filter(course=data.course)
         for data in analytics:
+            data.total_attempts = StudentAssessmentAttempt.objects.filter(user=user, assessment__course=data.course).count()
             data.total_assessments = Assessment.objects.filter(course=data.course).count()
             data.qualified_attempts = 0
             data.attempts = []
@@ -165,7 +166,7 @@ def performance_analytics(request):
 
 def ai_insights(request):
     user = request.user 
-    form = AIInsightsFilterForm(request.GET)
+    form = AIInsightsFilterForm(user=request.user)
     chart_name = []
 
     ai_insights = AIInsights.objects.all()

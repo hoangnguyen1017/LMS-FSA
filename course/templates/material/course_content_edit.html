@@ -67,6 +67,7 @@
 
                         <!-- Fixed Buttons Section -->
                         <div style="margin-bottom: 0.625rem;">
+                            {% if not editing_material %}
                             <div style="display: flex; align-items: center;">
                                 <button type="button" id="add-reading-material" class="btn btn-secondary" style="border: none; background: none; display: flex; align-items: center;">
                                     <i class="fas fa-plus-circle" style="font-size: 1.5rem; color: #2b59c3;"></i>
@@ -79,6 +80,7 @@
                                     <span style="margin-left: 0.625rem; color: #2b59c3;">Add PDF</span>
                                 </button>
                             </div>
+                            {% endif %}
                             <div style="display: flex; align-items: center;">
                                 <a href="{% url 'course:reorder_course_materials' course.pk selected_session.id %}" class="btn btn-secondary" style="border: none; background: none; display: flex; align-items: center;">
                                     <i class="fas fa-arrows-alt" style="font-size: 1.5rem; color: #2b59c3;"></i>
@@ -156,9 +158,8 @@
                     </div>
 
                     <div class="new-content" style="flex: 4; margin-left: 0.625rem;">
+                        {% if not editing_material %}
                         <h2 style="margin: 0; font-size: 1.6875rem; margin-bottom: 0.5rem; color: #2b59c3;">Add New Content</h2>
-
-                        <!-- Area to show selected reading material -->
                         <div id="content-display" style="border: 0.0625rem solid #ccc; padding: 0.9375rem; margin-top: 1.25rem; display: none;">
                             <div id="content-preview" style="margin-top: 0.625rem;"></div>
                         </div>
@@ -182,9 +183,11 @@
                         </div>
 
                         <div id="uploaded-pdfs" style="margin-bottom: 0.625rem;"></div>
+                        {% endif %}
 
+                        <!-- Edit Reading Material Section -->
+                        {% if editing_material %}
                         <div id="edit-reading-materials">
-                            {% if editing_material %}
                             <h2>Edit Reading Material</h2>
                             <div class="edit-reading-material-entry" style="display: flex; align-items: flex-start; margin-bottom: 0.625rem; font-size: 2.25rem; font-weight: bold;">
                                 <div style="flex-grow: 1;">
@@ -204,8 +207,8 @@
                                     </select>
                                 </div>
                             </div>
-                            {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-top: -0.625rem; padding-right: 3.4375rem; padding: 1.25rem; margin-right: 0.9375rem;">

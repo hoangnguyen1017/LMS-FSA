@@ -5,4 +5,7 @@ from .models import ProgressNotification
 class ProgressNotificationForm(forms.ModelForm):
     class Meta:
         model = ProgressNotification
-        fields = ['username', 'course', 'notification_message']
+        fields = ['user', 'course', 'notification_message']
+
+class ExcelImportForm(forms.Form):
+    excel_file = forms.FileField(label="Upload Excel File")

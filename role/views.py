@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from role.models import Role
+from role.models import Role, RoleModule
 from role.forms import RoleForm, ExcelImportForm
 import pandas as pd
 from django.contrib import messages
@@ -13,106 +13,84 @@ from user.models import Profile
 from .admin import RoleResource
 from tablib import Dataset
 from django.core.files.uploadedfile import UploadedFile
+
 def role_list(request):
-    roles = Role.objects.all()  # Lấy danh sách các role
-    module_groups = ModuleGroup.objects.all()  # Thay đổi theo cách bạn lấy dữ liệu
-    grouped_modules = {group: group.modules.all() for group in module_groups}
+    roles = Role.objects.all()  # Lấy danh sách tất cả các role
+    role_modules = RoleModule.objects.all()  # Lấy tất cả RoleModule (Role - Module liên kết)
 
-    form = ExcelImportForm()
+    form = ExcelImportForm()  # Form nhập liệu Excel (nếu có)
 
-    return render(request, 'role_list.html', { 'roles': roles, 'form': form,'module_groups': module_groups,
-        'grouped_modules': grouped_modules})
-
-def insert_role(role_id, role_name):
-    try:
-        Role.objects.create(
-            role_id=role_id,
-            role_name=role_name
-        )
-        return True, None
-    except Exception as e:
-        return False, str(e)
+    return render(request, 'role_list.html', {
+        'roles': roles,
+        'form': form,
+        'role_modules': role_modules
+    })
 
 
 def role_add(request, role_id=None):
-    if role_id:  # Nếu role_id được cung cấp, tức là đang chỉnh sửa một role hiện có
+    if role_id:  # Nếu đang chỉnh sửa một role hiện có
         role = get_object_or_404(Role, id=role_id)
         form = RoleForm(request.POST or None, instance=role)
-    else:  # Nếu không có role_id, tức là đang thêm một role mới
+    else:  # Nếu đang tạo mới một role
         role = None
         form = RoleForm(request.POST or None)
 
-    # Lấy danh sách tất cả permissions và modules
-    specific_permissions = Role._meta.permissions
-    all_permissions = Permission.objects.filter(
-        codename__in=[codename for codename, _ in specific_permissions]
-    )
-    all_modules = Module.objects.all()
+    all_modules = Module.objects.all()  # Lấy tất cả các module
 
     if request.method == 'POST':
         if form.is_valid():
-            new_role = form.save()
-            selected_permissions = request.POST.getlist('permissions')
-            selected_modules_ids = request.POST.getlist('modules')
+            new_role = form.save()  # Lưu role
+            selected_modules_ids = request.POST.getlist('modules')  # Lấy danh sách module được chọn
 
-            # Cập nhật permissions và modules cho role
-            new_role.permissions.set(Permission.objects.filter(id__in=selected_permissions))
-            new_role.modules.set(Module.objects.filter(id__in=selected_modules_ids))
-            new_role.save()
+            # Cập nhật RoleModule (thêm hoặc xóa các module liên quan)
+            RoleModule.objects.filter(role=new_role).delete()  # Xóa các liên kết cũ
+            for module_id in selected_modules_ids:
+                module = Module.objects.get(id=module_id)
+                RoleModule.objects.create(role=new_role, module=module)
 
-            # Thêm thông báo thành công
-            messages.success(request, 'Role and associated permissions/modules added/updated successfully.')
+            # Thông báo thành công và chuyển hướng
+            messages.success(request, 'Role and associated modules have been successfully added/updated.')
             return redirect('role:role_list')
 
-    # Xác định permissions và modules đã được chọn
-    selected_permissions = role.permissions.all() if role else []
-    selected_modules = role.modules.all() if role else []
+    # Xác định các module đã được chọn (nếu đang chỉnh sửa)
+    selected_modules = (
+        RoleModule.objects.filter(role=role).values_list('module', flat=True) if role else []
+    )
 
     context = {
         'form': form,
-        'all_permissions': all_permissions,
-        'selected_permissions': selected_permissions,
         'all_modules': all_modules,
         'selected_modules': selected_modules,
     }
     return render(request, 'role_form.html', context)
+
 def role_edit(request, pk):
-    role = get_object_or_404(Role, pk=pk)
-    
-    # Lấy danh sách tất cả permissions và modules
-    specific_permissions = Role._meta.permissions
-    all_permissions = Permission.objects.filter(
-        codename__in=[codename for codename, _ in specific_permissions]
-    )
-    all_modules = Module.objects.all()
+    role = get_object_or_404(Role, pk=pk)  # Lấy role cần chỉnh sửa
+    form = RoleForm(request.POST or None, instance=role)  # Tạo form liên kết với role
+    all_modules = Module.objects.all()  # Lấy danh sách tất cả module
 
     if request.method == 'POST':
-        form = RoleForm(request.POST, instance=role)
         if form.is_valid():
-            form.save()  # Lưu role
+            updated_role = form.save()  # Lưu role
 
-            # Lấy danh sách permission và module đã chọn
-            selected_permissions = request.POST.getlist('permissions')
+            # Lấy danh sách module được chọn từ form
             selected_modules_ids = request.POST.getlist('modules')
 
-            # Cập nhật permissions và modules cho role
-            role.permissions.set(Permission.objects.filter(id__in=selected_permissions))
-            role.modules.set(Module.objects.filter(id__in=selected_modules_ids))
-            role.save()
+            # Cập nhật RoleModule (xóa các liên kết cũ và thêm mới)
+            RoleModule.objects.filter(role=updated_role).delete()  # Xóa liên kết cũ
+            for module_id in selected_modules_ids:
+                module = Module.objects.get(id=module_id)
+                RoleModule.objects.create(role=updated_role, module=module)
 
-            messages.success(request, 'Role, permissions, and modules updated successfully.')
+            # Thông báo thành công và chuyển hướng
+            messages.success(request, 'Role and associated modules have been successfully updated.')
             return redirect('role:role_list')
-    else:
-        form = RoleForm(instance=role)
 
-    # Xác định permissions và modules đã được chọn
-    selected_permissions = role.permissions.all()
-    selected_modules = role.modules.all()
+    # Lấy danh sách module đã được chọn để hiển thị
+    selected_modules = RoleModule.objects.filter(role=role).values_list('module', flat=True)
 
     context = {
         'form': form,
-        'all_permissions': all_permissions,
-        'selected_permissions': selected_permissions,
         'all_modules': all_modules,
         'selected_modules': selected_modules,
     }
@@ -126,9 +104,6 @@ def role_delete(request, pk):
         return redirect('role:role_list')
     return render(request, 'role_confirm_delete.html', {'role': role})
 
-
-
-from .admin import RoleResource
 
 def export_roles(request):
     # Tạo resource

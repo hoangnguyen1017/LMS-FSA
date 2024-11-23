@@ -6,6 +6,6 @@ from .models import StudentPerformance
 class StudentPerformanceForm(forms.ModelForm):
     class Meta:
         model = StudentPerformance
-        fields = ['user', 'course', 'quiz', 'assignment', 'score', 'feedback']  # Use actual field names
+        fields = ['user', 'course', 'assessment', 'score', 'feedback']  # Use actual field names
 
 

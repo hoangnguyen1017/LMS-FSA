@@ -1,9 +1,8 @@
 from django.shortcuts import render
-from course.models import Course, Enrollment, Session, Completion, Tag, CourseMaterial, UserCourseProgress
+from course.models import Enrollment, Completion, UserCourseProgress
 from django.db.models import Count
 from module_group.models import ModuleGroup
 from user.models import User, Student, Profile
-from collections import Counter
 from django.http import JsonResponse
 from activity.models import UserActivityLog
 from django.db.models.functions import TruncDate
@@ -11,22 +10,24 @@ from datetime import datetime, timedelta
 from django.utils.dateparse import parse_date
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.utils.dateformat import DateFormat
-from django.shortcuts import render
-import plotly.graph_objs as go
-from django.utils.timezone import make_aware
 from progress_notification.models import ProgressNotification
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.timezone import now
 from django.db.models import Count, Q, Max
-from datetime import timedelta
 from activity.models import UserActivityLog
 from quiz.models import StudentQuizAttempt
 from assessments.models import StudentAssessmentAttempt
-from role.models import Role
+from role.models import Role, RoleModule
 from django.core.paginator import Paginator
 from decimal import Decimal
+from functools import reduce
+from main.models import PasswordChangeRecord
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.shortcuts import redirect
+
+
 @login_required
 def user_duration_login(request):
     user = request.user
@@ -37,7 +38,7 @@ def user_duration_login(request):
 
     # Lấy thời gian đăng nhập và đăng xuất
     for log in activity_logs:
-        if log.activity_type == 'login':
+        if log.activity_type == 'login' and log.activity_details == 'User logged in.':
             login_times.append(log.activity_timestamp)
         elif log.activity_type == 'logout':
             logout_times.append(log.activity_timestamp)
@@ -245,25 +246,23 @@ def role_report(request):
     # Lấy tất cả các vai trò
     roles = Role.objects.all()
 
-    # Lấy tất cả người dùng
-    users = User.objects.all().select_related('profile')
-
     # Lấy số lượng người dùng theo vai trò
     role_counts = Profile.objects.values('role__role_name').annotate(user_count=Count('user')).order_by('role__role_name')
 
-    # Lấy các quyền và modules của vai trò và số lượng người dùng cho mỗi vai trò
-    role_permissions = {}
+    # Lấy các module của vai trò và số lượng người dùng cho mỗi vai trò
+    role_modules = {}
     for role in roles:
-        # Lấy quyền của mỗi vai trò
-        permissions = role.permissions.all()
-        # Lấy các module của mỗi vai trò
-        modules = role.modules.all()
-        # Đếm số người dùng có vai trò này
-        user_count = Profile.objects.filter(role=role).count()
+        # Lấy các module của mỗi vai trò thông qua RoleModule
+        role_modules_queryset = RoleModule.objects.filter(role=role)
         
-        role_permissions[role.role_name] = {
-            'permissions': permissions,
-            'modules': [module.module_name for module in modules],  # Thêm module vào đây
+        # Lấy tất cả các module từ RoleModule
+        modules = [role_module.module.module_name for role_module in role_modules_queryset]
+        
+        # Lấy số lượng người dùng có vai trò này
+        user_count = Profile.objects.filter(role=role).count()
+
+        role_modules[role.role_name] = {
+            'modules': modules,  # Cập nhật module từ RoleModule
             'user_count': user_count
         }
 
@@ -271,7 +270,7 @@ def role_report(request):
     context = {
         'roles': roles,
         'role_counts': role_counts,
-        'role_permissions': role_permissions,
+        'role_modules': role_modules,  # Cập nhật context
     }
 
     return render(request, 'reports/user/role_report.html', context)
@@ -284,16 +283,38 @@ def user_overview_report(request):
 
     # Dữ liệu thống kê tóm tắt (áp dụng cho tất cả người dùng trừ superusers)
     all_users = User.objects.exclude(is_superuser=True).prefetch_related('profile__role', 'department')
+    total_users = all_users.count()  # Tính tổng số người dùng
+
+    # Danh sách các trường cần kiểm tra
+    profile_fields = [
+        'profile_picture_url', 'bio', 'interests', 'learning_style', 'preferred_language'
+    ]
+
+    # Tạo điều kiện Q() cho các trường cần kiểm tra
+    incomplete_condition = reduce(
+        lambda acc, field: acc | Q(**{f'profile__{field}__isnull': True}) | Q(**{f'profile__{field}': ''}),
+        profile_fields,
+        Q()
+    )
+
+    complete_condition = ~incomplete_condition  # Điều kiện ngược lại cho profile hoàn chỉnh
+
+    # Lọc các profile hoàn thành và chưa hoàn thành
+    complete_profiles = all_users.filter(complete_condition)
+    incomplete_profiles = all_users.filter(incomplete_condition)
+
+    profile_completion_percentage = (complete_profiles.count() / total_users) * 100 if total_users else 0
+
+    # Thống kê đăng nhập gần đây
+    recent_logins = all_users.filter(last_login__gte=timezone.now() - timedelta(days=30))
+    active_user_percentage = (recent_logins.count() / total_users) * 100 if total_users else 0
+
+    # Thống kê theo vai trò (role) và bộ phận (department)
     role_summary = {
         role.role_name: all_users.filter(profile__role=role).count()
         for role in Role.objects.all()
     }
-    incomplete_profiles = all_users.filter(profile__profile_picture_url__isnull=True)
-    total_users = all_users.count()
-    complete_profiles = all_users.exclude(profile__profile_picture_url__isnull=True)
-    profile_completion_percentage = (complete_profiles.count() / total_users) * 100 if total_users else 0
-    recent_logins = all_users.filter(last_login__gte=timezone.now() - timedelta(days=30))
-    active_user_percentage = (recent_logins.count() / total_users) * 100 if total_users else 0
+
     department_summary = all_users.filter(department__isnull=False).values('department__name').annotate(department_count=Count('department')).order_by('department__name')
     course_summary = all_users.filter(enrollments__isnull=False).values('enrollments__course__course_name').annotate(course_count=Count('enrollments')).order_by('enrollments__course__course_name')
 
@@ -308,9 +329,9 @@ def user_overview_report(request):
 
     # Áp dụng bộ lọc chi tiết nếu có
     if filter_type == 'incomplete_profiles':
-        users = users.filter(profile__profile_picture_url__isnull=True)
+        users = users.filter(incomplete_condition)
     elif filter_type == 'complete_profiles':
-        users = users.exclude(profile__profile_picture_url__isnull=True)
+        users = users.filter(complete_condition)
     elif filter_type == 'recent_logins':
         users = users.filter(last_login__gte=timezone.now() - timedelta(days=30))
     elif filter_type.startswith('role_'):
@@ -674,11 +695,12 @@ def warning_student_report(request):
 
 
 def authentication_security_report(request):
-    today = timezone.now()
-    start_of_week = today - timedelta(days=today.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
+    today = now()
+    # Xác định tuần hiện tại (bắt đầu từ thứ Hai)
+    start_of_week = today - timedelta(days=today.weekday(), hours=today.hour, minutes=today.minute, seconds=today.second, microseconds=today.microsecond)
+    end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
-    # Clear last week's data on Mondays
+    # Xóa dữ liệu tuần trước vào thứ Hai
     if today.weekday() == 0:
         last_week_start = start_of_week - timedelta(days=7)
         last_week_end = start_of_week - timedelta(seconds=1)
@@ -687,10 +709,9 @@ def authentication_security_report(request):
             activity_timestamp__range=[last_week_start, last_week_end]
         ).delete()
 
-    # Get search query from request
     search_query = request.GET.get('search', '').strip()
-
-    # Filter login data with optional search query
+    
+    # Lấy thông tin login
     login_data = (
         UserActivityLog.objects.filter(
             activity_timestamp__range=[start_of_week, end_of_week],
@@ -702,16 +723,60 @@ def authentication_security_report(request):
             successful_logins=Count('log_id', filter=Q(activity_details='success')),
             failed_logins=Count('log_id', filter=Q(activity_details='failure')),
             email_notifications=Count('log_id', filter=Q(activity_type='2fa_email_notification')),
+            password_attempts=Count('log_id', filter=Q(activity_type='password_attempt')),
             last_login=Max('activity_timestamp')
         )
         .order_by('-total_logins')
     )
 
-    # Pagination
-    paginator = Paginator(login_data, 10)  # Show 5 entries per page
-    page_number = request.GET.get('page')  # Get the current page number from the GET request
+    # Lấy thông tin đổi mật khẩu
+    password_change_data = []
+    password_records = PasswordChangeRecord.objects.filter(
+        user__username__icontains=search_query
+    )
+
+    for record in password_records:
+        last_change_time = record.updated_at
+        # Reset số lần thay đổi nếu đã quá 5 phút
+        if last_change_time and now() - last_change_time >= timedelta(minutes=5):
+            record.change_count = 0
+            record.save()
+        
+        warning = False
+        if last_change_time and now() - last_change_time < timedelta(minutes=5):
+            if record.change_count > 5:
+                warning = True
+        
+        password_change_data.append({
+            'user__username': record.user.username,
+            'total_password_changes': record.change_count,
+            'last_password_change': last_change_time,
+            'warning': warning,
+        })
+
+    # Gộp thông tin login và đổi mật khẩu
+    combined_data = []
+    for login_record in login_data:
+        username = login_record['user__username']
+        password_change_record = next((record for record in password_change_data if record['user__username'] == username), None)
+        
+        total_password_changes = password_change_record['total_password_changes'] if password_change_record else 0
+        last_password_change = password_change_record['last_password_change'] if password_change_record else None
+        warning = password_change_record['warning'] if password_change_record else False
+
+        combined_data.append({
+            **login_record,
+            'total_password_changes': total_password_changes,
+            'last_password_change': last_password_change,
+            'password_warning': warning,
+        })
+
+    # Phân trang
+    paginator = Paginator(combined_data, 10)
+    page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Đếm số người dùng có bật/tắt 2FA
     two_fa_enabled_count = Profile.objects.filter(two_fa_enabled=True).count()
     two_fa_disabled_count = Profile.objects.filter(two_fa_enabled=False).count()
 
@@ -723,93 +788,33 @@ def authentication_security_report(request):
         'two_fa_disabled_count': two_fa_disabled_count,
         'search_query': search_query,
     })
-from django.views.decorators.csrf import csrf_exempt
-from main.models import PasswordChangeRecord
-from django.shortcuts import redirect
-@login_required
-@csrf_exempt  # Bỏ qua bảo vệ CSRF cho POST
 
-def password_change_report(request):
-    if request.method == "POST":
-        # Xử lý gửi email cảnh báo
-        user_email = request.POST.get('user_email')
+def send_warning_email(request):
+    if request.method == 'POST':
+        # Lọc những người dùng có số lần thay đổi mật khẩu vượt quá 2 lần
+        password_change_data = PasswordChangeRecord.objects.filter(change_count__gt=5)
 
-        # Kiểm tra email có hợp lệ hay không
-        if user_email and is_valid_email(user_email):
-            send_warning_email(user_email)
-            return redirect('reports:password_change_report')  # Thực hiện redirect về trang password_change_report
-        else:
-            return JsonResponse({'status': 'error', 'message': 'Invalid or missing email.'})
+        # Kiểm tra nếu không có người dùng nào phạm lỗi
+        if not password_change_data.exists():
+            messages.info(request, 'No users have exceeded the password change limit.')
+            return redirect('reports:authentication_security_report')
 
-    # Xử lý logic hiển thị báo cáo (GET request)
-    search_query = request.GET.get('search', '')
+        # Gửi email cảnh báo cho từng người dùng
+        for record in password_change_data:
+            user = record.user  # Lấy người dùng từ bản ghi PasswordChangeRecord
+            try:
+                send_mail(
+                    'Password Change Warning',
+                    f'Dear {user.username}, you have changed your password frequently. Please review your account security.',
+                    'admin@example.com',
+                    [user.email],
+                    fail_silently=False,
+                )
+                messages.success(request, f'Warning email sent to {user.username}.')
+            except Exception as e:
+                messages.error(request, f'Error sending email to {user.username}: {str(e)}')
 
-    password_change = []
-    users = User.objects.all()
-
-    # Lọc người dùng theo từ khóa tìm kiếm
-    if search_query:
-        users = users.filter(
-            Q(username__icontains=search_query) |
-            Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query) |
-            Q(email__icontains=search_query)
-            )
-
-    for user in users:
-        # Lấy bản ghi thay đổi mật khẩu từ PasswordChangeRecord
-        password_change_record = PasswordChangeRecord.objects.filter(user=user).first()
-        
-        if not password_change_record:
-            continue
-        
-        # Reset change_count nếu đã quá 5 phút từ lần thay đổi cuối
-        last_change_time = password_change_record.updated_at
-        if last_change_time and now() - last_change_time >= timedelta(minutes=5):
-            password_change_record.change_count = 0
-            password_change_record.save()
-
-        change_count = password_change_record.change_count
-        
-        warning = False
-        # Kiểm tra nếu đã thay đổi mật khẩu trong vòng 5 phút và vượt quá 5 lần thay đổi
-        if last_change_time and now() - last_change_time < timedelta(minutes=5):
-            if change_count > 5:
-                warning = True
-
-        if change_count > 0:
-            password_change.append({
-                'username': user.username,
-                'full_name': f"{user.first_name} {user.last_name}",
-                'email': user.email,
-                'change_count': change_count,
-                'warning': warning,
-            })
-
-    paginator = Paginator(password_change, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    page_query = f"&search={search_query}" if search_query else ""
-
-    return render(request, 'reports/user/password_change_report.html', {
-        'reports': page_obj,
-        'search_query': search_query,
-        'page_query': page_query,
-    })
-
-
-def send_warning_email(user_email):
-    """
-    Hàm gửi email cảnh báo đến người dùng.
-    """
-    send_mail(
-        subject="Password Change Warning",
-        message="You have exceeded the maximum password changes in 5 minutes.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user_email],
-        fail_silently=False,
-    )
+    return redirect('reports:authentication_security_report')
 
 import re
 def is_valid_email(email):

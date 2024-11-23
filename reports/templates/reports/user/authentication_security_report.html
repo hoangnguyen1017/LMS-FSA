@@ -18,7 +18,7 @@
             <div class="input-group">
                 <input type="text" name="search" class="form-control" placeholder="Search by username" value="{{ search_query }}">
                 <button type="submit" class="btn btn-search">
-                    <i class="fa fa-search"></i> <!-- Font Awesome search icon -->
+                    <i class="fa fa-search"></i>
                 </button>
             </div>
         </form>
@@ -29,8 +29,12 @@
                     <th>Username</th>
                     <th>Total Logins</th>
                     <th>Successful Logins</th>
-                    <th>Email Notifications Sent (Failed 2FA Attempts)</th>
-                    <th>Last Login</th>
+                    <th>Failed Logins</th>
+                    <th>Password Attempts</th>
+                    <th>Total Password Changes</th>
+                    <th>Last Password Change</th>
+                    <th>Password Warning</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -39,16 +43,37 @@
                     <td>{{ entry.user__username }}</td>
                     <td>{{ entry.total_logins }}</td>
                     <td>{{ entry.successful_logins }}</td>
-                    <td>{{ entry.email_notifications }}</td>
-                    <td>{{ entry.last_login }}</td>
+                    <td>{{ entry.failed_logins }}</td>
+                    <td>{{ entry.password_attempts }}</td>
+                    <td>{{ entry.total_password_changes }}</td>
+                    <td>{% if entry.last_password_change %}{{ entry.last_password_change|date:"Y-m-d H:i:s" }}{% else %}N/A{% endif %}</td>
+                    <td>
+                        {% if entry.password_warning %}
+                            <span class="badge bg-danger">Warning</span>
+                        {% else %}
+                            <span class="badge bg-success">Safe</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry.password_warning %}
+                        <form id="emailWarningForm" method="POST" action="{% url 'reports:send_warning_email' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning">Send Warning Email</button>
+                        </form>
+                        
+                        {% else %}
+                            <button class="btn btn-secondary btn-sm" disabled>Safe</button>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center">No login data available for this week.</td>
+                    <td colspan="9" class="text-center">No login data available for this week.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
         <!-- Pagination controls -->
         <div class="pagination">
             <span class="step-links">
@@ -67,65 +92,41 @@
                 {% endif %}
             </span>
         </div>
-
-        <!-- 2FA Enabled/Disabled User List (Initially hidden) -->
-        <div id="enabledUsersList" style="display: none;">
-            <h3>Users with 2FA Enabled</h3>
-            <ul>
-                {% for user in two_fa_enabled_users %}
-                    <li>{{ user.username }}</li>
-                {% empty %}
-                    <li>No users with 2FA enabled.</li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div id="disabledUsersList" style="display: none;">
-            <h3>Users with 2FA Disabled</h3>
-            <ul>
-                {% for user in two_fa_disabled_users %}
-                    <li>{{ user.username }}</li>
-                {% empty %}
-                    <li>No users with 2FA disabled.</li>
-                {% endfor %}
-            </ul>
-        </div>
     </div>
 </div>
 
-<!-- CSS to adjust chart size -->
 <style>
     .input-group {
-        max-width: 30vh;  
-        margin: 0;        
-        display: flex;    
-        align-items: center; 
+        max-width: 30vh;
+        margin: 0;
+        display: flex;
+        align-items: center;
     }
     .form-control {
-        height: 3.5vh;     
-        font-size: 1.5vh; 
+        height: 3.5vh;
+        font-size: 1.5vh;
         border-radius: 0;
     }
     .btn-search {
         background-color: white;
-        border: 1px solid #007bff; 
-        color: #007bff; 
+        border: 1px solid #007bff;
+        color: #007bff;
         padding: 0.8vh 2vh;
-        font-size: 0vh;   
-        border-radius: 0; 
+        font-size: 0vh;
+        border-radius: 0;
     }
     .btn-search:hover {
         background-color: #007bff;
         color: white;
-        border-color: #0056b3; 
+        border-color: #0056b3;
     }
     .btn-search i {
-        font-size: 1.6vh; 
-        color: #007bff; 
+        font-size: 1.6vh;
+        color: #007bff;
     }
 
     .chart-container {
-        max-width: 40vh; 
+        max-width: 40vh;
         max-height: 40vh;
         margin: auto;
     }
@@ -135,7 +136,6 @@
         height: auto !important;
     }
 </style>
-
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -149,7 +149,7 @@
             labels: ['2FA Enabled', '2FA Disabled'],
             datasets: [{
                 data: [twoFaEnabledCount, twoFaDisabledCount],
-                backgroundColor: ['#A5D6A7', '#BDBDBD'], // Light green and light gray
+                backgroundColor: ['#A5D6A7', '#BDBDBD'],
                 hoverOffset: 4
             }]
         },
@@ -171,28 +171,5 @@
             }
         }
     });
-
-    // Event listener for click on chart sections
-    ctx.onclick = function(event) {
-        const activePoint = twoFaStatusChart.getElementsAtEventForMode(event, 'nearest', {intersect: true});
-        if (activePoint.length) {
-            const clickedIndex = activePoint[0].index;
-            const selectedStatus = clickedIndex === 0 ? 'enabled' : 'disabled';
-            displayUsers(selectedStatus);
-        }
-    };
-
-    function displayUsers(status) {
-        const enabledList = document.getElementById('enabledUsersList');
-        const disabledList = document.getElementById('disabledUsersList');
-
-        if (status === 'enabled') {
-            enabledList.style.display = 'block';
-            disabledList.style.display = 'none';
-        } else if (status === 'disabled') {
-            disabledList.style.display = 'block';
-            enabledList.style.display = 'none';
-        }
-    }
 </script>
 {% endblock %}

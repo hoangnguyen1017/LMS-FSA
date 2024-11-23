@@ -7,9 +7,9 @@ class ThreadForm(forms.ModelForm):
 
     class Meta:
         model = DiscussionThread
-        fields = ['thread_title', 'thread_content', 'course']
+        fields = ['thread_title', 'thread_content','image', 'course']
 
 class CommentForm(forms.ModelForm):
     class Meta:
         model = ThreadComments
-        fields = ['comment_text']
+        fields = ['comment_text','image']

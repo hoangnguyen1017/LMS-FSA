@@ -35,6 +35,5 @@ urlpatterns = [
     path('user/user_progress_and_milestones_report/', users_report.user_progress_and_milestones_report, name='user_progress_and_milestones_report'),
     path('user/student-group-details/', users_report.student_group_details, name='student_group_details'),
     path('user/authentication_security_report/', users_report.authentication_security_report, name='authentication_security_report'),
-    path('user/password-change-report/', users_report.password_change_report, name='password_change_report'),
     path('send-warning-email/', users_report.send_warning_email, name='send_warning_email'),
 ]

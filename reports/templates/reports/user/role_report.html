@@ -18,28 +18,21 @@
                 <canvas id="modulesChart" style="width: 100%; height: 100%;"></canvas>
             </div>
 
-            <!-- Canvas for Pie Chart (Permissions Chart) -->
-            <div class="mb-4" style="max-width: 33%; max-height: 100vh;">
-                <canvas id="permissionsChart" style="width: 100%; height: 100%;"></canvas>
-            </div>
-
         </div>
 
-
-        <!-- Table for Role Details (Roles, Modules, Permissions) -->
-        <h2 class="text-center mt-5">Roles, Modules, and Permissions</h2>
+        <!-- Table for Role Details (Roles, Modules) -->
+        <h2 class="text-center mt-5">Roles and Modules</h2>
         <div class="table-responsive" style="max-width: 100vw;">
             <table class="table table-striped table-bordered table-sm mt-3">
                 <thead class="table-light">
                     <tr>
                         <th scope="col">Role Name</th>
                         <th scope="col">Modules</th>
-                        <th scope="col">Permissions</th>
                         <th scope="col">Number of Users</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for role, details in role_permissions.items %}
+                    {% for role, details in role_modules.items %}
                         <tr>
                             <td>{{ role }}</td>
                             <td>
@@ -61,25 +54,6 @@
                                     <span>No modules assigned</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                {% if details.permissions %}
-                                    <span>
-                                        {% for permission in details.permissions|slice:":3" %}
-                                            {{ permission.name }}{% if not forloop.last %}, {% endif %}
-                                        {% endfor %}
-                                        {% if details.permissions|length > 3 %}
-                                            <ul id="permissions-{{ forloop.counter }}" class="full-list" style="display: none;">
-                                                {% for permission in details.permissions|slice:"3:" %}
-                                                    <li>{{ permission.name }}</li>
-                                                {% endfor %}
-                                            </ul>
-                                            <a href="#" class="view-more" data-target="permissions-{{ forloop.counter }}">...View More</a>
-                                        {% endif %}
-                                    </span>
-                                {% else %}
-                                    <span>No permissions assigned</span>
-                                {% endif %}
-                            </td>
                             <td>{{ details.user_count }}</td>
                         </tr>
                     {% endfor %}
@@ -94,6 +68,7 @@
     // Data for Pie Chart
     const roleLabels = [{% for role_count in role_counts %}"{{ role_count.role__role_name }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
     const roleData = [{% for role_count in role_counts %}{{ role_count.user_count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
 
     // Create Pie Chart for Roles
     const ctxRole = document.getElementById('rolePieChart').getContext('2d');
@@ -133,8 +108,9 @@
     });
 
     // Data for Modules Chart
-    const moduleLabels = [{% for role, details in role_permissions.items %}"{{ role }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-    const moduleData = [{% for role, details in role_permissions.items %}{{ details.modules|length }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const moduleLabels = [{% for role, details in role_modules.items %}"{{ role }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const moduleData = [{% for role, details in role_modules.items %}{{ details.modules|length }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
 
     // Create Bar Chart for Modules
     const ctxModules = document.getElementById('modulesChart').getContext('2d');
@@ -161,35 +137,11 @@
         }
     });
 
-    // Data for Permissions Chart
-    const permissionLabels = [{% for role, details in role_permissions.items %}"{{ role }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
-    const permissionData = [{% for role, details in role_permissions.items %}{{ details.permissions|length }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    // Remove Permissions Chart (no longer needed)
+    // No code for permissions chart here anymore
 
-    // Create Bar Chart for Permissions
-    const ctxPermissions = document.getElementById('permissionsChart').getContext('2d');
-    const permissionsChart = new Chart(ctxPermissions, {
-        type: 'bar',
-        data: {
-            labels: permissionLabels,
-            datasets: [{
-                label: 'Number of Permissions',
-                data: permissionData,
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: { display: true, text: 'Permissions Assigned to Roles' }
-            },
-            scales: {
-                y: { beginAtZero: true }
-            }
-        }
-    });
 </script>
+
 <script>
     // Toggle the full list when clicking 'View More'
     document.querySelectorAll('.view-more').forEach(function(link) {
@@ -208,4 +160,5 @@
         });
     });
 </script>
+
 {% endblock %}

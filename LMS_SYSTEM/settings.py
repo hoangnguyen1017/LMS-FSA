@@ -151,7 +151,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'main.context_processors.site_status',  # Thêm dòng này
+                'main.context_processors.site_status',
+                'role.context_processors.user_roles',
+                'module_group.module_context_processors.module_context',
             ],
         },
     },

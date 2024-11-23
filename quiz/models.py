@@ -1,5 +1,5 @@
 from django.db import models
-from user.models import User  # Assuming you use the default User model for instructors and students
+from django.contrib.auth.models import User  # Assuming you use the default User model for instructors and students
 from course.models import Course
 from django.conf import settings
 
@@ -8,7 +8,6 @@ class Quiz(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     quiz_title = models.CharField(max_length=255)
     quiz_description = models.TextField(blank=True, null=True)
-    
     total_marks = models.IntegerField()
     time_limit = models.IntegerField(default=0)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
@@ -61,7 +60,7 @@ class StudentQuizAttempt(models.Model):
 class StudentAnswer(models.Model):
     attempt = models.ForeignKey(StudentQuizAttempt, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    selected_option = models.ForeignKey(AnswerOption, on_delete=models.SET_NULL, null=True)
+    selected_options = models.ManyToManyField(AnswerOption, blank=True) 
     text_response = models.TextField(null=True, blank=True)
 
 # Model for AI Grading

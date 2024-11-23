@@ -1,5 +1,5 @@
 from django.db import models
-from user.models import User
+from django.conf import settings
 
 # Create your models here.
 class Exercise(models.Model):
@@ -19,12 +19,16 @@ class Exercise(models.Model):
     def __str__(self):
         return self.title
 
+from assessments.models import Assessment
+
 class Submission(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)  # Allow null for user
+    email = models.EmailField(null=True, blank=True)  # For anonymous users
     code = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    # created_at = models.DateTimeField(auto_now_add=True)
     score = models.IntegerField(null=True, blank=True)
     
     def __str__(self):
-        return f"{self.student.username} - {self.exercise.title}"
+        return f"{self.user.username} - {self.exercise.title}"

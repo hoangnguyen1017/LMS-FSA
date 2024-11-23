@@ -13,6 +13,7 @@ class DiscussionThread(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
     likes_count = models.PositiveIntegerField(default=0) 
     loves_count = models.PositiveIntegerField(default=0)
+    image = models.ImageField(upload_to="discussion_threads/",null = True,blank=True)
     def save(self, *args, **kwargs):
         self.updated_at = timezone.now()
         super().save(*args, **kwargs)
@@ -29,6 +30,7 @@ class ThreadComments(models.Model):
     thread = models.ForeignKey(DiscussionThread, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     comment_text = models.TextField()
+    image = models.ImageField(upload_to = 'comment_threads/',null = True,blank = True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

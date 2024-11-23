@@ -2,13 +2,15 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import DiscussionThread, ThreadComments, ThreadReaction, CommentReaction
 from .forms import ThreadForm, CommentForm
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Count, Case, When, IntegerField
 from course.models import Course
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
+from django.db.models import Count
 
-# Thread List
+from django.http import HttpResponseBadRequest
+
 @login_required
 def thread_list(request, course_id=None):
     q = request.GET.get('q', '')
@@ -26,25 +28,64 @@ def thread_list(request, course_id=None):
             Q(thread_content__icontains=q) |
             Q(created_by__username__icontains=q)
         )
-     # Apply pagination
-    paginator = Paginator(threads, 10)  # 10 threads per page
+    
+    # Apply annotations for likes, loves, comments, and interactions
+    threads = threads.annotate(
+        total_likes=Count(Case(When(reactions__reaction_type='like', then=1), output_field=IntegerField())),
+        total_loves=Count(Case(When(reactions__reaction_type='love', then=1), output_field=IntegerField())),
+        total_comments=Count('comments'),
+        total_interactions=Count('reactions') + Count('comments')
+    ).order_by('-total_interactions', '-created')
+    
+    recent_activities = threads.order_by('-created')
+    # Featured threads (do not slice the main queryset)
+    featured_threads = threads[:3]
+    
+    # For superuser
+    paginator = Paginator(threads, 5)  # 5 threads per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    # Fetch all courses
     courses = Course.objects.all()
+    
+    
+    threads = threads[3:]
+    # Apply pagination on the remaining threads
+    paginator1 = Paginator(threads, 5)  # 5 threads per page
+    page_number1 = request.GET.get('page')
+    page_obj1 = paginator1.get_page(page_number1)
+    
+    
+    
 
+    # Context for rendering templates
     context = {
-        'threads': threads,
+        'threads': page_obj,  # Use the paginated threads
         'courses': courses,
         'query': q,
+        'recent_activities': recent_activities,
+        'featured_threads': featured_threads,
     }
-    return render(request, 'thread/thread_list.html', context)
+    context1 = {
+        'threads': page_obj1,  # Use the paginated threads
+        'courses': courses,
+        'query': q,
+        'recent_activities': recent_activities,
+        'featured_threads': featured_threads,
+    }
+
+    # Render different templates based on user role
+    if request.user.is_superuser:
+        return render(request, 'thread/thread_list.html', context)
+    
+    return render(request, 'thread/thread_list_stu.html', context1)
 
 
 # Create Thread
 @login_required
 def createThread(request):
     if request.method == 'POST':
-        form = ThreadForm(request.POST)
+        form = ThreadForm(request.POST,request.FILES)
         if form.is_valid():
             thread = form.save(commit=False)
             thread.created_by = request.user
@@ -67,7 +108,7 @@ def updateThread(request, pk):
         return redirect('thread:thread_list')
 
     if request.method == 'POST':
-        form = ThreadForm(request.POST, instance=thread)
+        form = ThreadForm(request.POST,request.FILES, instance=thread)
         if form.is_valid():
             form.save()
             return redirect('thread:thread_list')
@@ -133,7 +174,7 @@ def add_comment(request, pk):
     thread = get_object_or_404(DiscussionThread, pk=pk)
 
     if request.method == 'POST':
-        form = CommentForm(request.POST)
+        form = CommentForm(request.POST,request.FILES)
         if form.is_valid():
             comment = form.save(commit=False)
             comment.thread = thread
@@ -156,7 +197,7 @@ def update_comment(request, pk, comment_id):
         return redirect('thread:thread_detail', pk=pk)
 
     if request.method == 'POST':
-        form = CommentForm(request.POST, instance=comment)
+        form = CommentForm(request.POST,request.FILES, instance=comment)
         if form.is_valid():
             form.save()
             return redirect('thread:thread_detail', pk=pk)
@@ -221,27 +262,44 @@ def add_reaction_to_comment(request, comment_id, reaction_type):
 def moderation_warning(request):
     return render(request, 'thread/moderation_warning.html')
 
-@require_POST
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest
+from .models import DiscussionThread, ThreadReaction
+
+@login_required
 def react_to_thread(request, thread_id):
-    reaction_type = request.POST.get('reaction_type')
-    thread = get_object_or_404(DiscussionThread, pk=thread_id)
+    if request.method == 'POST':
+        thread = get_object_or_404(DiscussionThread, id=thread_id)
+        reaction_type = request.POST.get('reaction_type')
 
-    # Check if the user has already reacted
-    existing_reaction = ThreadReaction.objects.filter(user=request.user, thread=thread)
+        if reaction_type not in dict(ThreadReaction.REACTION_CHOICES).keys():
+            return HttpResponseBadRequest("Invalid reaction type.")
 
-    if existing_reaction.exists():
-        # Update existing reaction
-        existing_reaction.update(reaction_type=reaction_type)
-    else:
-        # Create new reaction
-        ThreadReaction.objects.create(user=request.user, thread=thread, reaction_type=reaction_type)
+        # Check if the user has already reacted to this thread
+        reaction, created = ThreadReaction.objects.get_or_create(
+            user=request.user,
+            thread=thread,
+            defaults={'reaction_type': reaction_type}
+        )
 
-    # Calculate new counts
-    likes_count = ThreadReaction.objects.filter(thread=thread, reaction_type='like').count()
-    loves_count = ThreadReaction.objects.filter(thread=thread, reaction_type='love').count()
+        # If the reaction already exists but is different, update it
+        if not created and reaction.reaction_type != reaction_type:
+            reaction.reaction_type = reaction_type
+            reaction.save()
 
-    # Redirect back to the thread detail page with updated counts
-    return redirect('thread:thread_detail', pk=thread.pk)
+        # Calculate new counts
+        likes_count = ThreadReaction.objects.filter(thread=thread, reaction_type='like').count()
+        loves_count = ThreadReaction.objects.filter(thread=thread, reaction_type='love').count()
+
+        # Determine the referrer to decide where to redirect
+        referrer = request.META.get('HTTP_REFERER', '')
+        if 'thread/detail' in referrer:
+            return redirect('thread:thread_detail', pk=thread.pk)
+        else:
+            return redirect('thread:thread_list')
+        
+    return HttpResponseBadRequest("Invalid request method.")
 
 @require_POST
 def react_to_comment(request, comment_id):
@@ -264,3 +322,29 @@ def react_to_comment(request, comment_id):
 
     # Redirect back to the thread detail page
     return redirect('thread:thread_detail', pk=comment.thread.pk)
+
+
+def report_dashboard(request):
+    # Thread stats
+    total_threads = DiscussionThread.objects.count()
+    total_comments = ThreadComments.objects.count()
+
+    # Reactions breakdown for threads
+    thread_reactions = ThreadReaction.objects.values('reaction_type').annotate(count=Count('reaction_type'))
+
+    # Reactions breakdown for comments
+    comment_reactions = CommentReaction.objects.values('reaction_type').annotate(count=Count('reaction_type'))
+
+    # Top threads with the most comments
+    top_threads = DiscussionThread.objects.annotate(comment_count=Count('comments')).order_by('-comment_count')[:5]
+
+    context = {
+        'total_threads': total_threads,
+        'total_comments': total_comments,
+        'thread_reactions': thread_reactions,
+        'comment_reactions': comment_reactions,
+        'top_threads': top_threads,
+    }
+
+    return render(request, 'thread/report_dashboard.html', context)
+

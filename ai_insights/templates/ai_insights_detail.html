@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ ai_insights.username }} Details{% endblock %}
+{% block title %}{{ ai_insights.user }} Details{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <h2>User Details</h2>
-    <p><strong>Username:</strong> {{ ai_insights.username }}</p>
+    <p><strong>Username:</strong> {{ ai_insights.user }}</p>
     <p><strong>Course:</strong> {{ ai_insights.course }}</p>
     <p><strong>Insight Text:</strong> {{ ai_insights.insight_text }}</p>
     <p><strong>Insight Type:</strong> {{ ai_insights.insight_type }}</p>

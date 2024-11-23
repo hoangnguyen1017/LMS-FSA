@@ -36,67 +36,97 @@
         {% endfor %}
     {% endif %}
 </ul>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContentArea = document.getElementById('mainContentArea');
-            const toggleButton = document.getElementById('sidebarToggle');
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar');
+        const mainContentArea = document.getElementById('mainContentArea');
+        const toggleButton = document.getElementById('sidebarToggle');
     
-            let isSidebarOpen = true; // Sidebar starts open
+        // Kiểm tra nếu ứng dụng hiện tại là student_portal
+        const isStudentPortal = window.location.pathname.includes("student_portal");
+        let isSidebarOpen = !isStudentPortal; // Mặc định đóng sidebar nếu là student_portal
     
-            toggleButton.addEventListener('click', function() {
-                if (isSidebarOpen) {
-                    // Hide sidebar
-                    sidebar.style.transform = 'translateX(-100%)'; // Slide sidebar out
-                    mainContentArea.style.marginLeft = '8.33%'; // Adjust main content to slide
-                    toggleButton.innerHTML = '<i class="fas fa-arrow-alt-circle-right mt-1" style="font-size: 22px;"></i>'; // Toggle icon
-                } else {
-                    // Show sidebar
-                    sidebar.style.transform = 'translateX(0)'; // Slide sidebar back in
-                    mainContentArea.style.marginLeft = '17%'; // Reset main content margin
-                    toggleButton.innerHTML = '<i class="fas fa-arrow-alt-circle-left mt-1" style="font-size: 22px;"></i>'; // Toggle icon
-                }
-                isSidebarOpen = !isSidebarOpen; // Toggle state
-            });
+        // Thiết lập trạng thái ban đầu
+        if (isSidebarOpen) {
+            sidebar.style.transform = 'translateX(0)';
+            mainContentArea.classList.add('col-md-10', 'offset-md-2');
+            mainContentArea.classList.remove('col-md-12');
+            toggleButton.innerHTML = '<i class="fas fa-arrow-alt-circle-right mt-1" style="font-size: 22px;"></i>';
+        } else {
+            sidebar.style.transform = 'translateX(-100%)';
+            mainContentArea.classList.add('col-md-12');
+            mainContentArea.classList.remove('col-md-10', 'offset-md-2');
+            toggleButton.innerHTML = '<i class="fas fa-arrow-alt-circle-left mt-1" style="font-size: 22px;"></i>';
+        }
+    
+        // Thêm sự kiện cho nút bật/tắt sidebar
+        toggleButton.addEventListener('click', function () {
+            if (isSidebarOpen) {
+                // Hide sidebar
+                sidebar.style.transform = 'translateX(-100%)';
+                mainContentArea.classList.remove('offset-md-2', 'col-md-10');
+                mainContentArea.classList.add('col-md-12');
+                toggleButton.innerHTML = '<i class="fas fa-arrow-alt-circle-left mt-1" style="font-size: 22px;"></i>';
+            } else {
+                // Show sidebar
+                sidebar.style.transform = 'translateX(0)';
+                mainContentArea.classList.remove('col-md-12');
+                mainContentArea.classList.add('col-md-10', 'offset-md-2');
+                toggleButton.innerHTML = '<i class="fas fa-arrow-alt-circle-right mt-1" style="font-size: 22px;"></i>';
+            }
+            isSidebarOpen = !isSidebarOpen;
         });
-    </script>
+    });    
+</script>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Set active link and expand group based on current URL
-            const currentURL = window.location.pathname;
-            
-            document.querySelectorAll('.collapse').forEach(function (collapseElement) {
-                const moduleLinks = collapseElement.querySelectorAll('.nav-link');
-                let isActiveGroup = false;
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Set active link and expand group based on current URL
+        const currentURL = window.location.pathname;
         
-                moduleLinks.forEach(function (moduleLink) {
-                    if (moduleLink.getAttribute('href') === currentURL) {
-                        moduleLink.classList.add('active');
-                        isActiveGroup = true;
-                    } else {
-                        moduleLink.classList.remove('active');
-                    }
-                });
-        
-                // Expand group if it contains the active link
-                if (isActiveGroup) {
-                    collapseElement.classList.add('show');
+        document.querySelectorAll('.collapse').forEach(function (collapseElement) {
+            const moduleLinks = collapseElement.querySelectorAll('.nav-link');
+            let isActiveGroup = false;
+    
+            moduleLinks.forEach(function (moduleLink) {
+                if (moduleLink.getAttribute('href') === currentURL) {
+                    moduleLink.classList.add('active');
+                    isActiveGroup = true;
+                } else {
+                    moduleLink.classList.remove('active');
+                }
+            });
+    
+            // Expand group if it contains the active link
+            if (isActiveGroup) {
+                collapseElement.classList.add('show');
+            }
+        });
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        // Khi người dùng bấm vào module trong sidebar
+        $("a.nav-link").on("click", function(event) {
+            event.preventDefault();  // Ngừng hành động mặc định (điều hướng trang)
+
+            var url = $(this).attr("href");  // Lấy URL của module
+
+            $.ajax({
+                url: url,  // Gửi yêu cầu đến URL của module
+                type: "GET",
+                data: {
+                    'search': $('#search-input').val(),  // Đưa tham số tìm kiếm nếu có
+                    'group': $(this).data('group')  // Thêm group nếu cần (hoặc bất kỳ tham số nào)
+                },
+                success: function(response) {
+                    // Cập nhật nội dung của #mainContentArea mà không làm mới sidebar
+                    $("#mainContentArea").html(response.html);
+                },
+                error: function(xhr, status, error) {
+                    console.log("Có lỗi khi tải nội dung: ", error);
                 }
             });
         });
-            </script>
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    });
+</script>

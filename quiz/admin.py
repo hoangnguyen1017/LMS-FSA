@@ -76,6 +76,30 @@ class AnswerOptionAdmin(ImportExportModelAdmin):
     list_filter = ('question', 'is_correct')
 
 
+# StudentQuizAttempt Resource
+class StudentQuizAttemptResource(resources.ModelResource):
+    user = fields.Field(
+        column_name='user__username',  # Assuming username is the desired attribute to import/export
+        attribute='user',
+        widget=ForeignKeyWidget(User, 'username')  # Use the username to link to the User model
+    )
+    
+    quiz = fields.Field(
+        column_name='quiz__quiz_title',  # Assuming quiz_title is the desired attribute to import/export
+        attribute='quiz',
+        widget=ForeignKeyWidget(Quiz, 'quiz_title')  # Use the quiz title to link to the Quiz model
+    )
 
+    class Meta:
+        model = StudentQuizAttempt
+        fields = ('id', 'user', 'quiz', 'score', 'attempt_date', 'is_proctored')
+
+# Admin registration for StudentQuizAttempt
+@admin.register(StudentQuizAttempt)
+class StudentQuizAttemptAdmin(ImportExportModelAdmin):
+    resource_class = StudentQuizAttemptResource
+    list_display = ('user', 'quiz', 'score', 'attempt_date', 'is_proctored')
+    search_fields = ('user__username', 'quiz__quiz_title')
+    list_filter = ('quiz', 'is_proctored')
 
 

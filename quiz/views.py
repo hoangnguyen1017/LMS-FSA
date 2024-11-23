@@ -185,88 +185,6 @@ def get_answers(request, question_pk):
 
 
 
-# def quiz_detail(request, quiz_id):
-#     quiz = get_object_or_404(Quiz, id=quiz_id)
-#     all_quizzes = Quiz.objects.annotate(total_questions=Count('questions'))
-#     selected_quiz = None
-#     quiz_questions = []
-
-#     selected_quiz_id = request.GET.get('selected_quiz')
-#     if selected_quiz_id:
-#         selected_quiz = get_object_or_404(Quiz, id=selected_quiz_id)
-#         questions = selected_quiz.questions.prefetch_related('answer_options')
-
-#         for question in questions:
-#             answers = question.answer_options.all()
-#             quiz_questions.append({
-#                 'id': question.id,
-#                 'text': question.question_text,
-#                 'answers': [{'id': answer.id, 'text': answer.option_text, 'is_correct': answer.is_correct} for answer in answers]
-#             })
-
-#         total_questions_selected_quiz = questions.count()
-#     else:
-#         total_questions_selected_quiz = 0
-
-    # if request.method == 'POST':
-    #     data = json.loads(request.body)
-    #     received_question_ids = set(item['id'] for item in data if 'id' in item)
-
-    #     if selected_quiz:
-    #         current_question_ids = set(selected_quiz.questions.values_list('id', flat=True))
-    #         questions_to_delete = current_question_ids - received_question_ids
-    #         Question.objects.filter(id__in=questions_to_delete).delete()
-
-    #     for item in data:
-    #         question_id = item.get('id')
-    #         question_text = item['text']
-    #         answers = item['answers']
-    #         received_answer_ids = set(answer.get('id') for answer in answers if 'id' in answer)
-
-    #         if question_id:
-    #             try:
-    #                 question = Question.objects.get(id=question_id)
-    #                 question.question_text = question_text
-    #                 question.save()
-
-    #                 existing_answer_ids = set(question.answer_options.values_list('id', flat=True))
-    #                 answers_to_delete = existing_answer_ids - received_answer_ids
-    #                 AnswerOption.objects.filter(id__in=answers_to_delete).delete()
-
-    #             except Question.DoesNotExist:
-    #                 return JsonResponse({'status': 'error', 'message': f'Question with ID {question_id} not found.'}, status=400)
-
-    #         else:
-    #             question = Question.objects.create(quiz=selected_quiz, question_text=question_text)
-
-    #         for answer_data in answers:
-    #             answer_id = answer_data.get('id')
-    #             answer_text = answer_data['text']
-    #             is_correct = answer_data.get('is_correct', False)
-
-    #             if answer_id:
-    #                 try:
-    #                     answer = AnswerOption.objects.get(id=answer_id)
-    #                     answer.option_text = answer_text
-    #                     answer.is_correct = is_correct
-    #                     answer.save()
-    #                 except AnswerOption.DoesNotExist:
-    #                    return JsonResponse({'status': 'error', 'message': f'Answer with ID {answer_id} not found.'}, status=400)
-    #             else:
-    #                 AnswerOption.objects.create(question=question, option_text=answer_text, is_correct=is_correct)
-
-    #     return JsonResponse({'status': 'success', 'message': 'Questions and answers saved successfully!'})
-
-    # context = {
-    #     'quiz': quiz,
-    #     'all_quizzes': all_quizzes,
-    #     'selected_quiz': selected_quiz,
-    #     'quiz_questions': quiz_questions,
-    #     'total_questions_selected_quiz': total_questions_selected_quiz
-    # }
-
-    # return render(request, 'quiz_detail.html', context)
-
 def quiz_detail(request, quiz_id):
     # Get the current quiz or return 404 if not found
     quiz = get_object_or_404(Quiz, id=quiz_id)
@@ -298,20 +216,26 @@ def quiz_detail(request, quiz_id):
     # Handle POST request to update or add questions to the current quiz
     if request.method == 'POST':
         data = json.loads(request.body)
-        
-        received_question_ids = {item['id'] for item in data if 'id' in item}
 
-        # Only proceed if a selected quiz exists
-        if selected_quiz:
-            # Remove questions not included in the received data
-            current_question_ids = set(selected_quiz.questions.values_list('id', flat=True))
-            questions_to_delete = current_question_ids - received_question_ids
-            Question.objects.filter(id__in=questions_to_delete).delete()
+        # Check if data is a list or a dictionary
+        if isinstance(data, list):
+            deleted_ids = []  # Initialize as empty if it's a list
+            received_questions = data  # Assign data to received_questions
+        else:
+            deleted_ids = data.get('deleted_ids', [])
+            received_questions = data.get('questions', [])
+            
 
-        for item in data:
+        # Delete the specified questions from the database
+        if deleted_ids:
+            deleted_count, _ = Question.objects.filter(id__in=deleted_ids).delete()
+            print(f"Deleted {deleted_count} questions.")  # Debugging line
+
+        # Process received questions for updates or additions
+        for item in received_questions:
             question_id = item.get('id')
-            question_text = item['text']
-            answers = item['answers']
+            question_text = item.get('text')
+            answers = item.get('answers', [])
             received_answer_ids = {answer.get('id') for answer in answers if 'id' in answer}
 
             # Update existing question
@@ -329,15 +253,15 @@ def quiz_detail(request, quiz_id):
                 except Question.DoesNotExist:
                     return JsonResponse({'status': 'error', 'message': f'Question with ID {question_id} not found.'}, status=400)
 
-            # Add new question to the selected quiz
+            # Add new question to the selected quiz if no ID is provided
             else:
                 question = Question.objects.create(quiz=selected_quiz, question_text=question_text)
 
             # Add or update answers
             for answer_data in answers:
                 answer_id = answer_data.get('id')
-                answer_text = answer_data['text']
-                is_correct = answer_data.get('is_correct', False)
+                answer_text = answer_data.get('text')
+                is_correct = answer_data.get('is_correct', True)
 
                 if answer_id:  # Update existing answer
                     try:
@@ -345,14 +269,13 @@ def quiz_detail(request, quiz_id):
                         answer.option_text = answer_text
                         answer.is_correct = is_correct
                         answer.save()
+                        print(f"Answer created/updated: ID={answer.id}, Text={answer.option_text}, Is Correct={answer.is_correct}")
                     except AnswerOption.DoesNotExist:
                         return JsonResponse({'status': 'error', 'message': f'Answer with ID {answer_id} not found.'}, status=400)
                 else:  # Create new answer
                     AnswerOption.objects.create(question=question, option_text=answer_text, is_correct=is_correct)
 
         # Copy questions from the selected quiz to the current quiz if specified
-        received_questions = data if isinstance(data, list) else []
-
         for item in received_questions:
             question_id = item.get('id')
             if not question_id:
@@ -383,9 +306,9 @@ def quiz_detail(request, quiz_id):
                         new_answer.save()  # Save the new answer option
 
             except Question.DoesNotExist:
-                return JsonResponse({'status': 'error', 'message': f'Question with ID {question_id} not found.'}, status=400)
+                return JsonResponse({'status': 'error', 'message': f'Original question with ID {question_id} not found.'}, status=400)
 
-        return JsonResponse({'status': 'success', 'message': 'Questions and answers saved successfully!'})
+        return JsonResponse({'status': 'success', 'message': 'Questions updated successfully.'})
 
     # Pass data to the template
     context = {

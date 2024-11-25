@@ -17,7 +17,7 @@ from django.db.models import F
 @login_required
 def thread_list(request, course_id=None):
     q = request.GET.get('q', '')
-
+    selected_course = Course.objects.filter(id=course_id).first() if course_id else None
     if course_id:
         threads = DiscussionThread.objects.filter(
             Q(thread_title__icontains=q) |
@@ -37,15 +37,27 @@ def thread_list(request, course_id=None):
 
     # Apply annotations for likes, loves, comments, and interactions
     threads = threads.annotate(
-        total_likes=Count('reactions', filter=Q(reactions__reaction_type='like')),
-        total_loves=Count('reactions', filter=Q(reactions__reaction_type='love')),
-        total_comments=Coalesce(Subquery(comments_subquery, output_field=IntegerField()), 0)
-    )
-    threads= threads.annotate(
-    total_interactions=F('total_likes') + F('total_loves') + F('total_comments')
+    total_likes  = Count('reactions', filter=Q(reactions__reaction_type='like')),
+    total_loves  = Count('reactions', filter=Q(reactions__reaction_type='love')),
+    total_haha   = Count('reactions', filter=Q(reactions__reaction_type='haha')),
+    total_wow    = Count('reactions', filter=Q(reactions__reaction_type='wow')),
+    total_sad    = Count('reactions', filter=Q(reactions__reaction_type='sad')),
+    total_angry  = Count('reactions', filter=Q(reactions__reaction_type='angry')),
+    total_comments=Coalesce(Subquery(comments_subquery, output_field=IntegerField()), 0)
+)
+
+    # Then calculate total_reactions and total_interactions
+    threads = threads.annotate(
+        total_reactions = F('total_likes') + F('total_loves') + F('total_haha') + F('total_wow') + F('total_sad') + F('total_angry'),
+        total_interactions = F('total_comments') + F('total_reactions'),
+    ).order_by('-total_interactions', '-created')
+    
+    threads = threads.annotate(
+        total_interactions = F('total_comments') + F('total_reactions'),
     ).order_by('-total_interactions', '-created')
 
-    
+    user_reactions = {reaction.thread_id: reaction.reaction_type
+                    for reaction in ThreadReaction.objects.filter(user=request.user, thread__in=threads)}
     recent_activities = threads.order_by('-created')
     module_groups = ModuleGroup.objects.all()
     # Featured threads (do not slice the main queryset)
@@ -58,13 +70,13 @@ def thread_list(request, course_id=None):
     # Fetch all courses
     courses = Course.objects.all()
     
-    
     threads = threads[3:]
     # Apply pagination on the remaining threads
     paginator1 = Paginator(threads, 5)  # 5 threads per page
     page_number1 = request.GET.get('page')
     page_obj1 = paginator1.get_page(page_number1)
     
+    user_reactions = ThreadReaction.objects.filter(user=request.user, thread__in=threads).values('thread_id', 'reaction_type')
     
     
 
@@ -76,6 +88,7 @@ def thread_list(request, course_id=None):
         'recent_activities': recent_activities,
         'featured_threads': featured_threads,
         'module_groups' : module_groups,
+        'selected_course':selected_course,
         
 
     }
@@ -86,6 +99,7 @@ def thread_list(request, course_id=None):
         'recent_activities': recent_activities,
         'featured_threads': featured_threads,
         'module_groups' : module_groups,
+        'user_reactions':user_reactions,
     }
 
     # Render different templates based on user role
@@ -155,6 +169,10 @@ def thread_detail(request, pk):
     # Get the likes and loves counts for the thread
     likes_count = thread.likes_count
     loves_count = thread.loves_count
+    haha_count = thread.haha_count
+    wow_count = thread.wow_count
+    sad_count = thread.sad_count
+    angry_count = thread.angry_count
     module_groups = ModuleGroup.objects.all()
     # Prepare a list to hold comments with their reaction counts
     comments_with_reactions = []
@@ -162,12 +180,19 @@ def thread_detail(request, pk):
         # Get likes and loves counts for each comment
         comment_likes_count = CommentReaction.objects.filter(comment=comment, reaction_type='like').count()
         comment_loves_count = CommentReaction.objects.filter(comment=comment, reaction_type='love').count()
-        
+        comment_haha_count = CommentReaction.objects.filter(comment=comment, reaction_type='haha').count()
+        comment_wow_count = CommentReaction.objects.filter(comment=comment, reaction_type='wow').count()
+        comment_sad_count = CommentReaction.objects.filter(comment=comment, reaction_type='sad').count()
+        comment_angry_count = CommentReaction.objects.filter(comment=comment, reaction_type='angry').count()
         # Append the comment and its reaction counts to the list
         comments_with_reactions.append({
             'comment': comment,
             'comment_likes_count': comment_likes_count,
             'comment_loves_count': comment_loves_count,
+            'comment_haha_count':comment_haha_count,
+            'comment_wow_count':comment_wow_count,
+            'comment_sad_count':comment_sad_count,
+            'comment_angry_count':comment_angry_count,
         })
     
     # Prepare context data for the template
@@ -175,6 +200,10 @@ def thread_detail(request, pk):
         'thread': thread,
         'likes_count': likes_count,
         'loves_count': loves_count,
+        'haha_count':haha_count,
+        'wow_count':wow_count,
+        'sad_count':sad_count,
+        'angry_count':angry_count,
         'comments_with_reactions': comments_with_reactions,
         'module_groups': module_groups,
     }
@@ -277,10 +306,6 @@ def add_reaction_to_comment(request, comment_id, reaction_type):
 def moderation_warning(request):
     return render(request, 'thread/moderation_warning.html')
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseBadRequest
-from .models import DiscussionThread, ThreadReaction
 
 @login_required
 def react_to_thread(request, thread_id):
@@ -305,12 +330,20 @@ def react_to_thread(request, thread_id):
 
         # Calculate new counts
         likes_count = thread.likes_count  # This will dynamically calculate likes
-        loves_count = thread.loves_count  # This will dynamically calculate loves
+        loves_count = thread.loves_count  
+        haha_count = thread.haha_count
+        wow_count = thread.wow_count
+        sad_count = thread.sad_count
+        angry_count = thread.angry_count
         
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 'likes_count': likes_count,
                 'loves_count': loves_count,
+                'haha_count':haha_count,
+                'wow_count':wow_count,
+                'sad_count':sad_count,
+                'angry_count':angry_count,
                 'message': "Reaction updated successfully."
             })
 
@@ -323,6 +356,71 @@ def react_to_thread(request, thread_id):
         
         
     return HttpResponseBadRequest("Invalid request method.")
+
+
+# @login_required
+# def react_to_thread(request, thread_id):
+#     if request.method == 'POST':
+#         # Retrieve the thread with annotated reaction counts for each type
+#         thread = get_object_or_404(DiscussionThread, id=thread_id)
+
+#         # Get the reaction type from the request
+#         reaction_type = request.POST.get('reaction_type')
+
+#         # Validate the reaction type
+#         if reaction_type not in dict(ThreadReaction.REACTION_CHOICES).keys():
+#             return HttpResponseBadRequest("Invalid reaction type.")
+
+#         # Get or create a reaction
+#         reaction, created = ThreadReaction.objects.get_or_create(
+#             user=request.user,
+#             thread=thread,
+#             reaction_type= reaction_type
+#         )
+
+#         # Update reaction type if it already exists
+#         if not created:
+#             # If the reaction already exists, update the reaction type
+#             if reaction.reaction_type == reaction_type:
+#                 # Remove the reaction if the same type is clicked again
+#                 reaction.delete()
+#                 message = "Reaction removed."
+#             else:
+#                 # Update the reaction type
+#                 reaction.reaction_type = reaction_type
+#                 reaction.save()
+#                 message = "Reaction updated successfully."
+#         else:
+#             message = "Reaction added successfully."
+        
+
+#         # Calculate updated counts for each reaction type
+#         reaction_counts = thread.reactions.values('reaction_type').annotate(count=models.Count('id'))
+#         total_reactions = {item['reaction_type']: item['count'] for item in reaction_counts}
+
+#         # Return JSON response for AJAX requests
+#         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#             return JsonResponse({
+#                 'total_reactions': total_reactions,
+#                 'message': message,
+#             })
+
+#         # Redirect based on the referrer URL
+#         referrer = request.META.get('HTTP_REFERER', '')
+#         if 'thread/detail' in referrer:
+#             return redirect('thread:thread_detail', pk=thread.pk)
+#         else:
+#             return redirect('thread:thread_list')
+
+#     return HttpResponseBadRequest("Invalid request method.")
+
+
+
+
+
+
+
+
 
 @require_POST
 def react_to_comment(request, comment_id):
@@ -428,7 +526,7 @@ def recent_activity(request):
     
     
     
-    paginator = Paginator(recent_activities,10)
+    paginator = Paginator(recent_activities,15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
@@ -437,3 +535,16 @@ def recent_activity(request):
         'query':query
     }
     return render(request,'thread/recent_activity.html',context)
+
+
+@login_required
+def user_feed(request):
+    # Fetch all threads created by the logged-in user
+    user_threads = DiscussionThread.objects.filter(created_by=request.user).order_by('-created')
+
+    # Set up pagination
+    paginator = Paginator(user_threads, 5)  # Show 10 threads per page
+    page_number = request.GET.get('page')  # Get the current page number from the request
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'thread/user_feed.html', {'page_obj': page_obj})

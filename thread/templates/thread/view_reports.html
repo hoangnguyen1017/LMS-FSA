@@ -33,7 +33,19 @@
     }
 </style>
 
+<ul class="nav nav-tabs mb-3 justify-content-start">
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'thread:thread_list' %}">Thread</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'thread:recent_activity' %}">Recent Activity</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" href="{% url 'thread:view_reports' %}">Report</a>
+    </li>
+</ul>
 <div class="container report-container">
+    
     <h2 class="text-center mb-4">Report List</h2>
     <form method="GET" action="{% url 'thread:view_reports' %}" class="form-inline d-flex justify-content-center search-bar">
         <input type="text" name="q" class="form-control mr-sm-2" placeholder="Search reports..." value="{{ query|default:'' }}">

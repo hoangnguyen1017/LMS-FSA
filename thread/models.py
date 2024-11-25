@@ -25,9 +25,23 @@ class DiscussionThread(models.Model):
     @property
     def loves_count(self):
         return self.reactions.filter(reaction_type='love').count()
-
     
+    @property
+    def haha_count(self):
+        return self.reactions.filter(reaction_type='haha').count()
 
+    @property
+    def wow_count(self):
+        return self.reactions.filter(reaction_type='wow').count()
+    
+    @property
+    def sad_count(self):
+        return self.reactions.filter(reaction_type='sad').count()
+
+    @property
+    def angry_count(self):
+        return self.reactions.filter(reaction_type='angry').count()
+    
 class ThreadComments(models.Model):
     comment_id = models.AutoField(primary_key=True)
     thread = models.ForeignKey(DiscussionThread, on_delete=models.CASCADE, related_name='comments')
@@ -73,7 +87,26 @@ class ThreadReaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} reacted to {self.thread.thread_title} with {self.get_reaction_type_display()}"
+    def reaction_icons():
+        return {
+            'like': '👍',
+            'love': '❤️',
+            'haha': '😂',
+            'wow': '😮',
+            'sad': '😢',
+            'angry': '😡',
+        }
 
+    @staticmethod
+    def reaction_labels():
+        return {
+            'like': 'Like',
+            'love': 'Love',
+            'haha': 'Haha',
+            'wow': 'Wow',
+            'sad': 'Sad',
+            'angry': 'Angry',
+        }
 
 # Reaction model for Comments
 class CommentReaction(models.Model):
@@ -119,3 +152,5 @@ class ReportThread(models.Model):
     additional_comments = models.TextField(blank=True, null=True) 
     def __str__(self):
         return f"Report for {self.thread.thread_title} by {self.reported_by.username}"
+    
+    

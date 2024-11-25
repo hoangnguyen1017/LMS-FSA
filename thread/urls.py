@@ -20,6 +20,7 @@ urlpatterns = [
     path('thread/<int:thread_id>/report/', views.report_thread, name='report_thread'),
     path('reports/', views.view_reports, name='view_reports'),
     path('recent_activity/',views.recent_activity,name='recent_activity'),
+    path('your-threads/', views.user_feed, name='user_feed'),
 ]
 
 

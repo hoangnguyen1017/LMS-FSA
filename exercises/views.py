@@ -4,6 +4,7 @@ from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode, urlencode
+from django.contrib.auth.decorators import login_required
 from cheat_logger.utils.encryption_handler import Data_Encryption
 from django.core.paginator import Paginator
 from .libs.submission import grade_submission, precheck
@@ -12,6 +13,7 @@ from .models import Exercise, Submission
 from assessments.models import Assessment, StudentAssessmentAttempt
 
 # Create your views here.
+@login_required
 def exercise_list(request):
     # Get the selected language from the GET request
     selected_language = request.GET.get('language')
@@ -30,6 +32,7 @@ def exercise_list(request):
     exercises = paginator.get_page(page_number) 
     return render(request, 'exercise_list.html', {'exercises': exercises, 'languages': languages, 'selected_language': selected_language})
 
+@login_required
 def exercise_add(request):
     if request.method == 'POST':
         form = ExerciseForm(request.POST)
@@ -67,11 +70,16 @@ def exercise_add(request):
 
     return render(request, 'exercise_add.html', {'form': form})
 
-
+@login_required
 def exercise_detail(request, exercise_id, assessment_id=None):
     exercise = get_object_or_404(Exercise, id=exercise_id)
     is_preview = assessment_id is None  # Check if it's preview mode
     email = request.GET.get('email') or request.session.get('email')
+    
+    if assessment_id is not None:
+        base_template = "assessment/take_assessment.html"
+    else:
+        base_template = "base_generic.html"
 
     # Determine if the user is authenticated
     if request.user.is_authenticated:
@@ -93,11 +101,12 @@ def exercise_detail(request, exercise_id, assessment_id=None):
     # Retrieve the latest submission using the filter
     submission = Submission.objects.filter(exercise=exercise, **submission_filter).last()
 
+    submission_flEmail = submission.email if submission else None
     # Kiểm tra mã code trong session
     session_key = f"exercise_{exercise_id}_code"
     code_in_session = request.session.get(session_key, None)
 
-    if submission and email == submission.email:
+    if submission and email == submission_flEmail:
         # Pre-fill the form with the submission's code if it exists and matches the email
         code_to_use = submission.code  # Ensure your form has a 'code' field
     elif code_in_session:  
@@ -139,17 +148,19 @@ def exercise_detail(request, exercise_id, assessment_id=None):
 
 
     return render(request, 'exercise_form.html', {
+        'base_template': base_template,
         'exercise': exercise,
         'form': form,
         'language': language,
         'input_example': input_example, 
         'output_example': output_example,
         'is_preview': is_preview,
+        'submission_flEmail': submission_flEmail,
         'assessment_id': assessment_id,  # Pass assessment_id for further processing if needed
         'email': email if not request.user.is_authenticated else None,  # Pass email if the user is anonymous
     })
 
-
+@login_required
 def submit_code(request, exercise_id, assessment_id):
     exercise = get_object_or_404(Exercise, id=exercise_id)
     assessment = get_object_or_404(Assessment, id=assessment_id)
@@ -287,15 +298,17 @@ def submit_code(request, exercise_id, assessment_id):
 
 #     return redirect('exercises:exercise_list')
 
-
+@login_required
 def result_detail(request, submission_id):
     submission = Submission.objects.get(id=submission_id)
     return render(request, 'result_detail.html', {'submission': submission})
 
+@login_required
 def result_list(request):
     submissions = Submission.objects.filter(user=request.user)
     return render(request, 'result_list.html', {'submissions': submissions})
 
+@login_required
 def precheck_code(request, exercise_id):
     exercise = get_object_or_404(Exercise, id=exercise_id)
     if request.method == "POST":

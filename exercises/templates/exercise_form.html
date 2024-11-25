@@ -1,4 +1,4 @@
-{% extends "assessment/take_assessment.html" %}
+{% extends base_template %}
 
 {% block left_content %}
 <!-- CodeMirror CSS -->
@@ -37,7 +37,11 @@
         <!-- Center Panel (Code Editor) -->
         <div class="col-md-6 p-0 bg-dark text-white d-flex flex-column"
                 style="overflow-y:auto; max-height:calc(100vh - 10vh);">
+            {% if assessment_id is None %}
+            <form id="code-form" method="POST" action="{% url 'exercises:submit_code' exercise.id 0%}" class="h-100 d-flex flex-column">
+            {% else %}
             <form id="code-form" method="POST" action="{% url 'exercises:submit_code' exercise.id assessment_id%}" class="h-100 d-flex flex-column">
+            {% endif %}
                 {% csrf_token %}
                 <div class="ms-1 me-1 h-100 d-flex flex-column" style="background-color:#404040;">
                     <div class="btn-toolbar mb-2 mt-2" role="toolbar">
@@ -67,13 +71,15 @@
                     <i class="fa fa-terminal" aria-hidden="true"></i> Pre-check</button>
                 <button type="button" id="clear-button" class="btn btn-outline-danger me-2 w-100">
                     <i class="fa fa-eraser" aria-hidden="true"></i> Clear</button>
-                {% if submission is None %}
+                {% if submission_flEmail is None and assessment_id is not None %}
                     <button type="button" id="submit-button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#confirmModal">
                         <i class="fa fa-paper-plane" aria-hidden="true"></i> Submit Code</button>
-                {% else %}
+                {% elif submission_flEmail is not None and assessment_id is not None %}
                     <button type="button" id="submit-button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#confirmModal" hidden>Submit Code</button>
                     <button type="button" class="btn btn-outline-dark text-light w-100">
                         <i class="fa fa-star" aria-hidden="true"></i> {{score}} POINTS</button>
+                {% elif assessment_id is None %}
+                    <button type="button" id="submit-button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#confirmModal" hidden>Submit Code</button>
                 {% endif %}
             </div>
             <div id="output" class="mt-1 p-2" style="overflow:auto; font-size:0.75em;">
@@ -111,6 +117,7 @@
         theme: 'dracula',
         tabSize: 4,
         indentUnit: 4,
+        indentWithTabs: true,
         matchBrackets: true,
         autoCloseBrackets: true
     });

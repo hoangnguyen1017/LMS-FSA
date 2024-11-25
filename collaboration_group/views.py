@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model  # Import for custom user model
-from .forms import CollaborationGroupForm, GroupMemberForm, FeedbackForm
-from .models import CollaborationGroup, GroupMember, Feedback
+from .forms import CollaborationGroupForm, GroupMemberForm, GroupFeedbackForm, MemberFeedbackForm
+from .models import CollaborationGroup, GroupMember, GroupFeedback, MemberFeedback
 from django.core.paginator import Paginator
 from django.http import HttpResponseBadRequest
 from django.db.models import Q
@@ -25,30 +25,6 @@ def my_groups_view(request):
     return render(request, 'my_groups.html', {'page_obj': page_obj})
 
 @login_required
-def feedback_view(request):
-    if request.method == 'POST':
-        form = FeedbackForm(request.POST)
-        if form.is_valid():
-            feedback = form.save(commit=False)
-            feedback.created_by = request.user  # Corrected field name
-            feedback.save()
-            return redirect('collaboration_group:collaboration_group_list')  # Replace with the appropriate redirect
-    else:
-        form = FeedbackForm()
-    
-    return render(request, 'feedback.html', {'form': form})
-
-@login_required
-def view_feedbacks(request):
-    # Fetch all feedback entries
-    feedback_list = Feedback.objects.select_related('groups', 'created_by').order_by('-created_at')
-
-    context = {
-        'feedback_list': feedback_list,
-    }
-    return render(request, 'view_feedbacks.html', context)
-
-@login_required
 def collaboration_group_list(request):
     collaboration_groups = CollaborationGroup.objects.all()
     
@@ -59,12 +35,6 @@ def collaboration_group_list(request):
     paginator = Paginator(collaboration_groups, 10)  # Show 10 groups per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
-    if request.user.is_superuser:
-        return render(request, 'admin_collaboration_group_list.html', {
-            'page_obj': page_obj,  # Pass paginated object to template
-            'user_membership_ids': user_membership_ids
-        })
 
     return render(request, 'collaboration_group_list.html', {
         'page_obj': page_obj,  # Pass paginated object to template
@@ -258,3 +228,66 @@ def add_member(request, group_id, user_id):
     user = get_object_or_404(User, pk=user_id)
     GroupMember.objects.get_or_create(group=group, user=user)
     return redirect('collaboration_group:manage_group', group_id=group.id)
+
+@login_required
+def leave_feedback(request, group_id):
+    group = get_object_or_404(CollaborationGroup, id=group_id)
+    group_feedback_form = GroupFeedbackForm()
+    member_feedback_form = MemberFeedbackForm(group=group)  # Pass group to filter members
+
+    if request.method == 'POST':
+        feedback_type = request.POST.get('feedback_type')
+        if feedback_type == 'group':
+            group_feedback_form = GroupFeedbackForm(request.POST)
+            if group_feedback_form.is_valid():
+                feedback = group_feedback_form.save(commit=False)
+                feedback.group = group
+                feedback.submitted_by = request.user
+                feedback.save()
+                return redirect('collaboration_group:collaboration_group_list')  # Replace with the list of feedbacks view
+        elif feedback_type == 'member':
+            member_feedback_form = MemberFeedbackForm(request.POST, group=group)
+            if member_feedback_form.is_valid():
+                feedback = member_feedback_form.save(commit=False)
+                feedback.group = group
+                feedback.submitted_by = request.user
+                feedback.save()
+                return redirect('collaboration_group:collaboration_group_list')  # Replace with the list of feedbacks view
+
+    context = {
+        'group': group,
+        'group_feedback_form': group_feedback_form,
+        'member_feedback_form': member_feedback_form,
+    }
+    return render(request, 'leave_feedback.html', context)
+
+@login_required
+def view_feedbacks(request):
+    groups = CollaborationGroup.objects.all()  # Fetch all groups for filtering
+    selected_group = request.GET.get('group')  # Get the selected group from the query string
+
+    # Filter feedbacks based on the selected group
+    if selected_group:
+        group_feedbacks = GroupFeedback.objects.filter(group_id=selected_group)
+        member_feedbacks = MemberFeedback.objects.filter(group_id=selected_group)
+    else:
+        group_feedbacks = GroupFeedback.objects.all()
+        member_feedbacks = MemberFeedback.objects.all()
+
+    # Add pagination
+    group_feedback_paginator = Paginator(group_feedbacks, 10)  # 10 items per page
+    member_feedback_paginator = Paginator(member_feedbacks, 10)
+
+    group_feedback_page = request.GET.get('group_feedback_page', 1)  # Current page for group feedbacks
+    member_feedback_page = request.GET.get('member_feedback_page', 1)  # Current page for member feedbacks
+
+    group_feedbacks = group_feedback_paginator.get_page(group_feedback_page)
+    member_feedbacks = member_feedback_paginator.get_page(member_feedback_page)
+
+    context = {
+        'groups': groups,
+        'selected_group': selected_group,
+        'group_feedbacks': group_feedbacks,
+        'member_feedbacks': member_feedbacks,
+    }
+    return render(request, 'view_feedbacks.html', context)

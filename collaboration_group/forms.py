@@ -1,5 +1,5 @@
 from django import forms
-from .models import CollaborationGroup, GroupMember, Feedback
+from .models import CollaborationGroup, GroupMember, GroupFeedback, MemberFeedback
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -36,18 +36,32 @@ class GroupMemberForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['user'].queryset = user_queryset
 
-class FeedbackForm(forms.ModelForm):
+class GroupFeedbackForm(forms.ModelForm):
     class Meta:
-        model = Feedback
-        fields = ['groups', 'feedback_text']
+        model = GroupFeedback
+        fields = ['group_engagement', 'collaboration_quality', 'goal_achievement', 'comments']
         widgets = {
-            'groups': forms.Select(attrs={'class': 'form-control'}),
-            'feedback_text': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter your feedback here...'}),
+            'group_engagement': forms.RadioSelect(choices=[(i, str(i)) for i in range(1, 6)]),
+            'collaboration_quality': forms.RadioSelect(choices=[(i, str(i)) for i in range(1, 6)]),
+            'goal_achievement': forms.RadioSelect(choices=[(i, str(i)) for i in range(1, 6)]),
+            'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }
+
+class MemberFeedbackForm(forms.ModelForm):
+    class Meta:
+        model = MemberFeedback
+        fields = ['member', 'teamwork', 'reliability', 'leadership', 'communication', 'comments']
+        widgets = {
+            'member': forms.Select(attrs={'class': 'form-control'}),
+            'teamwork': forms.RadioSelect(choices=[(i, str(i)) for i in range(1, 6)]),
+            'reliability': forms.RadioSelect(choices=[(i, str(i)) for i in range(1, 6)]),
+            'leadership': forms.RadioSelect(choices=[(i, str(i)) for i in range(1, 6)]),
+            'communication': forms.RadioSelect(choices=[(i, str(i)) for i in range(1, 6)]),
+            'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        super(FeedbackForm, self).__init__(*args, **kwargs)
-        if user:
-            # Limit dropdown options to groups the user has joined
-            self.fields['groups'].queryset = CollaborationGroup.objects.filter(members=user)
+        group = kwargs.pop('group', None)
+        super().__init__(*args, **kwargs)
+        if group:
+            self.fields['member'].queryset = group.members.all()

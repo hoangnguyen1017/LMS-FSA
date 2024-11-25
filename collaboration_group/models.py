@@ -24,11 +24,44 @@ class GroupMember(models.Model):
     def __str__(self):
         return f'{self.user.username} - {self.group.group_name}'
 
-class Feedback(models.Model):
-    groups = models.ForeignKey(CollaborationGroup, on_delete=models.CASCADE, related_name='feedbacks')
-    feedback_text = models.TextField()
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='feedbacks')
+class GroupFeedback(models.Model):
+    group = models.ForeignKey(
+        CollaborationGroup, on_delete=models.CASCADE, related_name="group_feedbacks"
+    )
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="submitted_group_feedbacks"
+    )
+    group_engagement = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    collaboration_quality = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    goal_achievement = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    comments = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def average_rating(self):
+        return (self.group_engagement + self.collaboration_quality + self.goal_achievement) / 3.0
+
     def __str__(self):
-        return f'{self.created_by.username} - {self.created_at}'
+        return f"Feedback for Group: {self.group.name} by {self.submitted_by.username}"
+    
+class MemberFeedback(models.Model):
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="member_feedbacks"
+    )
+    group = models.ForeignKey(
+        CollaborationGroup, on_delete=models.CASCADE, related_name="member_feedbacks"
+    )
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="submitted_member_feedbacks"
+    )
+    teamwork = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    reliability = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    leadership = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    communication = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    comments = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def average_rating(self):
+        return (self.teamwork + self.reliability + self.leadership + self.communication) / 4.0
+
+    def __str__(self):
+        return f"Feedback for Member: {self.member.username} in Group: {self.group.name}"

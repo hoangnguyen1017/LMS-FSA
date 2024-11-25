@@ -21,6 +21,6 @@ urlpatterns = [
 
     # User-specific and feedback views
     path('my-groups/', views.my_groups_view, name='my_groups'),
-    path('feedback/', views.feedback_view, name='feedback'),
-    path('view-feedbacks/', views.view_feedbacks, name='view_feedback'),
+    path('leave-feedback/<int:group_id>/', views.leave_feedback, name='leave_feedback'),
+    path('view-feedbacks/', views.view_feedbacks, name='view_feedbacks'),
 ]

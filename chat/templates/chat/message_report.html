@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Report</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        thead {
+            background-color: #f7f8fa;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        th {
+            color: #555;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        td {
+            color: #333;
+        }
+
+        .no-messages {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Message</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sender</th>
+                    <th>Latest Message</th>
+                    <th>Time Sent</th>
+                    <th>Total Messages</th>
+                    <th>Unread Messages</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in report_data %}
+                <tr {% if data.unread_count > 0 %}class="unread-row"{% endif %}>
+                    <td>{{ data.sender__username }}</td>
+                    <td>{{ data.message_content }}</td>
+                    <td>{% if data.time_sent %}{{ data.time_sent|date:"M d, Y h:i A" }}{% else %}N/A{% endif %}</td>
+                    <td>{{ data.message_count }}</td>
+                    <td>{% if data.unread_count > 0 %}<span class="badge bg-danger">{{ data.unread_count }}</span>{% else %}0{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="no-messages">No messages received.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+ 

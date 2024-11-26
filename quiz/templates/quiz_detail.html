@@ -81,8 +81,12 @@
                     <button class="btn btn-success btn-sm me-2" onclick="location.href='{% url 'quiz:import_questions' quiz.id %}'">
                         <i class="fas fa-file-import"></i> Import 
                     </button>
-                    <button class="btn btn-secondary btn-sm" onclick="location.href='{% url 'quiz:export_questions' quiz.id %}'">
+                    <button class="btn btn-secondary btn-sm me-5" onclick="location.href='{% url 'quiz:export_questions' quiz.id %}'">
                         <i class="fas fa-file-export"></i> Export 
+                    </button>
+
+                    <button class="btn btn-secondary btn-sm me-5" onclick="location.href='{% url 'quiz:import_quiz_json' quiz.id course.id %}'">
+                        <i class="fas fa-file-export"></i> import quiz json
                     </button>
                 </div>   
             </div>             

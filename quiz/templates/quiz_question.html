@@ -139,7 +139,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-center" style="flex: 1;">Add/Edit Answers</h5>  
                 </div>
-                <div class="card-body" id="answerFormContainer" style="display: none;">
+                <div class="card-body" id="answerFormContainer">
                     <div id="answerDisplay"></div> 
                     <div class="d-flex justify-content-end"> 
                         <button type="button" class="btn btn-light btn-sm mb-2" id="editButton" style="display:none;" onclick="editAnswers()">
@@ -171,7 +171,7 @@
                     </form>
                 </div>
             </div>
-        </div>       
+        </div>     
     </div>
 </div>
 
@@ -186,9 +186,7 @@
     const addAnswerForm = document.getElementById('addAnswerForm');
     const answerOptionsContainer = document.getElementById('answerOptionsContainer');
     const selectedQuestionIdInput = document.getElementById('selectedQuestionId');
-    const editButton = document.getElementById('editButton');
     let currentlyOpenQuestion = null; // Track currently open question
-
 
     function toggleAddQuestionForm() {
         const addQuestionFormContainer = document.getElementById('addQuestionFormContainer');
@@ -199,6 +197,7 @@
         item.addEventListener('click', () => {
             const questionId = item.dataset.questionId;
 
+            // Check if this question is already open
             if (currentlyOpenQuestion === questionId) {
                 // Clicking the already open question - close it
                 item.classList.remove('highlight');
@@ -208,62 +207,25 @@
             } else {
                 // Clicking a different question - open it (and close any previously open one)
                 if (currentlyOpenQuestion !== null) {
-                    // A question is currently open, so close it first
+                    // Close the previously open question
                     const previouslyOpenItem = document.querySelector(`.question-item[data-question-id="${currentlyOpenQuestion}"]`);
                     if (previouslyOpenItem) {
-                    previouslyOpenItem.classList.remove('highlight');
+                        previouslyOpenItem.classList.remove('highlight');
                     }
                 }
 
-
+                // Open the new question for editing
                 item.classList.add('highlight');
                 answerFormContainer.style.display = 'block';
-                addAnswerForm.style.display = 'none';
-                editButton.style.display = 'block';
-                loadAnswers(questionId);
+                addAnswerForm.style.display = 'block'; // Directly show the answer editing form
+                loadAnswersForEditing(questionId); // Load answers into the editing form
                 currentlyOpenQuestion = questionId;
                 selectedQuestionIdInput.value = questionId; // Update the hidden input field
-
             }
         });
     });
 
-    // Handle Edit button click
-    editButton.addEventListener('click', () => {
-        const questionId = selectedQuestionIdInput.value;
-        loadAnswersForEditing(questionId); // Load answers into edit form
-        addAnswerForm.style.display = 'block';  // Show edit form
-        editButton.style.display = 'none';    // Hide edit button
-        answerDisplay.innerHTML = '';         // Clear displayed answers
-    });
-
-    // Load answers to display or edit
-    function loadAnswers(questionId) {
-        fetch(`/quiz/get_answers/${questionId}/`)
-            .then(response => response.json())
-            .then(data => {
-                answerDisplay.innerHTML = ''; // Clear the display area first
-                if (data.answers.length === 0) { // Check if there are no answers
-                    loadAnswersForEditing(questionId); // Load the edit form directly
-                    addAnswerForm.style.display = 'block';
-                    editButton.style.display = 'none';  // Hide the edit button
-                } else {
-                    answerDisplay.innerHTML = data.answers.map((answer, index) => {
-                        // Calculate the alphabet letter based on the index
-                        const alphabet = String.fromCharCode(65 + index); // 65 is the ASCII code for 'A'
-                        return `
-                            <div class="answer-card mb-3 p-3 border border-light rounded shadow-sm text-start position-relative">
-                                <p class="mb-0" style="text-align: left;"><strong>${alphabet}.</strong> ${answer.option_text}</p>
-                                ${answer.is_correct ? '<i class="fas fa-check-circle position-absolute" style="color: green; right: 10px; top: 10px; font-size: 1.5rem;"></i>' : ''}
-                            </div>
-                        `;
-                    }).join('');
-                }
-            });
-    }
-
-
-    // Load answers into the editing form
+    // Load answers into the editing form directly when the question is clicked
     function loadAnswersForEditing(questionId) {
         fetch(`/quiz/get_answers/${questionId}/`)
             .then(response => response.json())
@@ -324,7 +286,7 @@
         `;
 
         document.getElementById('answerOptionsContainer').appendChild(newAnswerDiv);
-        
+
         // Add event listener for the remove button
         const removeButton = newAnswerDiv.querySelector('.remove-answer');
         removeButton.addEventListener('click', () => {

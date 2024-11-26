@@ -188,6 +188,8 @@ def get_answers(request, question_pk):
 def quiz_detail(request, quiz_id):
     # Get the current quiz or return 404 if not found
     quiz = get_object_or_404(Quiz, id=quiz_id)
+    course = quiz.course
+    print(course)
 
     # Retrieve all quizzes with their total question counts
     all_quizzes = Quiz.objects.annotate(total_questions=Count('questions'))
@@ -313,6 +315,7 @@ def quiz_detail(request, quiz_id):
     # Pass data to the template
     context = {
         'quiz': quiz,
+        'course':course,
         'all_quizzes': all_quizzes,
         'selected_quiz': selected_quiz,
         'quiz_questions': quiz_questions,
@@ -902,3 +905,58 @@ def _get_quiz_result_context(quiz, attempt):
         'attempt': attempt,
         'questions_with_options': questions_with_options,
     }
+
+# json import .
+def import_quiz_json(request, quiz_id, course_id):
+    # Lấy quiz và course từ database
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    course = get_object_or_404(Course, id=course_id)
+    context={
+                            'quiz':quiz,
+                            'course':course,
+                        }
+
+    if request.method == 'POST' and request.FILES.get('file'):
+        try:
+            # Lấy file JSON và parse dữ liệu
+            file = request.FILES['file']
+            data = json.load(file)
+
+            # Nếu muốn tạo quiz mới (hoặc chỉnh sửa quiz hiện có):
+            quiz.quiz_title = data.get('quiz_title', quiz.quiz_title)
+            quiz.quiz_description = data.get('quiz_description', quiz.quiz_description)
+            quiz.total_marks = data.get('total_marks', 100)
+            quiz.time_limit = data.get('time_limit', 60)
+            quiz.course = course  # Gắn vào khóa học tương ứng
+            quiz.save()
+
+            # Thêm câu hỏi và đáp án
+            for mc_question in data.get('mc_questions', []):
+                # Tạo hoặc cập nhật câu hỏi
+                question = Question.objects.create(
+                    quiz=quiz,
+                    question_text=mc_question['question'],
+                    question_type='MCQ',  # Mặc định là Multiple Choice
+                    points=mc_question.get('points', 1),  # Điểm mỗi câu hỏi
+                )
+
+                # Tạo các đáp án
+                correct_answers = mc_question['correct'].split(', ')
+                for i, answer_text in enumerate(mc_question['answers']):
+                    AnswerOption.objects.create(
+                        question=question,
+                        option_text=answer_text,
+                        is_correct=chr(65 + i) in correct_answers,  # Kiểm tra đáp án đúng
+                    )
+                
+
+            return redirect('quiz:quiz_detail', quiz_id=quiz.id)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON file format.'}, status=400)
+        except KeyError as e:
+            return JsonResponse({'error': f'Missing required field: {e}'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        
+    return render(request, 'import_quiz_json.html' ,context)

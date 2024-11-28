@@ -23,7 +23,8 @@
         <!-- All Enrollments Tab -->
         <div class="tab-pane active" id="all-enrollments" role="tabpanel" aria-labelledby="all-enrollments-tab">
             <div class="d-flex justify-content-end mt-3">
-                <a href="{% url 'group_enrollment:admin_enroll_users' %}" class="btn btn-primary">Enroll Multiple Users</a>
+                <a href="{% url 'group_enrollment:admin_enroll_users_learning_path' %}" class="btn btn-primary">Enroll Multiple Users in Learning Path</a>
+                <a href="{% url 'group_enrollment:admin_enroll_users' %}" class="btn btn-primary">Enroll Multiple Users in Course</a>
             </div>
             <!-- <h2>All Enrollments</h2> -->
             {% if all_enrollments %}
@@ -63,7 +64,7 @@
         <div class="tab-pane fade" id="personal-enrollments" role="tabpanel" aria-labelledby="personal-enrollments-tab">
             <div class="d-flex justify-content-end mt-3">
                 <a href="{% url 'group_enrollment:enroll_student' %}" class="btn btn-primary me-2">Enroll in a New Course</a>
-                
+
             </div>
             {% if enrollments %}
                 <table class="table table-striped">
@@ -97,7 +98,7 @@
             {% endif %}
         </div>
 
-        
+
     </div>
 </div>
 {% endblock %}

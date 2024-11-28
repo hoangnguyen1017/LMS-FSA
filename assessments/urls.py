@@ -27,6 +27,9 @@ urlpatterns = [
 
     path('<int:assessment_id>/result/attempt-id=<int:attempt_id>/', operations.Assessment_result.as_view(), name='assessment_result'),
     path('<int:assessment_id>/report/attempt-id=<int:attempt_id>/<str:email>/', operations.Assessment_report.as_view(), name='assessment_report'),
+    path('<int:assessment_id>/report/challenge_solution/attempt-id=<int:attempt_id>/<str:email>/<int:submission_id>', operations.Challenge_solution.as_view(), name='assessment_solution'),
+    path('run-code/', operations.RunCodeView.as_view(), name='run_code'),
+    path('<int:pk>/copy_invite_link/', operations.Copy_public_invite_link.as_view(), name='copy_public_invite_link'),
 ]
 
 

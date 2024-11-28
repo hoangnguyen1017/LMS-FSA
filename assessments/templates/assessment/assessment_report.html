@@ -41,7 +41,7 @@
             <div class="row">
                  <!-- Score Card -->
                 <div class="col-md-6">
-                    <div class="card shadow-sm">
+                    <div class="card shadow-sm h-100">
                         <div class="card-header d-flex justify-content-between align-items-center"
                             style="background-color: #20c997; color: white; font-weight: bold; text-align: center; padding: 10px;">
                             <span >Scores</span>
@@ -49,23 +49,23 @@
                             <span style="width: 20%;">Qualifying 60%</span>
                             <span style="width: 20%; font-weight: bold;">Final Score 68%</span>
                         </div>
-                        <div class="card-body" style="background-color: #e8f5f4;">
-                            <div class="d-flex justify-content-between mb-3">
+                        <div class="card-body" style="background-color: #e8f5f4; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; height: 100%;">
+                            <div class="d-flex justify-content-between align-items-center w-100" style="text-align: center;">
                                 <span>Challenges</span>
                                 <span style="font-weight: bold;">68%</span>
                             </div>
-                            <hr class="my-1">
-                            <div class="d-flex justify-content-between mb-3">
+                            <hr class="w-100 my-1">
+                            <div class="d-flex justify-content-between align-items-center w-100" style="text-align: center;">
                                 <span>Score Quiz</span>
                                 <span style="color: #6c757d; font-size: 0.9rem;">{{ score_quiz }}</span>
                             </div>
-                            <hr class="my-1">
-                            <div class="d-flex justify-content-between mb-3">
+                            <hr class="w-100 my-1">
+                            <div class="d-flex justify-content-between align-items-center w-100" style="text-align: center;">
                                 <span>Score Code</span>
                                 <span style="color: #6c757d; font-size: 0.9rem;">{{ score_ass|floatformat:1 }}</span>
                             </div>
-                            <hr class="my-1">
-                            <div class="d-flex justify-content-between mb-3">
+                            <hr class="w-100 my-1">
+                            <div class="d-flex justify-content-between align-items-center w-100" style="text-align: center;">
                                 <span>Personality test <i class="fas fa-info-circle" style="color: #6c757d;"></i></span>
                                 <span style="color: #6c757d; font-size: 0.9rem;">N/A</span>
                             </div>
@@ -144,7 +144,7 @@
                 </div>
                 <div class="col-md-12"> <!-- Expand column to full width -->
                     <div class="card" style="max-width: 100%; margin: 0 auto; padding: 0;">
-                        <div class="card-header d-flex justify-content-around" style="padding: 10px;">
+                        <div class="card-header d-flex justify-content-around" style="padding: 10px;">  
                             <!-- Algorithm Skill Section -->
                             <div class="text-center" id="algorithm-skill">
                                 <h6 class="mb-1 bg-light fw-bold small-title">Algorithm skill</h6>
@@ -209,6 +209,10 @@
                                 </div>
                             </div>
                         </div>
+                         <!-- Save Button -->
+                        <div class="card-footer text-center">
+                            <button id="saveRatings" class="btn btn-primary">Save Ratings</button>
+                        </div>
                     </div>
                 </div>
             </div>    
@@ -218,129 +222,48 @@
 
             <!-- Challenge Solution Cards -->
             <div class="col-md-12 mb-4">
-                <!-- Array Addition Card -->
-                <div class="card card-body d-flex align-items-left">
+                {% for submission in submission_attempt %}
+                <div class="card card-body d-flex align-items-left mb-4">
                     <div class="d-flex align-items-center justify-content-between">
                         <!-- Challenge Title and Details -->
                         <div>
-                            <p class="mb-0"><b>Array Addition I</b> <i class="bi bi-box-arrow-up-right"></i></p>
+                            <p class="mb-0">
+                                <b>{{ submission.exercise.title }}</b> 
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </p>
                             <div class="d-flex align-items-center">
-                                <a href="#" class="btn btn-link p-0">Run solution</a>
+                                <a href="{% url 'assessment:assessment_solution' assessment.id attempt.id attempt.email submission.id %}" class="btn btn-link p-0">Run solution</a>
                                 <span class="mx-2">|</span>
-                                <span>20 mins</span>
+                                <span>{{ 20}} mins</span>
                                 <span class="mx-2">|</span>
-                                <span class="text-success">Easy</span>
+                                
                             </div>
                         </div>
-
+            
                         <!-- Vertical Divider -->
                         <div class="vr mx-3" style="height: 60px;"></div>
-
+            
                         <!-- Cheating Status -->
-                        <p class="mb-0 text-muted">Cheating not detected</p>
-
+                        <p class="mb-0 text-muted">no cheating</p>
+            
                         <div class="vr mx-3" style="height: 60px;"></div>
-
+            
                         <!-- Score Box and Language/Resources -->
                         <div class="d-flex align-items-center ms-auto">
                             <div class="bg-success text-white rounded d-flex justify-content-center align-items-center" style="width:50px; height:50px;">
-                                8/10
+                                {{submission.score }}/10
                             </div>
-
+            
                             <div class="vr mx-3" style="height: 60px;"></div>
-
+            
                             <div>
-                                <div><span>TypeScript</span></div>
-                                <div><span><i class="bi bi-play-circle"></i> Video 1 2 3 4</span></div>
-                                <div><span><i class="bi bi-browser-chrome"></i> Vietnam</span></div>
+                                <div><span><b>{{ submission.exercise.language|capfirst }}</b></span></div>
+                                <div><span><i class="bi bi-browser-chrome"></i><b> Vietnam </b></span></div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="col-md-12 mb-4">
-                <!-- Distinct List Card -->
-                <div class="card card-body d-flex align-items-left">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <!-- Challenge Title and Details -->
-                        <div>
-                            <p class="mb-0"><b>Distinct List</b> <i class="bi bi-box-arrow-up-right"></i></p>
-                            <div class="d-flex align-items-center">
-                                <a href="#" class="btn btn-link p-0">Run solution</a>
-                                <span class="mx-2">|</span>
-                                <span>20 mins</span>
-                                <span class="mx-2">|</span>
-                                <span class="text-danger">Hard</span>
-                            </div>
-                        </div>
-
-                        <!-- Vertical Divider -->
-                        <div class="vr mx-3" style="height: 60px;"></div>
-
-                        <!-- Cheating Status -->
-                        <p class="mb-0 text-muted">Cheating not detected</p>
-
-                        <div class="vr mx-3" style="height: 60px;"></div>
-
-                        <!-- Score Box and Language/Resources -->
-                        <div class="d-flex align-items-center ms-auto">
-                            <div class="bg-success text-white rounded d-flex justify-content-center align-items-center" style="width:50px; height:50px;">
-                                8/10
-                            </div>
-
-                            <div class="vr mx-3" style="height: 60px;"></div>
-
-                            <div>
-                                <div><span>TypeScript</span></div>
-                                <div><span><i class="bi bi-play-circle"></i> Video 1 2 3 4</span></div>
-                                <div><span><i class="bi bi-browser-chrome"></i> Vietnam</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-12 mb-4">
-                <!-- Prime Time Card -->
-                <div class="card card-body d-flex align-items-left">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <!-- Challenge Title and Details -->
-                        <div>
-                            <p class="mb-0"><b>Prime Time</b> <i class="bi bi-box-arrow-up-right"></i></p>
-                            <div class="d-flex align-items-center">
-                                <a href="#" class="btn btn-link p-0">Run solution</a>
-                                <span class="mx-2">|</span>
-                                <span>20 mins</span>
-                                <span class="mx-2">|</span>
-                                <span class="text-success">Easy</span>
-                            </div>
-                        </div>
-
-                        <!-- Vertical Divider -->
-                        <div class="vr mx-3" style="height: 60px;"></div>
-
-                        <!-- Cheating Status -->
-                        <p class="mb-0 text-muted">Cheating not detected</p>
-
-                        <div class="vr mx-3" style="height: 60px;"></div>
-
-                        <!-- Score Box and Language/Resources -->
-                        <div class="d-flex align-items-center ms-auto">
-                            <div class="bg-success text-white rounded d-flex justify-content-center align-items-center" style="width:50px; height:50px;">
-                                8/10
-                            </div>
-
-                            <div class="vr mx-3" style="height: 60px;"></div>
-
-                            <div>
-                                <div><span>TypeScript</span></div>
-                                <div><span><i class="bi bi-play-circle"></i> Video 1 2 3 4</span></div>
-                                <div><span><i class="bi bi-browser-chrome"></i> Vietnam</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -430,6 +353,59 @@ document.querySelectorAll('.link-hover').forEach(link => {
     });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+    // Hàm để lấy đánh giá hiện tại
+    function getRatings(sectionId) {
+        const stars = document.querySelectorAll(`#${sectionId} .star i`);
+        let rating = 0;
+        stars.forEach((star, index) => {
+            if (star.classList.contains("text-warning")) {
+                rating = index + 1;
+            }
+        });
+        return rating;
+    }
+
+    // Xử lý khi bấm nút Save
+    document.getElementById("saveRatings").addEventListener("click", function () {
+        const algorithmRating = getRatings("algorithm-skill");
+        const codeQualityRating = getRatings("code-quality");
+        const typescriptRating = getRatings("typescript-skills");
+        const privateNotes = document.getElementById("editor").innerHTML;
+
+        // Lưu tạm thời vào localStorage
+        localStorage.setItem("algorithmRating", algorithmRating);
+        localStorage.setItem("codeQualityRating", codeQualityRating);
+        localStorage.setItem("typescriptRating", typescriptRating);
+        localStorage.setItem("privateNotes", privateNotes);
+
+        location.reload();
+    });
+
+    // Khôi phục đánh giá đã lưu từ localStorage
+    function restoreRatings(sectionId, savedRating) {
+        const stars = document.querySelectorAll(`#${sectionId} .star i`);
+        for (let i = 0; i < stars.length; i++) {
+            if (i < savedRating) {
+                stars[i].classList.add("text-warning");
+            } else {
+                stars[i].classList.remove("text-warning");
+            }
+        }
+    }
+
+    // Khôi phục dữ liệu khi tải lại trang
+    restoreRatings("algorithm-skill", parseInt(localStorage.getItem("algorithmRating") || "0"));
+    restoreRatings("code-quality", parseInt(localStorage.getItem("codeQualityRating") || "0"));
+    restoreRatings("typescript-skills", parseInt(localStorage.getItem("typescriptRating") || "0"));
+
+
+    // Khôi phục ghi chú đã lưu từ localStorage
+    const privateNotes = localStorage.getItem("privateNotes");
+    if (privateNotes) {
+        document.getElementById("editor").innerHTML = privateNotes; // Hiển thị ghi chú đã lưu
+    }
+});
 
 
 </script>

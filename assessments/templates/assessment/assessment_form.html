@@ -5,18 +5,22 @@
 {% block content %}
 <head>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
 </head>
+
 <div class="container mt-4">
     <h2 class="text-center mb-4">{% if assessment %}Edit Assessment{% else %}Create New Assessment{% endif %}</h2>
 
     {% if assessment.id %}
-    <a href="{% url 'assessment:take_assessment' assessment_id=assessment.id %}" class="btn btn-secondary">Prievew Assessment</a>
-    
+    <a href="{% url 'assessment:take_assessment' assessment_id=assessment.id %}" class="btn btn-secondary mb-3">Preview Assessment</a>
     {% endif %}
-    <form method="POST" id="assessment-form" class="mb-5">
+
+    <form method="POST" id="assessment-form">
         {% csrf_token %}
-        <!-- Assessment Details Section -->
-        <div class="card mb-6">
+
+        <div class="card mb-4 shadow">
             <div class="card-header bg-primary text-white">
                 <h4>Assessment Details</h4>
             </div>
@@ -25,276 +29,64 @@
                     <div class="col-md-4">
                         <label for="id_assessment_type" class="form-label">Assessment Type</label>
                         {{ form.assessment_type }}
-                        {% if form.assessment_type.errors %}
-                            <div class="text-danger">{{ form.assessment_type.errors }}</div>
-                        {% endif %}
+
                     </div>
                     <div class="col-md-4">
                         <label for="id_title" class="form-label">Title</label>
                         {{ form.title }}
-                        {% if form.title.errors %}
-                            <div class="text-danger">{{ form.title.errors }}</div>
-                        {% endif %}
+
                     </div>
                     <div class="col-md-4">
                         <label for="id_course" class="form-label">Course</label>
                         {{ form.course }}
-                        {% if form.course.errors %}
-                            <div class="text-danger">{{ form.course.errors }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        <label for="id_course" class="form-label"> </label>
                         
                     </div>
                 </div>
             </div>
         </div>
 
-
-        <!-- Tab Section for Exercises, Questions and Settings -->
-        <div class="card mb-4">
+        <div class="card mb-4 shadow">
             <div class="card-header bg-secondary text-white">
-                <h4>Select Exercises/Questions/Settings</h4>
+                <h4>Exercises/Questions/Settings</h4>
             </div>
             <div class="card-body">
-                <ul class="nav nav-tabs" id="exerciseQuestionTabs" role="tablist">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    {% if show_exercises %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {% if show_exercises and not show_questions%}active{% endif %}" id="exercises-tab" data-bs-toggle="tab" data-bs-target="#exercises" type="button" role="tab" aria-controls="exercises" aria-selected="{% if show_exercises %}true{% else %}false{% endif %}">Exercises</button>
+                        </li>
+                    {% endif %}
+                    {% if show_questions %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {% if show_questions and not show_exercises %}active{% endif %}" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab" aria-controls="questions" aria-selected="{% if show_questions %}true{% else %}false{% endif %}">Questions</button>
+                        </li>
+                    {% endif %}
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link active" id="exercises-tab" data-bs-toggle="tab" href="#exercises" role="tab" aria-controls="exercises" aria-selected="true">Exercises</a>
+                        <button class="nav-link {% if not show_exercises and not show_questions %}active{% endif %}" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="true">Settings</button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" id="questions-tab" data-bs-toggle="tab" href="#questions" role="tab" aria-controls="questions" aria-selected="false">Questions</a>
-                    </li>
-                    <li class="nav-item" role="presentation"> 
-                        <a class="nav-link" id="settings-tab" data-bs-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="false">Settings</a>
-                    </li>
-                    
                 </ul>
-                               
-                <div class="tab-content mt-3" id="exerciseQuestionTabContent">
-                    <!-- Exercises Tab -->
-                    <div class="tab-pane fade show active" id="exercises" role="tabpanel" aria-labelledby="exercises-tab">
-                        <div class="row">
-                            <div class="col-md-12">  <!-- Wrap both columns in a single column for search -->
-                                <div class="mb-3">
-                                    <div style="display: flex; align-items: center;">
-                                        <span style="margin-right: 5px;">🔍</span> 
-                                        <input type="text" id="search-exercises" class="form-control" placeholder="Search for exercises..." onkeyup="filterExercises()">
-                                    </div>                                                             
-                                </div>
-                            </div>  
-                            <!-- Exercise List Section -->
-                            <div class="col-md-6">
-                                <div class="mb-1">
-                                    <label for="search-exercises" class="form-label">Exercises</label>                           
-                                </div>
-                                <div class="exercise-list" id="exercise-list" style="height: 300px; overflow-y: auto; border: 1px solid #f5ebeb;">
-                                    {% for exercise in exercises %} 
-                                        <div class="d-flex align-items-center exercise-item border mb-1 p-2 cursor-pointer" data-exercise-id="{{ exercise.id }}">
-                                            <input type="checkbox" name="exercises" value="{{ exercise.id }}" id="exercise-{{ exercise.id }}"
-                                                {% if exercise.id in selected_exercises %}checked{% endif %} class="me-4">
-                                            <label for="exercise-{{ exercise.id }}" >{{ exercise.title }}</label>
-                                                                
-                                            <div class="d-flex align-items-center ms-auto">  
-                                                <span class="badge rounded-pill bg-light text-dark small me-2 border border-primary">{{ exercise.language|capfirst }}</span>
-                                                <button type="button" class="view-button btn btn-link text-secondary" 
-                                                    onmouseover="if (!this.classList.contains('active')) { this.classList.remove('text-secondary'); this.classList.add('text-primary'); }" 
-                                                    onmouseout="if (!this.classList.contains('active')) { this.classList.remove('text-primary'); this.classList.add('text-secondary'); }"
-                                                    onclick="toggleViewButton(this, {{ exercise.id }})">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                                <div id="filtered-exercises" style="height: 300px; overflow-y: auto; border: 1px solid #f5ebeb; display: none;"></div>
-                            </div>
-
-                            <!-- Exercise Preview Section -->
-                            <div class="col-md-6">
-                                <div class="mb-1">
-                                    <div class="mb-1">
-                                        <label for="search-exercises2" class="form-label">Preview Selected Exercise</label>                                       
-                                    </div>                            
-                                    <div id="exercise-content" class="border p-2" style="height: 300px; overflow-y: auto;">
-                                        <p>Select an exercise from the list to preview its content here.</p>                                                                    
-                                    </div>
-                                </div>
-                            </div>
-                            
+                
+                <div class="tab-content mt-3" id="myTabContent">
+                    {% if show_exercises %}
+                        <div class="tab-pane fade {% if show_exercises and not show_questions %}show active{% endif %}" id="exercises" role="tabpanel" aria-labelledby="exercises-tab">
+                            {% include "assessment/exercises_tab.html" %}
                         </div>
-                    </div>
-
-                    <!-- Questions Tab -->
-                    <div class="tab-pane fade" id="questions" role="tabpanel" aria-labelledby="questions-tab">
-                        <div class="row">
-                            <!-- Search Bar -->
-                            <div class="col-md-12">
-                                <div class="mb-3"> 
-                                    <div class="input-group">   
-                                        <span class="input-group-text">🔍</span> 
-                                        <input type="text" id="search-questions" class="form-control" placeholder="Search for questions..." onkeyup="filterQuestions()">
-                                    </div>                                                                                               
-                                </div>
-                            </div>
-                            
-                            <!-- Multiple Choice Library -->
-                            <div class="col-md-5">
-                                <div class="card shadow-sm hover-shadow">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">Multiple Choice Library</h5> <!-- Use the "Questions" label from Code 1 -->
-                                    </div>
-                                    <div class="card-body question-library" style="max-height: 400px; overflow-y: auto; scrollbar-width: thin;">
-                                        <div class="accordion" id="quizAccordion">
-                                            {% for quiz_option in all_quizzes %}
-                                            <div class="accordion-item">
-                                                <h2 class="accordion-header" id="heading{{ quiz_option.id }}">
-                                                    <div class="quiz-dropdown border rounded p-2 mb-2 bg-light" id="quizDropdown{{ quiz_option.id }}" style="cursor: pointer;">
-                                                        <div class="quiz-header d-flex justify-content-between align-items-center border-bottom pb-1 mb-1" style="font-size: 0.8rem;">
-                                                            <div class="position-relative">
-                                                                <span class="quiz-title h6 fw-bold" style="font-size: 16px; margin-right: 10px;">
-                                                                    {{ quiz_option.quiz_title }}
-                                                                    <span class="badge bg-success" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">{{ quiz_option.total_questions }} questions</span>
-                                                                </span>
-                                                                
-                                                                <div class="quiz-info d-flex gap-3" style="font-size: 0.7rem; color: #666;">
-                                                                    <div style="position: absolute; left: 200px; margin-top: 12px; transform: rotate(180deg);">
-                                                                        <svg width="10" height="10" viewBox="0 0 24 24">
-                                                                            <path d="M 12 4 L 20 16 L 4 16 Z" fill="#999999" stroke="#999999" stroke-width="4" stroke-linejoin="round" style="filter: drop-shadow(0 0 3px cyan);"/>
-                                                                        </svg>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        
-                                                            <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center position-relative btn-add-question add-questions" 
-                                                                    data-quiz-id="{{ quiz_option.id }}" 
-                                                                    data-question-id="{{ question.id }}" 
-                                                                    style="width: 35px; height: 35px; border-radius: 50%; transition: width 0.3s ease; overflow: hidden;" 
-                                                                    onmouseover="this.style.width='70px'; this.style.borderRadius='5px'; this.querySelector('.add-all-text').style.opacity='1'; this.querySelector('.add-all-text').style.transform='translateY(0)'; this.querySelector('.plus-sign').style.opacity='0';" 
-                                                                    onmouseout="this.style.width='35px'; this.style.borderRadius='50%'; this.querySelector('.add-all-text').style.opacity='0'; this.querySelector('.add-all-text').style.transform='translateY(-10px)'; this.querySelector('.plus-sign').style.opacity='1';">
-                                                                <span class="plus-sign" style="font-size: 1.3rem; transition: opacity 0.3s ease;">+</span>
-                                                                <span class="add-all-text position-absolute" style="opacity: 0; left: 20%; transform: translateX(-50%) translateY(-10px); font-size: 0.8rem; transition: opacity 0.3s ease, transform 0.3s ease;">Add All</span>
-                                                            </button>
-                                                        </div>
-
-                                                        {% if selected_quiz %}
-                                                            <div class="selected-quiz-info">
-                                                                <span>Selected Quiz: {{ selected_quiz.quiz_title }}</span>
-                                                                <span>Total Questions: {{ total_questions_selected_quiz }}</span>
-                                                            </div>
-                                                        {% endif %}
-                                                    </div>
-                                                </h2>
-                                                <div id="collapse{{ quiz_option.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ quiz_option.id }}" data-bs-parent="#quizAccordion">
-                                                    <div class="accordion-body">
-                                                        <ul class="list-group" style="max-height: 400px; overflow-y: auto; scrollbar-width: thin;">
-                                                            {% for question in quiz_option.questions.all %}
-                                                            <li class="list-group-item d-flex align-items-start justify-content-between shadow-sm">
-                                                                <span class="question-text">{{ question.question_text }}</span>
-                                                                <button class="btn btn-sm btn-primary add-question ms-3 align-self-center" data-question-id="{{ question.id }}">+</button>
-                                                                <div class="answer-options bg-success-subtle d-none">
-                                                                    {% for answer in question.answer_options.all %}
-                                                                    <span class="answer-option" data-is-correct="{{ answer.is_correct|yesno:'true,false' }}" data-answer-id="{{ answer.id }}">{{ answer.option_text }}</span>
-                                                                    {% endfor %}
-                                                                </div>
-                                                            </li>
-                                                            {% endfor %}
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Selected Questions -->
-                            <div class="col-md-7">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">Selected Questions</h5> 
-                                    </div>
-                                    <div class="card-body">
-                                        <ul class="list-group" id="selected-questions" style="max-height: 350px; overflow-y: auto;">
-                                            <!-- Selected questions will be dynamically added here -->
-                                            {% for question in assessment.questions.all %}
-                                                <li class="list-group-item d-flex" data-question-id="{{ question.id }}">
-                                                    <div class="question-content flex-grow-1">
-                                                        <!-- Question text area (readonly for view-only mode) -->
-                                                        <textarea class="form-control question-input" name="question_text_{{ question.id }}" placeholder="Edit question..." readonly>{{ question.question_text }}</textarea>
-                                                        <br>
-                                                        <!-- Answers section (readonly for view-only mode) -->
-                                                        
-                                                        {% for answer in question.answer_options.all %}
-                                                            <div class="answer-container d-flex align-items-center mb-3"> <!-- Bootstrap margin-bottom for spacing -->
-                                                                <!-- Checkbox before the answer textarea -->
-                                                                <input type="checkbox" name="answer_{{ answer.id }}" {% if answer.is_correct %} checked {% endif %} disabled>
-                                                                
-                                                                <!-- Answer textarea with conditional background color -->
-                                                                <textarea class="form-control answer-input" name="answer_text_{{ answer.id }}" rows="2" readonly
-                                                                        style="{% if answer.is_correct %}background-color: #d9f7d9;{% endif %}">{{ answer.option_text }}</textarea>
-                                                            </div>
-                                                        {% endfor %}
-                                                    </div>
-                                            
-                                                    <!-- Actions section (optional) -->
-                                                    <div class="actions d-flex flex-column align-items-center ml-2" style="gap: 5px;"> <!-- Align vertically with gap -->
-                                                        <!-- Trash icon button to remove question -->
-                                                        <button type="button" class="btn btn-light btn-sm d-flex justify-content-center align-items-center remove-question" style="width: 30px; height: 30px; font-size: 1rem; border: none; background-color: transparent; margin-left: 15px;" data-question-id="{{ question.id }}" title="Remove question">
-                                                            <i class="fas fa-trash-alt text-danger" style="font-size: 1.2rem;"></i> <!-- Trash icon -->
-                                                        </button>
-                                                        
-                                                        <!-- Question number (read-only view) -->
-                                                        <span class="question-number d-flex justify-content-center align-items-center" style="font-size: 0.9rem; width: 30px; height: 30px; border-radius: 50%; background-color: #f8f9fa; color: #6c757d; font-weight: bold; margin-left: 15px;">
-                                                            {{ forloop.counter }}
-                                                        </span>
-                                                    </div>                                                                                                   
-                                            
-                                                    <!-- Hidden input to keep track of selected questions -->
-                                                    <input type="hidden" name="selected_questions[]" value="{{ question.id }}">
-                                                </li>
-                                            {% endfor %}
-                                        </ul>                                                                                
-                                    </div>
-                                </div>
-                            </div>
+                    {% endif %}
+                    {% if show_questions %}
+                        <div class="tab-pane fade {% if show_questions and not show_exercises %}show active{% endif %}" id="questions" role="tabpanel" aria-labelledby="questions-tab">
+                           {% include "assessment/questions_tab.html" %}
                         </div>
-                    </div>
-                    <!-- Settings Tab -->
-                    <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
-                        <div id="assessment-settings-content">
-                            <div class="form-group">
-                                <label for="id_total_score">Total Score:</label>
-                                {{ form.total_score }}
-                                {% if form.total_score.errors %}
-                                    <div class="text-danger">{{ form.total_score.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_qualify_score">Minimum Score:</label>
-                                {{ form.qualify_score }}
-                                {% if form.qualify_score.errors %}
-                                    <div class="text-danger">{{ form.qualify_score.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_time_limit">Time Limit:</label>
-                                {{ form.time_limit }}
-                                {% if form.time_limit.errors %}
-                                    <div class="text-danger">{{ form.time_limit.errors }}</div>
-                                {% endif %}
-                            </div>
-                             
-                        </div>
-                    </div>
+                    {% endif %}
 
-
+                    <div class="tab-pane fade {% if not show_exercises and not show_questions %}show active{% endif %}" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+                         {% include "assessment/settings_tab.html" %}
+                    </div>
                 </div>
+
             </div>
         </div>
 
-        <!-- Submit Button -->
+
         <div class="text-center">
             <button type="submit" class="btn btn-success">Save Assessment</button>
             <a href="{% url 'assessment:assessment_list' %}" class="btn btn-secondary">Back to List</a>
@@ -739,11 +531,13 @@
     // Function to filter exercises in the list
     function filterExercises() {
         const input = document.getElementById('search-exercises').value.toLowerCase();
+        const selectedLanguage = document.getElementById('id_language').value.toLowerCase();
         const exercises = document.querySelectorAll('.exercise-item');
         const filteredExercisesContainer = document.getElementById('filtered-exercises');
         filteredExercisesContainer.innerHTML = '';
 
-        if (input.trim() === "") {
+        if (input.trim() === "" && selectedLanguage === "") {
+            // Show all if both search and language filter are empty
             filteredExercisesContainer.style.display = 'none';
             document.getElementById('exercise-list').style.display = 'block';
             exercises.forEach(exercise => exercise.style.display = 'flex');
@@ -751,40 +545,81 @@
         }
 
         let filteredExercises = [];
-        let addedExerciseIds = new Set(); // Dùng Set để lưu ID của các exercise đã thêm
+        let addedExerciseIds = new Set();
 
         exercises.forEach(exercise => {
             const title = exercise.querySelector('label').textContent.toLowerCase();
-            const language = exercise.querySelector('.badge').textContent.toLowerCase();
-            const exerciseId = exercise.dataset.exerciseId; // Lấy ID của exercise
+            const exerciseLanguage = exercise.querySelector('.badge').textContent.toLowerCase();
+            const exerciseId = exercise.dataset.exerciseId;
 
-            // Kiểm tra nếu exercise đã được thêm hay chưa
-            if ((title.includes(input) || language.includes(input)) && !addedExerciseIds.has(exerciseId)) {
+            const titleMatches = title.includes(input);
+            const languageMatches = selectedLanguage === "" || exerciseLanguage === selectedLanguage;
+
+
+            if (titleMatches && languageMatches && !addedExerciseIds.has(exerciseId)) {
                 filteredExercises.push(exercise.cloneNode(true));
-                addedExerciseIds.add(exerciseId); // Thêm ID vào Set
+                addedExerciseIds.add(exerciseId);
             }
         });
 
 
         if (filteredExercises.length > 0) {
+        // Display the filtered results
             document.getElementById('exercise-list').style.display = 'none';
             filteredExercisesContainer.style.display = 'block';
             filteredExercises.forEach(exercise => filteredExercisesContainer.appendChild(exercise));
+
         } else {
-            filteredExercisesContainer.style.display = 'none';
+
+            if(input !== "" && selectedLanguage !== "")
+            {
             document.getElementById('exercise-list').style.display = 'block';
+            filteredExercisesContainer.style.display = 'none';
+
             exercises.forEach(exercise => {
-                const title = exercise.querySelector('label').textContent.toLowerCase();
-                const language = exercise.querySelector('.badge').textContent.toLowerCase();
-                if (title.includes(input) || language.includes(input)) {
-                    exercise.style.display = 'flex';
-                } else {
-                    exercise.style.display = 'none';
-                }
-            });
+                    const title = exercise.querySelector('label').textContent.toLowerCase();
+                    const languageBadge = exercise.querySelector('.badge');
+                    const exerciseLanguage = languageBadge ? languageBadge.textContent.toLowerCase() : '';
+                    if (title.includes(input) && exerciseLanguage.includes(selectedLanguage) ) {
+                        exercise.style.display = 'flex';
+                    } else {
+                        exercise.style.display = 'none';
+                    }
+                });
+            }
+            else if (selectedLanguage !== "") {
+            document.getElementById('exercise-list').style.display = 'block';
+            filteredExercisesContainer.style.display = 'none';
+                exercises.forEach(exercise => {
+                    const languageBadge = exercise.querySelector('.badge');
+                    const exerciseLanguage = languageBadge ? languageBadge.textContent.toLowerCase() : ''; // Get the language. Handle cases where the badge might not exist.
+
+                    if (exerciseLanguage === selectedLanguage) {
+                        exercise.style.display = 'flex';
+                    } else {
+                        exercise.style.display = 'none';
+                    }
+                });
+            }
+            else {
+
+                filteredExercisesContainer.style.display = 'none';
+                document.getElementById('exercise-list').style.display = 'block';
+                exercises.forEach(exercise => {
+                    const title = exercise.querySelector('label').textContent.toLowerCase();
+                    if (title.includes(input)) {
+                        exercise.style.display = 'flex';
+                    } else {
+                        exercise.style.display = 'none';
+                    }
+                });
+            }
+
         }
     }
 
+
+    document.getElementById('id_language').addEventListener('change', filterExercises);
     document.getElementById('search-exercises').addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -921,17 +756,22 @@
 
     // Hàm để chuyển đổi trạng thái nút và gọi viewExercise
     function toggleViewButton(button, exerciseId) {
+            const icon = button.querySelector('i');
             const isActive = button.classList.contains("active");
 
             if (isActive) {
                 // Nếu đã active, thì reset về trạng thái ban đầu
                 button.classList.remove("active", "text-primary");
                 button.classList.add("text-secondary");
+                icon.classList.remove("bi-eye");
+                icon.classList.add("bi-eye-slash");
                 viewExercise(null); // Đóng nội dung
             } else {
                 // Nếu chưa active, thì hiển thị nội dung
                 button.classList.add("active", "text-primary");
                 button.classList.remove("text-secondary");
+                icon.classList.remove("bi-eye-slash");
+                icon.classList.add("bi-eye");
                 viewExercise(exerciseId); // Hiển thị nội dung
             }
         }

@@ -60,7 +60,7 @@
     </div> <!-- Đóng hàng báo cáo -->
 
     <!-- User Reports Card -->
-        <div class="row mt-4">
+    <div class="row mt-4">
         <div class="col-md-4 mb-4 mx-auto">
             <div class="card border-warning shadow-sm h-100" style="height: 100%;">
                 <div class="card-header bg-warning text-white">
@@ -75,9 +75,28 @@
                     <a href="{% url 'reports:user_duration_login' %}" class="btn btn-outline-warning btn-lg mb-3 w-75">User Duration Login</a>
                     
                 </div>
-            </div>
+            </div>            
         </div>
-    </div> <!-- Đóng hàng người dùng -->
+    <!-- Achievement Report -->
+        <div class="col-md-4 mb-4 mx-auto">
+            <div class="card border-dangershadow-sm h-100" style="height: 100%;">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Achievement Reports</h5>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    <a href="{% url 'reports:user_perform_report' %}" class="btn btn-outline-danger btn-lg mb-3 w-75">User Performance</a>
+                    <a href="{% url 'reports:course_perform_report' %}" class="btn btn-outline-danger btn-lg mb-3 w-75">Course Performance</a>
+                    <a href="{% url 'reports:risk_prediction_report' %}" class="btn btn-outline-danger btn-lg mb-3 w-75">Risk Prediction</a>
 
+                    
+                    
+                </div>
+            </div>
+
+            
+        </div>
+
+    </div> <!-- Đóng hàng người dùng -->
+     
 </div>
 {% endblock %}

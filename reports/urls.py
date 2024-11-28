@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-
+from .view import achievement_view
 app_name = 'reports'
 urlpatterns = [
     # URL to load the report dashboard
@@ -23,5 +23,12 @@ urlpatterns = [
     path('user_statistics_report/', views.user_statistics_report, name='user_statistics_report'),  
     path('login-frequency-report/', views.login_frequency_report, name='login_frequency_report'),
     path('user_duration_login/', views.user_duration_login, name='user_duration_login'),
+    # ---------------------------------- Achievement ----------------------------------
+    path('user_perform_report/', achievement_view.user_perform_report, name = 'user_perform_report'),
+    path('course_perform_report/', achievement_view.course_perform_report, name = 'course_perform_report'),
+    path('risk_prediction_report/', achievement_view.risk_prediction_report, name = 'risk_prediction_report'),
+    path('student_risk_predict/<str:course_name>/', achievement_view.student_risk_predict, name='student_risk_predict'),
+
+
 
 ]

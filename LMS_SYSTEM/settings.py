@@ -26,6 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOGIN_URL = 'login'  # Default URL to redirect if not logged in
 # settings.py
 LOGIN_REDIRECT_URL = ''
+# settings.py
+ADMIN_EMAIL = 'Toshidoakira@gmail.com'
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+XS_SHARING_ALLOWED_METHODS = ['POST','GET','OPTIONS', 'PUT', 'DELETE']
 
 # Add or update media settings for handling uploaded files
 MEDIA_URL = '/media/'

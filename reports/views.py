@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from course.models import Course, Enrollment, Session, Completion, Tag, CourseMaterial
+from assessments.models import Assessment, CourseFinalScore
 from django.db.models import Count
 from module_group.models import ModuleGroup
 from user.models import User, Student, Profile
@@ -260,7 +261,7 @@ def material_usage_report(request):
 def enrollment_trends_report(request):
     today = timezone.now()
     
-    # Querying enrollments and annotating with count
+    # Querying enrollments and annotating with count 
     enrollments = (
         Enrollment.objects
         .filter(date_enrolled__month=today.month)

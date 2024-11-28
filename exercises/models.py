@@ -31,4 +31,4 @@ class Submission(models.Model):
     score = models.IntegerField(null=True, blank=True)
     
     def __str__(self):
-        return f"{self.user.username} - {self.exercise.title}"
+        return f"{self.user} - {self.exercise.title}"

@@ -307,7 +307,7 @@ def user_edit(request, pk):
 
             # Kiểm tra và thay đổi vai trò nếu cần
             new_role_name = form.cleaned_data.get('role')  # lấy tên vai trò
-            if new_role_name and new_role_name != old_role.role_name:  # so sánh với tên vai trò cũ
+            if new_role_name and (old_role is None or new_role_name != old_role.role_name): # so sánh với tên vai trò cũ
                 try:
                     # Truy vấn Role dựa trên tên vai trò
                     new_role = Role.objects.get(role_name = new_role_name)

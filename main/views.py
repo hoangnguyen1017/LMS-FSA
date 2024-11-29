@@ -263,10 +263,11 @@ def check_username(request):
         return JsonResponse({'exists': True})
     return JsonResponse({'exists': False})
 
-
+from course.models import Course
 def home(request):
     query = request.GET.get('q')
     temporary_role_id = request.session.get('temporary_role')
+    courses = Course.objects.all()
 
     module_groups, grouped_modules = get_grouped_modules(request.user, temporary_role_id)
 
@@ -284,6 +285,7 @@ def home(request):
         'modules': modules,
         'grouped_modules': grouped_modules,
         'form': form,
+        'courses': courses,
     })
 
 
@@ -298,7 +300,6 @@ def login_view(request):
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
             user = authenticate(request, username=username, password=password)
-
             if user is not None:
                 # Đăng nhập thành công
                 if str(current_week) not in user_sessions:

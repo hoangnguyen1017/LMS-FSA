@@ -54,7 +54,6 @@
                         <th>Username</th>
                         <th>Email</th>
                         <th>Full Name</th>
-                        <th>Status</th>
                         {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %}
                             <th>Actions</th>
                         {% endif %}
@@ -68,7 +67,6 @@
                         <td>{{ instructor.user.username }}</td>
                         <td>{{ instructor.user.email }}</td>
                         <td>{{ instructor.user.first_name }} {{ instructor.user.last_name }}</td>
-                        <td>{{ instructor.status|yesno:"Active,Inactive" }}</td>
                         {% if request.user.profile.role.role_name == 'Manager' or request.user.is_superuser %}
                         <td>
                             <a href="{% url 'user:user_detail' instructor.user.pk %}" class="btn btn-outline-dark btn-sm" title="View Instructor Details" data-bs-toggle="tooltip">

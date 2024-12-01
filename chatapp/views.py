@@ -31,7 +31,7 @@ class ChatbotInteraction(View):
             payload = {"message": encrypted_message}
             
             # Call the chatbot model API using _request function
-            response = _request(api_name="ai_chatbot", json=payload, host="127.0.0.1", port="8002")  # Match FastAPI server config
+            response = _request(api_name="/", json=payload, host="0.0.0.0", port="8000")  # Match FastAPI server config
             
             # Ensure the response is valid JSON
             try:

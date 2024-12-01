@@ -32,7 +32,7 @@ def __dns_to_ip(domain: str) -> str:
     return next(iter(answers)).address
 
 
-def _request(api_name, json, host, port, protocol="http", verbose=True, timeout=30):
+def _request(api_name, json, host, port, protocol="http", verbose=True):
     if host is None:
         host = settings.AI_API_SERVER["HOST"]
         port = settings.AI_API_SERVER["PORT"]
@@ -53,7 +53,7 @@ def _request(api_name, json, host, port, protocol="http", verbose=True, timeout=
         if verbose:
             logger.info(f"Sending request to: '{url}'!")
 
-        response = requests.post(url, json=json, timeout=timeout)
+        response = requests.post(url, json=json, timeout=5)
         response.raise_for_status()
 
         message = response.json().get("response", "Error retrieving response")

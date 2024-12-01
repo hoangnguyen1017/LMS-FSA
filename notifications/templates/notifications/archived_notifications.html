@@ -60,6 +60,7 @@
         border-bottom: 2px solid #dfe6e9;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
         border-radius: 8px;
+        transition: transform 0.3s ease-in-out;
     }
 
     .header-title {
@@ -92,36 +93,39 @@
     .notification-item {
         display: flex;
         align-items: flex-start;
-        background: #ffffff; /* White background */
-        border-radius: 12px; /* Rounded corners */
+        background: #ffffff;
+        border-radius: 12px;
         padding: 20px;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid #ecf0f1;
         transition: box-shadow 0.3s ease, transform 0.3s ease;
-        overflow: hidden;
-        position: relative; /* For the hover effect */
+        position: relative;
+        opacity: 0;
+        animation: fadeInUp 0.5s ease-out forwards;
     }
 
     .notification-item:hover {
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         transform: translateY(-3px);
     }
 
     .notification-icon {
         background: linear-gradient(135deg, #1e90ff, #2c3e50); /* Gradient background */
-        color: #ffffff; /* White bell icon */
+        color: #ffffff;
         border-radius: 50%;
         width: 60px;
         height: 60px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem; /* Larger bell icon size */
+        font-size: 1.8rem;
         margin-right: 20px;
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, background-color 0.3s ease;
     }
 
     .notification-item:hover .notification-icon {
         transform: scale(1.1); /* Slight enlargement on hover */
+        background-color: #2980b9; /* Change icon color on hover */
     }
 
     .notification-content {
@@ -133,6 +137,7 @@
         font-weight: bold;
         color: #2c3e50;
         margin: 0 0 5px;
+        transition: color 0.3s ease;
     }
 
     .notification-message {
@@ -231,6 +236,17 @@
         }
         to {
             opacity: 1;
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
 </style>

@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import DiscussionThread, ThreadComments, ThreadReaction, CommentReaction,ReportThread
-from .forms import ThreadForm, CommentForm,ThreadReportForm
+from .models import DiscussionThread, ThreadComments, ThreadReaction, CommentReaction, ThreadReport
+from .forms import ThreadForm, CommentForm, ThreadReportForm
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Case, When, IntegerField, F, Q, OuterRef, Subquery
 from course.models import Course
@@ -13,6 +13,7 @@ from django.contrib import messages
 from module_group.models import ModuleGroup
 from django.http import HttpResponseBadRequest
 from django.db.models import F
+from django.utils import timezone
 
 @login_required
 def thread_list(request, course_id=None):
@@ -308,9 +309,9 @@ def moderation_warning(request):
 
 
 @login_required
-def react_to_thread(request, thread_id):
+def react_to_thread(request, pk):
     if request.method == 'POST':
-        thread = get_object_or_404(DiscussionThread, id=thread_id)
+        thread = get_object_or_404(DiscussionThread, id=pk)
         reaction_type = request.POST.get('reaction_type')
 
         if reaction_type not in dict(ThreadReaction.REACTION_CHOICES).keys():
@@ -478,37 +479,40 @@ def report_thread(request, thread_id):
         if form.is_valid():
             report = form.save(commit=False)
             report.thread = thread
-            report.reported_by = request.user  # Ensure this field exists in your report model
+            report.reported_by = request.user
             report.save()
-            messages.success(request, 'Your report has been submitted.')
-            return redirect('thread:thread_list')  # Redirect after successful submission
+            messages.success(request, 'Report submitted successfully.')
+            return redirect('thread:thread_detail', pk=thread.id)
     else:
-        # For GET request, instantiate the form
         form = ThreadReportForm()
     
-    # Render the template with the thread and form
-    return render(request, 'thread/report_thread.html', {'thread': thread, 'form': form})
+    return render(request, 'thread/report_thread.html', {
+        'thread': thread,
+        'form': form
+    })
 
 
 def view_reports(request):
-    # Get the search query from the request
-    query = request.GET.get('q', '')
-
-    # Filter reports based on the search query if provided
-    if query:
-        reports = ReportThread.objects.filter(
-            Q(thread__thread_title__icontains=query) |  # Adjust based on your thread model
-            Q(reported_by__username__icontains=query) |  # Assuming 'reported_by' is a user field
-            Q(reason__icontains=query)  # Assuming there is a reason field
-        )
-    else:
-        reports = ReportThread.objects.all()
+    reports = ThreadReport.objects.select_related('thread', 'reported_by').all()
     
-    paginator = Paginator(reports, 10)  # 10 threads per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    module_groups = ModuleGroup.objects.all()
-    return render(request, 'thread/view_reports.html', {'reports': page_obj, 'query': query,'module_groups': module_groups})
+    # Add search functionality
+    query = request.GET.get('q')
+    if query:
+        reports = reports.filter(
+            Q(thread__thread_title__icontains=query) |
+            Q(reported_by__username__icontains=query) |
+            Q(reason__icontains=query)
+        )
+    
+    # Add pagination
+    paginator = Paginator(reports, 10)
+    page = request.GET.get('page')
+    reports = paginator.get_page(page)
+    
+    return render(request, 'thread/view_reports.html', {
+        'reports': reports,
+        'query': query
+    })
 
 
 def recent_activity(request):
@@ -548,3 +552,15 @@ def user_feed(request):
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'thread/user_feed.html', {'page_obj': page_obj})
+
+
+@login_required
+def resolve_report(request, report_id):
+    if request.method == 'POST':
+        report = get_object_or_404(ThreadReport, id=report_id)
+        report.is_resolved = True
+        report.resolved_by = request.user
+        report.resolved_at = timezone.now()
+        report.save()
+        messages.success(request, 'Report has been marked as resolved.')
+    return redirect('thread:view_reports')

@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>My Feed</h1>
+    <h1>{{request.user.username}}'s Feed</h1>
     <div class="create-thread-btn-container">
         <a href="{% url 'thread:create_thread' %}" class="add-comment-btn create-thread-btn">Create New Thread</a>
+        <a href="{% url 'thread:thread_list' %}" class="add-comment-btn create-thread-btn">New Feed</a>
     </div>
     <div class="thread-feed">
         {% if page_obj %}

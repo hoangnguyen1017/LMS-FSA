@@ -1,5 +1,5 @@
 from django import forms
-from .models import DiscussionThread,ThreadComments,ReportThread
+from .models import DiscussionThread,ThreadComments,ThreadReport
 from user.models import User  # Assuming you have a User model
 from course.models import Course
 class ThreadForm(forms.ModelForm):
@@ -16,5 +16,12 @@ class CommentForm(forms.ModelForm):
 
 class ThreadReportForm(forms.ModelForm):
     class Meta:
-        model = ReportThread
-        fields = ['reason','additional_comments']
+        model = ThreadReport
+        fields = ['reason', 'details']
+        widgets = {
+            'details': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Please provide more details about your report...'
+            }),
+        }

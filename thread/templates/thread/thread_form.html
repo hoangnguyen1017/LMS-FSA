@@ -1,51 +1,193 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load form_filters %}
-{% block title %}Thread Form{% endblock %}
+
+{% block title %}{% if form.instance.pk %}Edit Thread{% else %}Create Thread{% endif %}{% endblock %}
+
+{% block header %}
+<div class="container-fluid bg-gradient py-3">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="text-white mb-0">
+                {% if form.instance.pk %}
+                    <i class="fas fa-edit me-2"></i>Edit Thread
+                {% else %}
+                    <i class="fas fa-plus-circle me-2"></i>Create New Thread
+                {% endif %}
+            </h3>
+            <a href="{% url 'thread:thread_list' %}" class="btn btn-light">
+                <i class="fas fa-arrow-left me-1"></i>Back to Threads
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <!-- Include the custom CSS for this form -->
-    <link rel="stylesheet" href="{% static 'css/thread_form.css' %}">
-
-    <!-- Thread form container -->
-    <div class="card p-4 mb-4 shadow-sm" style="border-radius: 10px;">
+<div class="thread-container">
+    <div class="card">
         <div class="card-body">
-            <h2 class="text-center mb-4" style="font-weight: 500;">Create a New Thread</h2>
-
-            <!-- Set enctype to multipart/form-data to handle file uploads -->
-            <form method="POST" action="" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-
-                <!-- Add form fields with Bootstrap styling -->
-                <div class="form-group mb-3">
-                    <label for="thread_title" class="form-label" style="font-weight: bold;">Thread Title</label>
+                
+                <!-- Thread Title -->
+                <div class="mb-3">
+                    <label class="form-label">Thread Title</label>
                     {{ form.thread_title|add_class:"form-control" }}
+                    {% if form.thread_title.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.thread_title.errors|join:", " }}
+                    </div>
+                    {% endif %}
                 </div>
 
-                <div class="form-group mb-3">
-                    <label for="thread_content" class="form-label" style="font-weight: bold;">Content</label>
+                <!-- Course Selection -->
+                <div class="mb-3">
+                    <label class="form-label">Course</label>
+                    {{ form.course|add_class:"form-select" }}
+                    {% if form.course.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.course.errors|join:", " }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Thread Content -->
+                <div class="mb-3">
+                    <label class="form-label">Content</label>
                     {{ form.thread_content|add_class:"form-control" }}
+                    {% if form.thread_content.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.thread_content.errors|join:", " }}
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- Add course selection dropdown -->
-                <div class="form-group mb-3">
-                    <label for="course" class="form-label" style="font-weight: bold;">Course</label>
-                    {{ form.course|add_class:"form-control" }}
+                <!-- Image Upload -->
+                <div class="mb-3">
+                    <label class="form-label">Image (optional)</label>
+                    {{ form.image|add_class:"form-control" }}
+                    {% if form.image.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.image.errors|join:", " }}
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- Add image upload field -->
-                <div class="form-group mb-3">
-                    <label for="image" class="form-label" style="font-weight: bold;">Upload Image (optional)</label>
-                    {{ form.image|add_class:"form-control-file" }} <!-- Image upload field -->
-                </div>
-
-                <!-- Customize submit button -->
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary btn-block" style="width: 100%; padding: 10px 0; font-size: 16px;">Submit</button>
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}
+                            <i class="fas fa-save me-1"></i>Save Changes
+                        {% else %}
+                            <i class="fas fa-plus me-1"></i>Create Thread
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'thread:thread_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<style>
+    .bg-gradient {
+        background: linear-gradient(45deg, #2c3e50, #3498db);
+    }
+
+    .thread-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 2px solid #ced4da;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    textarea.form-control {
+        min-height: 150px;
+        resize: vertical;
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, #2c3e50, #3498db);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(45deg, #3498db, #2c3e50);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn-light {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-light:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .text-danger {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .thread-container {
+            margin: 1rem auto;
+        }
+        
+        .card {
+            border-radius: 8px;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+        }
+    }
+</style>
 {% endblock %}

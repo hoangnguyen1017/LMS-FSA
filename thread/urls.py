@@ -21,6 +21,9 @@ urlpatterns = [
     path('reports/', views.view_reports, name='view_reports'),
     path('recent_activity/',views.recent_activity,name='recent_activity'),
     path('your-threads/', views.user_feed, name='user_feed'),
+    path('thread/<int:thread_pk>/comment/<int:comment_pk>/react/', views.react_to_comment, name='react_to_comment'),
+    path('thread/<int:pk>/react/', views.react_to_thread, name='react_to_thread'),
+    path('report/<int:report_id>/resolve/', views.resolve_report, name='resolve_report'),  
 ]
 
 

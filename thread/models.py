@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from course.models import Course
 from user.models import User
+from django.conf import settings
 
 
 class DiscussionThread(models.Model):
@@ -41,7 +42,8 @@ class DiscussionThread(models.Model):
     @property
     def angry_count(self):
         return self.reactions.filter(reaction_type='angry').count()
-    
+
+
 class ThreadComments(models.Model):
     comment_id = models.AutoField(primary_key=True)
     thread = models.ForeignKey(DiscussionThread, on_delete=models.CASCADE, related_name='comments')
@@ -138,18 +140,34 @@ class CommentReaction(models.Model):
         return f"{self.user.username} reacted to {self.comment.comment_text[:20]} with {self.get_reaction_type_display()}"
 
 
-class ReportThread(models.Model):
+class ThreadReport(models.Model):
     REASON_CHOICES = [
-        ('spam','Spam'),
-        ('abuse','Abuse or harassment'),
-        ('inappropriate','Inappropriate content'),
-        ('other','Other'),
+        ('inappropriate_content', 'Inappropriate Content'),
+        ('spam', 'Spam'),
+        ('harassment', 'Harassment'),
+        ('misinformation', 'Misinformation'),
+        ('copyright', 'Copyright Violation'),
+        ('other', 'Other'),
     ]
-    thread = models.ForeignKey(DiscussionThread,on_delete=models.CASCADE)
-    reported_by = models.ForeignKey(User,on_delete=models.CASCADE)
-    reason = models.CharField(max_length=20,choices= REASON_CHOICES)
+
+    thread = models.ForeignKey(DiscussionThread, on_delete=models.CASCADE, related_name='reports')
+    reported_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    reason = models.CharField(max_length=50, choices=REASON_CHOICES)
+    details = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    additional_comments = models.TextField(blank=True, null=True) 
+    is_resolved = models.BooleanField(default=False)
+    resolved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='resolved_reports'
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
     def __str__(self):
         return f"Report for {self.thread.thread_title} by {self.reported_by.username}"
     

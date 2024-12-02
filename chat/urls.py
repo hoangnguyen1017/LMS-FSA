@@ -15,8 +15,6 @@ urlpatterns = [
     path('edit_message/<int:message_id>/', views.edit_message_view, name='edit_message'),
     path('delete_message/<int:message_id>/', views.delete_message_view, name='delete_message'),
     path('message_report/', views.message_report_view, name='message_report'),
-
-   # path('notifications/', views.notifications_view, name='notifications'),
 ]
 
 

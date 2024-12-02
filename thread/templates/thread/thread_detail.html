@@ -2,6 +2,7 @@
 
 {% load static %}
 
+
 {% block title %}{{ thread.thread_title }}{% endblock %}
 
 {% block header %}
@@ -28,9 +29,18 @@
                 <div>
                     <h4 class="card-title mb-1">{{ thread.thread_title }}</h4>
                     <p class="text-muted small mb-0">
-                        <a href="{% url 'user:user_detail' thread.created_by.pk %}" class="text-decoration-none">
-                            <strong>@{{ thread.created_by.username }}</strong>
-                        </a> · 
+                        {% if thread.is_anonymous %}
+                            {% if request.user.is_staff or request.user.is_superuser %}
+                                <strong>Anonymous (Actually: @{{ thread.created_by.username }})</strong>
+                            {% else %}
+                                <strong>Anonymous</strong>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'user:user_detail' thread.created_by.pk %}" class="text-decoration-none">
+                                <strong>@{{ thread.created_by.username }}</strong>
+                            </a>
+                        {% endif %}
+                        · 
                         <span>{{ thread.created|date:"M d, Y H:i" }}</span>
                     </p>
                 </div>

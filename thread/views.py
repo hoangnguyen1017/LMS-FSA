@@ -114,7 +114,7 @@ def thread_list(request, course_id=None):
 @login_required
 def createThread(request):
     if request.method == 'POST':
-        form = ThreadForm(request.POST,request.FILES)
+        form = ThreadForm(request.POST, request.FILES)
         if form.is_valid():
             thread = form.save(commit=False)
             thread.created_by = request.user

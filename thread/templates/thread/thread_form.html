@@ -74,6 +74,22 @@
                     {% endif %}
                 </div>
 
+                <!-- Anonymous Posting Option -->
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.is_anonymous|add_class:"form-check-input" }}
+                        <label class="form-check-label" for="{{ form.is_anonymous.id_for_label }}">
+                            Post Anonymously
+                            <small class="text-muted d-block">Your username will be hidden from other users</small>
+                        </label>
+                    </div>
+                    {% if form.is_anonymous.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.is_anonymous.errors|join:", " }}
+                    </div>
+                    {% endif %}
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">
@@ -174,6 +190,15 @@
     .text-danger {
         font-size: 0.875rem;
         margin-top: 0.25rem;
+    }
+
+    .form-check-label {
+        color: #495057;
+    }
+
+    .form-check-input:checked {
+        background-color: #3498db;
+        border-color: #3498db;
     }
 
     @media (max-width: 768px) {

@@ -9,6 +9,7 @@ class DiscussionThread(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     thread_title = models.CharField(max_length=255)
     thread_content = models.TextField(blank=True, null=True)
+    is_anonymous = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
@@ -42,6 +43,12 @@ class DiscussionThread(models.Model):
     @property
     def angry_count(self):
         return self.reactions.filter(reaction_type='angry').count()
+
+    def get_display_name(self):
+        """Return 'Anonymous' if the post is anonymous, otherwise return the username"""
+        if self.is_anonymous:
+            return "Anonymous"
+        return self.created_by.username if self.created_by else "Deleted User"
 
 
 class ThreadComments(models.Model):

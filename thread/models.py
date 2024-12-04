@@ -3,17 +3,29 @@ from django.utils import timezone
 from course.models import Course
 from user.models import User
 from django.conf import settings
+from django.db.models import Count
 
 
 class DiscussionThread(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     thread_title = models.CharField(max_length=255)
     thread_content = models.TextField(blank=True, null=True)
-    is_anonymous = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
-    image = models.ImageField(upload_to="discussion_threads/",null = True,blank=True)
+    image = models.ImageField(upload_to="discussion_threads/", null=True, blank=True)
+    is_anonymous = models.BooleanField(default=False)
+    _is_hidden = models.BooleanField(default=False, db_column='is_hidden')
+
+    def save(self, *args, **kwargs):
+        # Check if this is a new thread
+        if not self.pk:
+            super().save(*args, **kwargs)
+        else:
+            # Update visibility before saving existing thread
+            self._is_hidden = not self.is_visible
+            super().save(*args, **kwargs)
+
     def __str__(self):
         return self.thread_title
 
@@ -44,11 +56,23 @@ class DiscussionThread(models.Model):
     def angry_count(self):
         return self.reactions.filter(reaction_type='angry').count()
 
+    @property
+    def report_count(self):
+        return self.reports.count()
+    
     def get_display_name(self):
         """Return 'Anonymous' if the post is anonymous, otherwise return the username"""
         if self.is_anonymous:
             return "Anonymous"
         return self.created_by.username if self.created_by else "Deleted User"
+
+    @property
+    def is_visible(self):
+        """Returns True if thread should be visible (less than 30 reports)"""
+        return self.report_count < 30
+
+
+
 
 
 class ThreadComments(models.Model):

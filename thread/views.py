@@ -19,6 +19,10 @@ from django.utils import timezone
 def thread_list(request, course_id=None):
     q = request.GET.get('q', '')
     selected_course = Course.objects.filter(id=course_id).first() if course_id else None
+    
+    
+
+    # Filter threads based on search and course
     if course_id:
         threads = DiscussionThread.objects.filter(
             Q(thread_title__icontains=q) |
@@ -32,78 +36,95 @@ def thread_list(request, course_id=None):
             Q(thread_content__icontains=q) |
             Q(created_by__username__icontains=q)
         )
+
+    # For student view, filter out hidden threads
+    if not request.user.is_superuser:
+        threads = threads.annotate(
+            reports_count=Count('reports')
+        ).filter(reports_count__lt=30)
+
+    # Rest of your existing annotations
     comments_subquery = ThreadComments.objects.filter(
-    thread_id=OuterRef('pk')
+        thread_id=OuterRef('pk')
     ).values('thread_id').annotate(count=Count('comment_id')).values('count')
 
-    # Apply annotations for likes, loves, comments, and interactions
     threads = threads.annotate(
-    total_likes  = Count('reactions', filter=Q(reactions__reaction_type='like')),
-    total_loves  = Count('reactions', filter=Q(reactions__reaction_type='love')),
-    total_haha   = Count('reactions', filter=Q(reactions__reaction_type='haha')),
-    total_wow    = Count('reactions', filter=Q(reactions__reaction_type='wow')),
-    total_sad    = Count('reactions', filter=Q(reactions__reaction_type='sad')),
-    total_angry  = Count('reactions', filter=Q(reactions__reaction_type='angry')),
-    total_comments=Coalesce(Subquery(comments_subquery, output_field=IntegerField()), 0)
-)
+        total_likes=Count('reactions', 
+            filter=Q(reactions__reaction_type='like'),
+            distinct=True
+        ),
+        total_loves=Count('reactions', 
+            filter=Q(reactions__reaction_type='love'),
+            distinct=True
+        ),
+        total_haha=Count('reactions', 
+            filter=Q(reactions__reaction_type='haha'),
+            distinct=True
+        ),
+        total_wow=Count('reactions', 
+            filter=Q(reactions__reaction_type='wow'),
+            distinct=True
+        ),
+        total_sad=Count('reactions', 
+            filter=Q(reactions__reaction_type='sad'),
+            distinct=True
+        ),
+        total_angry=Count('reactions', 
+            filter=Q(reactions__reaction_type='angry'),
+            distinct=True
+        ),
+        total_comments=Coalesce(Subquery(comments_subquery, output_field=IntegerField()), 0)
+    )
 
-    # Then calculate total_reactions and total_interactions
     threads = threads.annotate(
-        total_reactions = F('total_likes') + F('total_loves') + F('total_haha') + F('total_wow') + F('total_sad') + F('total_angry'),
-        total_interactions = F('total_comments') + F('total_reactions'),
-    ).order_by('-total_interactions', '-created')
-    
-    threads = threads.annotate(
-        total_interactions = F('total_comments') + F('total_reactions'),
+        total_reactions=F('total_likes') + F('total_loves') + F('total_haha') + 
+                       F('total_wow') + F('total_sad') + F('total_angry'),
+        total_interactions=F('total_comments') + F('total_reactions'),
     ).order_by('-total_interactions', '-created')
 
-    user_reactions = {reaction.thread_id: reaction.reaction_type
-                    for reaction in ThreadReaction.objects.filter(user=request.user, thread__in=threads)}
     recent_activities = threads.order_by('-created')
     module_groups = ModuleGroup.objects.all()
-    # Featured threads (do not slice the main queryset)
     featured_threads = threads[:3]
     
-    # For superuser
-    paginator = Paginator(threads, 5)  # 5 threads per page
+    # Pagination for superuser view
+    paginator = Paginator(threads, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    # Fetch all courses
     courses = Course.objects.all()
     
-    threads = threads[3:]
-    # Apply pagination on the remaining threads
-    paginator1 = Paginator(threads, 5)  # 5 threads per page
+    # Pagination for student view
+    remaining_threads = threads[3:]
+    paginator1 = Paginator(remaining_threads, 5)
     page_number1 = request.GET.get('page')
     page_obj1 = paginator1.get_page(page_number1)
     
-    user_reactions = ThreadReaction.objects.filter(user=request.user, thread__in=threads).values('thread_id', 'reaction_type')
-    
-    
+    user_reactions = ThreadReaction.objects.filter(
+        user=request.user, 
+        thread__in=remaining_threads
+    ).values('thread_id', 'reaction_type')
 
-    # Context for rendering templates
+    # Context for superuser
     context = {
-        'threads': page_obj,  # Use the paginated threads
+        'threads': page_obj,
         'courses': courses,
         'query': q,
         'recent_activities': recent_activities,
         'featured_threads': featured_threads,
-        'module_groups' : module_groups,
-        'selected_course':selected_course,
-        
-
+        'module_groups': module_groups,
+        'selected_course': selected_course,
     }
+
+    # Context for students
     context1 = {
-        'threads': page_obj1,  # Use the paginated threads
+        'threads': page_obj1,
         'courses': courses,
         'query': q,
         'recent_activities': recent_activities,
         'featured_threads': featured_threads,
-        'module_groups' : module_groups,
-        'user_reactions':user_reactions,
+        'module_groups': module_groups,
+        'user_reactions': user_reactions,
     }
 
-    # Render different templates based on user role
     if request.user.is_superuser:
         return render(request, 'thread/thread_list.html', context)
     
@@ -114,7 +135,7 @@ def thread_list(request, course_id=None):
 @login_required
 def createThread(request):
     if request.method == 'POST':
-        form = ThreadForm(request.POST, request.FILES)
+        form = ThreadForm(request.POST,request.FILES)
         if form.is_valid():
             thread = form.save(commit=False)
             thread.created_by = request.user
@@ -482,7 +503,7 @@ def report_thread(request, thread_id):
             report.reported_by = request.user
             report.save()
             messages.success(request, 'Report submitted successfully.')
-            return redirect('thread:thread_detail', pk=thread.id)
+            return redirect('thread:thread_list')
     else:
         form = ThreadReportForm()
     
@@ -494,7 +515,7 @@ def report_thread(request, thread_id):
 
 def view_reports(request):
     reports = ThreadReport.objects.select_related('thread', 'reported_by').all()
-    
+    module_groups = ModuleGroup.objects.all()
     # Add search functionality
     query = request.GET.get('q')
     if query:
@@ -511,7 +532,8 @@ def view_reports(request):
     
     return render(request, 'thread/view_reports.html', {
         'reports': reports,
-        'query': query
+        'query': query,
+        'module_groups':module_groups,
     })
 
 

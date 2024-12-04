@@ -6,7 +6,7 @@
 <style>
     /* Table Container Styling */
     .table-container {
-        height: 500px; /* Fixed height */
+        height: 400px;
         overflow-y: scroll;
         border-radius: 10px;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
@@ -207,20 +207,18 @@
 {% endblock %}
 
 {% block content %}
+<ul class="nav nav-tabs ">
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'thread:thread_list' %}">Thread</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" href="{% url 'thread:recent_activity' %}">Recent Activity</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'thread:view_reports' %}">Report</a>
+    </li>
+</ul>
 <div class="container mt-5">
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs mb-4">
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'thread:thread_list' %}">Thread</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" href="{% url 'thread:recent_activity' %}">Recent Activity</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'thread:view_reports' %}">Report</a>
-        </li>
-    </ul>
-
     <div class="row justify-content-center">
         <div class="col-md-9">
             <h2 class="text-center mb-4">Recent Activity</h2>

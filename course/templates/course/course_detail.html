@@ -148,9 +148,11 @@
                     <tr>
                         <th>Instructor</th>
                         <td class="text-left">{{ course.instructor.get_full_name }} {{ course.instructor.username }}
+                        {% if course.instructor %}
                         <a href="{% url 'feedback:give_instructor_feedback' course.pk course.instructor.pk %}" class="text-primary" style='margin-left: 0.1875rem;'>
                             Give A Feedback
                         </a>
+                        {% endif %}
                         </td>
                     </tr>
                     <tr>
@@ -323,9 +325,11 @@
                             <td style="border: 0.0625rem solid #ddd; padding: 0.5rem; text-align: left;">{{ instructor.username }}</td>
                             <td style="border: 0.0625rem solid #ddd; padding: 0.5rem; text-align: left;">{{ instructor.email }}</td>
                             <td style="border: 0.0625rem solid #ddd; padding: 0.5rem; text-align: left;">
+                                {% if course.instructor %}
                                 <a href="{% url 'feedback:give_instructor_feedback' course.pk course.instructor.pk %}" class="text-primary" style='margin-left: 0.1875rem;'>
                                     Give A Feedback
                                 </a>
+                                {% endif %}
                             </td>
                         </tr>
                     </tbody>

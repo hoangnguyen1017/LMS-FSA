@@ -362,8 +362,8 @@
         let ascending = icon.classList.contains('fa-sort-amount-down');
 
         rows.sort((a, b) => {
-            const ratingA = parseFloat(a.getElementsByTagName('td')[1].textContent);
-            const ratingB = parseFloat(b.getElementsByTagName('td')[1].textContent);
+            const ratingA = parseFloat(a.getElementsByTagName('td')[2].textContent);
+            const ratingB = parseFloat(b.getElementsByTagName('td')[2].textContent);
             return ascending ? ratingA - ratingB : ratingB - ratingA;
         });
 

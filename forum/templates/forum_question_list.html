@@ -73,14 +73,14 @@
 <div class="container mt-4">
     <h2>Discussion{% if selected_course_id %} for {{ courses|get_selected_course_name:selected_course_id }}{% endif %}</h2>
 
-    <!-- Filter Form -->
-    <form method="get" class="mb-4">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label for="course">Search for a Course:</label>
-                    <input type="text" id="courseSearch" class="form-control mb-2" placeholder="Search for a course...">
-                    <select name="course_id" id="course" class="form-control" size="5" onchange="this.form.submit()">
+<form id="filterForm" method="get" class="mb-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="form-group">
+                <label for="course">Search for a Course:</label>
+                <input type="text" id="courseSearch" class="form-control mb-2" placeholder="Search for a course...">
+                <div id="courseSelectWrapper" style="display: none;">
+                    <select name="course_id" id="course" class="form-control" size="5">
                         <option value="">All Courses</option>
                         {% for course in courses %}
                         <option value="{{ course.id }}" {% if course.id == selected_course_id %}selected{% endif %}>
@@ -90,11 +90,13 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label for="creator">Search for a Creator:</label>
-                    <input type="text" id="creatorSearch" class="form-control mb-2" placeholder="Search for a creator...">
-                    <select name="creator_id" id="creator" class="form-control" size="5" onchange="this.form.submit()">
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label for="creator">Search for a Creator:</label>
+                <input type="text" id="creatorSearch" class="form-control mb-2" placeholder="Search for a creator...">
+                <div id="creatorSelectWrapper" style="display: none;">
+                    <select name="creator_id" id="creator" class="form-control" size="5">
                         <option value="">All Creators</option>
                         {% for user in users %}
                         <option value="{{ user.id }}" {% if user.id == selected_creator_id %}selected{% endif %}>
@@ -104,20 +106,28 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label for="start_date">Start Date:</label>
-                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date }}">
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label for="end_date">End Date:</label>
-                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}">
-                </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-group">
+                <label for="start_date">Start Date:</label>
+                <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date }}">
             </div>
         </div>
-    </form>
+        <div class="col-md-2">
+            <div class="form-group">
+                <label for="end_date">End Date:</label>
+                <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-group0">
+                <label>&nbsp;</label>
+                <button type="button" id="applyFilterBtn" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </div>
+    </div>
+</form>
+
 
     <!-- Add Question Button -->
     <div class="mb-3">
@@ -176,53 +186,63 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const courseSearch = document.getElementById('courseSearch');
     const courseSelect = document.getElementById('course');
     const creatorSearch = document.getElementById('creatorSearch');
     const creatorSelect = document.getElementById('creator');
-    const dateRangeInput = document.getElementById('dateRange');
+    const applyFilterBtn = document.getElementById('applyFilterBtn');
 
-    // Hide the select elements initially
-    courseSelect.style.display = 'none';
-    creatorSelect.style.display = 'none';
-
-    // Show the select element when the input is focused
-    courseSearch.addEventListener('focus', function() {
-        courseSelect.style.display = 'block';
+    // Show course dropdown when search input is focused
+    courseSearch.addEventListener('focus', function () {
+        courseSelectWrapper.style.display = 'block';
     });
 
-    creatorSearch.addEventListener('focus', function() {
-        creatorSelect.style.display = 'block';
+    // Hide course dropdown when search input loses focus
+    courseSearch.addEventListener('blur', function () {
+        setTimeout(() => courseSelectWrapper.style.display = 'none', 100);
     });
 
-    // Hide the select element when the input loses focus
-    courseSearch.addEventListener('blur', function() {
-        setTimeout(() => courseSelect.style.display = 'none', 100);
+    // Show creator dropdown when search input is focused
+    creatorSearch.addEventListener('focus', function () {
+        creatorSelectWrapper.style.display = 'block';
     });
 
-    creatorSearch.addEventListener('blur', function() {
-        setTimeout(() => creatorSelect.style.display = 'none', 100);
+    // Hide creator dropdown when search input loses focus
+    creatorSearch.addEventListener('blur', function () {
+        setTimeout(() => creatorSelectWrapper.style.display = 'none', 100);
     });
 
-    courseSearch.addEventListener('keyup', function() {
+    // Filter courses as you type
+    courseSearch.addEventListener('keyup', function () {
         const filter = courseSearch.value.toLowerCase();
-        const options = courseSelect.options;
-
-        for (let i = 0; i < options.length; i++) {
-            const optionText = options[i].text.toLowerCase();
-            options[i].style.display = optionText.includes(filter) ? '' : 'none';
-        }
+        Array.from(courseSelect.options).forEach(option => {
+            option.style.display = option.text.toLowerCase().includes(filter) ? '' : 'none';
+        });
     });
 
-    creatorSearch.addEventListener('keyup', function() {
-        const filter = creatorSearch.value.toLowerCase();
-        const options = creatorSelect.options;
+    courseSelect.addEventListener('change', function () {
+        const selectedOption = courseSelect.options[courseSelect.selectedIndex];
+        courseSearch.value = selectedOption.text === 'All Courses' ? '' : selectedOption.text;
+    });
 
-        for (let i = 0; i < options.length; i++) {
-            const optionText = options[i].text.toLowerCase();
-            options[i].style.display = optionText.includes(filter) ? '' : 'none';
-        }
+    // Filter creators as you type
+    creatorSearch.addEventListener('keyup', function () {
+        const filter = creatorSearch.value.toLowerCase();
+        Array.from(creatorSelect.options).forEach(option => {
+            option.style.display = option.text.toLowerCase().includes(filter) ? '' : 'none';
+        });
+    });
+
+    creatorSelect.addEventListener('change', function () {
+        const selectedOption = creatorSelect.options[creatorSelect.selectedIndex];
+        creatorSearch.value = selectedOption.text === 'All Creators' ? '' : selectedOption.text;
+    });
+
+    // Apply filters when clicking the filter button
+    applyFilterBtn.addEventListener('click', function () {
+        const filterForm = document.getElementById('filterForm');
+        filterForm.submit();
     });
 
     // Initialize date range picker

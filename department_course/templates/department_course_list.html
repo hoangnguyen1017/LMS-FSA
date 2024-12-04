@@ -29,7 +29,7 @@
                         <div class="p-2">
                             <span class="course-name" data-full-name="{{ course.course_name }}" title="{{ course.course_name }}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 150px;">{{ course.course_name }}</span>
                         </div>
-                        <button onclick="showAssessmentsPopup({{ course.id }}, this)" class="btn btn-link p-0">Assessments</button>
+                        <button onclick="showAssessmentsPopup({{ course.id }}, this)" class="btn btn-link p-0" style="text-align: left; white-space: nowrap;">Assessments</button>
                         <ul class="assessment-dropdown" style="display: none;"></ul>
                     </div>
                 </div>
@@ -61,7 +61,7 @@
                                         <div class="p-2">
                                             <span class="course-name" data-full-name="{{ course.course_name }}" title="{{ course.course_name }}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 150px;">{{ course.course_name }}</span>
                                         </div>
-                                        <button onclick="showAssessmentsPopup({{ course.id }}, this)" class="btn btn-link p-0">Assessments</button>
+                                        <button onclick="showAssessmentsPopup({{ course.id }}, this)" class="btn btn-link p-0" style="text-align: left; white-space: nowrap;">Assessments</button>
                                         <ul class="assessment-dropdown" style="display: none;"></ul>
                                         <button class="btn btn-sm btn-outline-danger remove-course" data-course-id="{{ course.id }}" onclick="removeCourse(event)">Remove</button>
                                     </div>
@@ -312,7 +312,7 @@ function saveOpenDepartments() {
                             </div>
                             <div class="p-2">
                                 <span class="course-name" data-full-name="${data.course_name}" title="${data.course_name}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 150px;">${data.course_name}</span>
-                                <button onclick="showAssessmentsPopup(${courseId}, this)" class="btn btn-link p-0">Assessments</button>
+                                <button onclick="showAssessmentsPopup({{ course.id }}, this)" class="btn btn-link p-0" style="text-align: left; white-space: nowrap;">Assessments</button>
                                 <ul class="assessment-dropdown" style="display: none;"></ul>
                             </div>
                         </div>

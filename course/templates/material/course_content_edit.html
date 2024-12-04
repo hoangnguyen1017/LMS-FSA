@@ -320,7 +320,9 @@
                 <select name="reading_material_type[]" class="form-control" style="margin-top: 10px;">
                     <option value="" disabled {% if material_types|length == 0 %}selected{% endif %}>Select Material Type</option>
                     {% for key, value in material_types.items %}
-                        <option value="{{ key }}" {% if key == 'lectures' %}selected{% endif %}>{{ value }}</option>
+                        {% if key != 'assessments' %}
+                            <option value="{{ key }}" {% if key == 'lectures' %}selected{% endif %}>{{ value }}</option>
+                        {% endif %}
                     {% endfor %}
                 </select>
             </div>

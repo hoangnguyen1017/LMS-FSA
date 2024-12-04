@@ -9,7 +9,7 @@ class InstructorFeedback(models.Model):
     instructor = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="instructor_feedback",
                                    on_delete=models.CASCADE)
     course = models.ForeignKey(Course, related_name="feedbacks",
-                               on_delete=models.CASCADE)  # Link feedback to a specific course
+                               on_delete=models.CASCADE, default=1)  # Link feedback to a specific course
 
     course_knowledge = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     communication_skills = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])

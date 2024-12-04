@@ -14,6 +14,10 @@
         .sidebar-collapsed .sidebar-expanded {
             display: none;
         }
+        /* Ẩn sidebar khi trạng thái hidden */
+        .sidebar-hidden {
+            display: none !important;
+        }
 
         /* Hiển thị nhóm module khi sidebar mở rộng */
         .sidebar-expanded .sidebar-collapsed {
@@ -93,7 +97,7 @@
                         <li class="nav-item text-center">
                             <a class="nav-link text-light {% if module.module_url == active_module_url %}active{% endif %}" 
                             href="{% url module.module_url %}">
-                                <i class="{{ module.icon }}" style="font-size: 3vh;"></i> <!-- Icon module -->
+                                <i class="{{ module.icon }}" style="font-size: 4vh;"></i> <!-- Icon module -->
                                 <span class="module-name d-block mt-1" style="font-size: 1vh;">{{ module.module_name }}</span> <!-- Tên module -->
                             </a>
                         </li>
@@ -111,49 +115,58 @@
         const sidebar = document.getElementById('sidebar');
         const mainContentArea = document.getElementById('mainContentArea');
         const toggleButton = document.getElementById('sidebarToggle');
-
-        // Lấy trạng thái sidebar từ LocalStorage (mặc định là thu gọn nếu không có giá trị nào được lưu)
-        let isSidebarOpen = JSON.parse(localStorage.getItem('isSidebarOpen'));
-        if (isSidebarOpen === null) {
-            isSidebarOpen = false; // Mặc định sidebar thu gọn
-        }
-
+    
+        // Lấy trạng thái sidebar từ LocalStorage (mặc định là mở rộng nếu không có giá trị nào được lưu)
+        let sidebarState = JSON.parse(localStorage.getItem('sidebarState')) || 'expanded'; // expanded, collapsed, hidden
+    
         // Hàm cập nhật trạng thái sidebar
         function updateSidebarState() {
-            if (isSidebarOpen) {
+            if (sidebarState === 'expanded') {
                 sidebar.style.transform = 'translateX(0)';
                 sidebar.style.width = '15vw';
                 mainContentArea.classList.add('col-md-10', 'offset-md-2');
-                mainContentArea.classList.remove('col-md-11', 'offset-md-1');
-                sidebar.classList.remove('sidebar-collapsed');
+                mainContentArea.classList.remove('col-md-11', 'offset-md-1','col-md-12','col-md-11','offset-md-1');
+                sidebar.classList.remove('sidebar-collapsed', 'sidebar-hidden');
                 sidebar.classList.add('sidebar-expanded');
-                toggleButton.innerHTML = '<i class="fas fa-arrow-alt-circle-left"></i>';
-            } else {
+                toggleButton.innerHTML = '<i class="fas fa-bars"></i>'; // Icon cho mở rộng
+            } else if (sidebarState === 'collapsed') {
                 sidebar.style.transform = 'translateX(0)';
                 sidebar.style.width = '8vw';
                 mainContentArea.classList.add('col-md-11', 'offset-md-1');
-                mainContentArea.classList.remove('col-md-10', 'offset-md-2');
+                mainContentArea.classList.remove('col-md-10', 'offset-md-2','col-md-12');
                 sidebar.classList.add('sidebar-collapsed');
-                sidebar.classList.remove('sidebar-expanded');
-                toggleButton.innerHTML = '<i class="fas fa-arrow-alt-circle-right"></i>';
+                sidebar.classList.remove('sidebar-expanded', 'sidebar-hidden');
+                toggleButton.innerHTML = '<i class="fas fa-bars"></i>'; // Icon cho thu gọn
+            } else if (sidebarState === 'hidden') {
+                sidebar.style.transform = 'translateX(-100%)';
+                sidebar.style.width = '0';
+                mainContentArea.classList.add('col-md-12');
+                mainContentArea.classList.remove('col-md-10', 'offset-md-2', 'col-md-11', 'offset-md-1');
+                sidebar.classList.add('sidebar-hidden');
+                sidebar.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+                toggleButton.innerHTML = '<i class="fas fa-bars"></i>'; // Icon cho tắt hẳn
             }
         }
-
+    
         // Thiết lập trạng thái ban đầu
         updateSidebarState();
-
+    
         // Xử lý sự kiện khi nhấn nút toggle
         toggleButton.addEventListener('click', function () {
-            isSidebarOpen = !isSidebarOpen; // Đảo trạng thái
-            localStorage.setItem('isSidebarOpen', JSON.stringify(isSidebarOpen)); // Lưu trạng thái vào LocalStorage
+            // Chuyển trạng thái xoay tua
+            if (sidebarState === 'expanded') {
+                sidebarState = 'collapsed';
+            } else if (sidebarState === 'collapsed') {
+                sidebarState = 'hidden';
+            } else {
+                sidebarState = 'expanded';
+            }
+            localStorage.setItem('sidebarState', JSON.stringify(sidebarState)); // Lưu trạng thái vào LocalStorage
             updateSidebarState(); // Cập nhật trạng thái
         });
     });
+    
 </script>
-
-
-
-
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -163,6 +176,7 @@
         document.querySelectorAll('.sidebar-expanded .nav-link').forEach(function (link) {
             if (link.getAttribute('href') === currentURL) {
                 link.classList.add('active'); // Thêm lớp active cho mục phù hợp
+                link.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Cuộn đến mục active
             } else {
                 link.classList.remove('active'); // Xóa lớp active nếu không phù hợp
             }
@@ -172,6 +186,7 @@
         document.querySelectorAll('.sidebar-collapsed .nav-link').forEach(function (link) {
             if (link.getAttribute('href') === currentURL) {
                 link.classList.add('active'); // Thêm lớp active cho mục phù hợp
+                link.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Cuộn đến mục active
             } else {
                 link.classList.remove('active'); // Xóa lớp active nếu không phù hợp
             }
@@ -192,7 +207,7 @@
                 collapseElement.classList.add('show'); // Mở rộng nhóm
             }
         });
-    });    
+    });
 </script>
 <script>
     $(document).ready(function() {

@@ -11,6 +11,22 @@
 <style>
     html {
     font-size: 85%; 
+    .breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        list-style: none;
+        background-color: transparent;
+        border-radius: 0.25rem;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: ">";
+        padding: 0 0.5rem;
+        color: #6c757d; /* Màu xám nhẹ cho dấu ">" */
+    }
+    
   }
 </style>
 
@@ -61,6 +77,19 @@
                     col-sm-12
                 {% endif %}
             " id="mainContentArea" style="transition: margin-left 0.3s ease;">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        {% for crumb in breadcrumb %}
+                            {% if not forloop.last %}
+                                <li class="breadcrumb-item">
+                                    <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                                </li>
+                            {% else %}
+                                <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ol>
+                </nav>
                 {% block content %}{% endblock %}
             </div>
         </div>

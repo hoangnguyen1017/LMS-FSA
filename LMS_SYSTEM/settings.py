@@ -121,6 +121,8 @@ INSTALLED_APPS = [
     #group05 
     'activity', 'analytics_report', 'book', 'progress_notification',
     'achievement', 'quiz_bank', # -- add this app
+    'rest_framework',
+    'api',
 
 ]
 
@@ -134,7 +136,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'activity.activity_tracking_middleware.ActivityTrackingMiddleware',
-    'main.middleware.SiteLockMiddleware'
+    'main.middleware.SiteLockMiddleware',
 
 ]
 
@@ -154,6 +156,7 @@ TEMPLATES = [
                 'main.context_processors.site_status',
                 'role.context_processors.user_roles',
                 'module_group.module_context_processors.module_context',
+                'main.context_processors.breadcrumb',
             ],
         },
     },
